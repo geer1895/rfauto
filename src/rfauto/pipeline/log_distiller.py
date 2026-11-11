@@ -1,4 +1,4 @@
-"""工件语义化 LogDistiller（WP3.6，continuation-plan §10.6 / §10.22 #21）。
+"""工件语义化 LogDistiller（WP3.6，continuation_plan §10.6 / §10.22 #21）。
 
 把 openEMS stdout / HFSS(PyAEDT) 日志 / 审计 JSON 解析压缩为结构化 digest
 （rc / errors / warnings / 关键指标 / 失败签名），供 F5 最小自愈环、MCP 工具

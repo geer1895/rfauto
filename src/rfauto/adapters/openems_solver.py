@@ -28,6 +28,7 @@ from rfauto.adapters.em_solver_base import (
     EMSolverType,
     get_global_registry,
 )
+from rfauto.core.exit_code_verdict import FAMILY_OPENEMS, evaluate_exit_code
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,31 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
                 (self._working_dir / "_last_stdout.log").write_text(
                     result.stdout or "", encoding="utf-8")
 
+            # P4-1-1（aurora_r R-21）判读门："退出码 0 不足信"——rc=0 正常
+            # 终止 + 引擎静默降级（#232 柱坐标 MUR skipping/#253 Excitation
+            # inside Mur-ABC）= 假绿形态，判 ok 前必须过 fatal-marker 白名
+            # 单复核。marker 命中即失败（fail-closed，#316 方向；命中时产
+            # 物优先让位——CSV 在档也有引擎致命降级记录）；rc 语义归下方既
+            # 有分支（rc 门/产物优先不变），日志干净时本门零作用=缺省行为
+            # 逐字节不变。
+            verdict = evaluate_exit_code(
+                result.returncode, result.stdout or "", result.stderr or "",
+                fatal_marker_patterns=FAMILY_OPENEMS,
+            )
+            if verdict.fatal_hits:
+                # stderr 落盘供归因（stdout 已于上方落盘；best-effort 同 #105）
+                with contextlib.suppress(Exception):
+                    (self._working_dir / "_last_stderr.log").write_text(
+                        result.stderr or "", encoding="utf-8")
+                hits_txt = "; ".join(
+                    f"{h.source}:{h.line}:{h.pattern}:{h.snippet[:160]}"
+                    for h in verdict.fatal_hits[:4])
+                return EMSolverResult(
+                    success=False,
+                    message=(f"openEMS 判读失败（退出码 0 不足信）："
+                             f"{verdict.note}｜hits: {hits_txt}"),
+                )
+
             if result.returncode != 0:
                 # 产物优先于退出码：绑定库在解释器退出段偶发非零退出，
                 # 但 CSV 已完整落盘（2026-09-04 实测）——解析成功即接受。
@@ -345,14 +371,16 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
         far_field/sar 产物（WP4.1）best-effort 附带：解析失败不影响
         S 参数主路（观测性 best-effort #105）。
         """
-        # Touchstone 优先（N 端口全矩阵，skrf 天然支持）
+        # Touchstone 优先（N 端口全矩阵，skrf 天然支持）。strict=True（VB-3）：
+        # 求解产物回读即验读取边界（频轴/有限性），带病产物在解析点响亮失败
+        # （StrictAccessError 家族走下方 except → success=False，消息含文件名+规则名）。
         snp_files = sorted(self._working_dir.rglob("*.s?p"))
         if snp_files:
             self._write_sidecar(snp_files[0])
             try:
-                import skrf
+                from rfauto.adapters.interchange import read_touchstone
 
-                net = skrf.Network(str(snp_files[0]))
+                net = read_touchstone(snp_files[0], strict=True)
                 return EMSolverResult(
                     success=True,
                     freq_ghz=net.f * 1e-9,

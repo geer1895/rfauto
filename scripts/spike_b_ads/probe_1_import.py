@@ -6,7 +6,7 @@ import os
 import sys
 
 print("python:", sys.version)
-os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
+os.environ.setdefault("HPEESOF_DIR", r"C:\Program Files\Keysight\ADS 2023")
 
 try:
     import keysight.ads

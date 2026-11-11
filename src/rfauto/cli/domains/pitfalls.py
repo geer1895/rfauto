@@ -7,7 +7,7 @@
 本域模块并由 tests/unit/test_kb_b_pitfall_index.py 直钉。
 
 数据面：knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 从
-AGENTS 踩坑速查+runs/ SESSION_PITFALLS 散档机器全量解析，条目数以
+AGENTS.md 踩坑速查+runs/ SESSION_PITFALLS 散档机器全量解析，条目数以
 构建报告实测为准；漂移重建：
 ``python scripts/pitfall_index.py``）；--index 可切人工精选 v1
 （knowledge/pitfalls_index.json，66 条）——两索引同 schema 契约
@@ -32,7 +32,7 @@ from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import app as app
 
-pitfalls_app = typer.Typer(help="坑账检索面（AGENTS 踩坑速查全量索引，只读）")
+pitfalls_app = typer.Typer(help="坑账检索面（AGENTS.md 踩坑速查全量索引，只读）")
 app.add_typer(pitfalls_app, name="pitfalls")
 
 #: 缺省索引（与 knowledge/pitfalls_index.json 同目录的全量机器解析产物；
@@ -148,8 +148,12 @@ def pitfalls_search_cmd(
         _emit(idx, "坑账索引读取失败", json_output=json_output)
         return
     domains = [d for d in domain.split(",") if d.strip()]
+    # 纯过滤模式（零关键词，仅 --number/--domain）语义=列出该坑号全部
+    # 登记——不截断到分页 limit（aurora_r M-10 2026-11-10：top-N 截断把
+    # 同池散档挤出输出面，#391 同池语义澄清）
+    eff_limit = limit if kw_list else max(limit, 200)
     hits, n_candidates = search_entries(
-        idx["entries"], kw_list, domains=domains, number=num, limit=limit)
+        idx["entries"], kw_list, domains=domains, number=num, limit=eff_limit)
     result = {
         "ok": True,
         "keywords": kw_list,

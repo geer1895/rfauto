@@ -1,0 +1,49 @@
+# PIFA 天线 — 模板直跑配方（T-Q14 模板→配方通路预置件，aurora_q Q-W1-1）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增（T-Q18 部分提前）：外部用户反馈 P0① 的正向样例——
+# 从 pifa 模板页到第一次仿真的可跑配方（template: 形态）。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe pifa --out recipes/pifa_v1.yaml --force
+# · template: 形态 = openEMS 模板直跑（pifa 无 models 注册表优化模型，
+#   75 族映射表: service.template_recipe_service.template_model_mapping）。
+#   run 通道: fake（解析近似零 license，S11 谷落设计频率）或 openems（真引擎）。
+# · tune 调参面暂不支持 template 形态——调参需求用有优化模型的 4 族
+#   （wilkinson/patch/branchline/mline，见 recipes/ 既有 v1 配方）。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；
+#   通路全程实录：docs/tutorials/from-template-to-first-sim.md。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+template: pifa
+# template：openEMS 模板族名（TEMPLATE_META 75 族键；与 model 二选一且互斥）。
+recipe_version: 1
+# recipe_version：配方 schema 版本（与插件 schema_version 语义不同，#106）。
+notes: "2.4 GHz PIFA（居中短路板 λ/4，L 路径式定版），Rogers 4350B 0.508mm"
+# notes：人类备注（自由文本，不进校验/缓存键）。
+params:
+  # params：设计参数段（必需键）。键名=pifa 族参数面（TEMPLATE_META.params ∪
+  # TEMPLATE_NOMINAL）；名义值出处=注册表归档（HJ 精算，registry 头注）。
+  pifa_l_mm: 17.0785
+  # pifa_l_mm：贴片长 L（L 路径式定版 L=λ0/(4√εeff(W))；居中短路板电流不绕行，
+  # 文献通式 L+W−Ws 的 +W−Ws 项不适用，真机两轮实证）。
+  pifa_w_mm: 8.0
+  # pifa_w_mm：贴片宽 W（进 εeff，影响谐振频率与匹配）。
+  pifa_ws_mm: 2.0
+  # pifa_ws_mm：短路板宽 Ws（≤W，几何输入不进谐振式）。
+  pin_back_mm: 2.0
+  # pin_back_mm：馈针距短路板距离（定匹配深度的主旋钮）。
+  pin_y_mm: 2.0
+  # pin_y_mm：馈针 y 向偏置（<W）。
+setup:
+  # setup：仿真设置段。solver=openEMS（模板直跑引擎）；频带/点数由
+  # export-recipe 从 meta f0 确定性派生（band_frac=0.96/401 点口径）。
+  solver: openEMS
+  freq_range_ghz: [2.304, 2.5]
+  points: 401
+objectives:
+  # objectives：判读带取设计频率 ±2%（外部用户复现配方同款判读口径）。
+  # 缺席合法（plain run 只出 S 参数/报告不评 cost）；调参（tune）暂不支持
+  # template 形态——本目标是 run/validate 的判读演示位。
+  - metric: s11_db_min
+    band: [2.35, 2.45]
+    op: max_below
+    value: -10

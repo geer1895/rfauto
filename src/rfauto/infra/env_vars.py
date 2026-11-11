@@ -86,6 +86,13 @@ _ENV_VAR_CATALOG: tuple[EnvVarSpec, ...] = (
     EnvVarSpec("RFAUTO_MAPES_M_TAG", "knob", "campaign", "MAPES M 战役标签"),
     EnvVarSpec("RFAUTO_MAPES_M_DELTA_S", "knob", "campaign", "MAPES M ΔS 目标"),
     EnvVarSpec("RFAUTO_MAPES_M_MAX_PASSES", "knob", "campaign", "MAPES M 最大 passes"),
+    # ── HFSS 会话守卫（VB-8 R-17 席 aurora_r 2026-11-10；env_vars 目录
+    #    +docs/env_vars.md 同笔补登——挂账 b 清偿，合流笔 M-3）──
+    EnvVarSpec(
+        "RFAUTO_HFSS_DIALOG_GUARD", "flag", "hfss",
+        "图形/共享会话求解前 AEDT 模态弹窗只读预检（VB-8 三态巡检；"
+        "blocked/indeterminate→not_started 不发送，缺省关零行为变化）",
+    ),
     # ── 远程多机（多机协同 WP v0；E3-4 ge8e 审查批补登，两键漏登于 09-28 WP）──
     EnvVarSpec(
         "RFAUTO_REMOTE_SSH_USER", "knob", "remote",

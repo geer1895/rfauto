@@ -334,6 +334,44 @@ TEMPLATE_META: dict[str, dict[str, Any]] = {
         "三带缘+jog 顶边带缘+Δ 节点负载盒边精确入网（#198）；jog 横移 0.412mm "
         "≈1 网格胞（0.4mm 档），Δ 缘与竖边带缘最小间距=jog≫1µm（#152 守卫）",
     },
+    # layered_stack（晶圆键合叠层+空腔族，aurora_q Q-X6 批 2 注册 75→76；
+    # 批 1=schema+双引擎渲染+lint 闭环 91ef1a1c，批 2=注册五消费者+nominal
+    # 精算账本化。族语义=晶圆键合/SIW/SICL/空气腔悬置线：多层叠层+挖腔+
+    # 腔壁金属化+双 StripLinePort 落腔端截面；几何/端口/域单源
+    # layered_stack_spec.layered_stack_layout，openEMS 整脚本渲染器
+    # render_layered_stack（render_core 早分发，mim_cap 同款形态），
+    # HFSS 侧 hfss_builder_layered）
+    "layered_stack": {
+        "f0_ghz": 95.0, "n_ports": 2,
+        "extraction": "S11/S21 @ StripLinePort 1-2（腔端截面波端口，"
+        "suspended_stripline/sicl 同法；β 金标准→εeff 对照闭式锚 "
+        "|Δ|≤2% 口径同 stripline 族；|S11| 带谷=Z0 锚，ref=50，"
+        "闭式 Z0 偏差见渲染 meta closed_form 注）",
+        "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
+        "params": ["strip_w_mm", "line_len_mm", "wafer_width_mm",
+                   "cavity_w_mm", "cavity_h_mm"],
+        "topology": "晶圆键合叠层+空腔（批 1 反馈 §3.4/§2.1 锚）：五层叠层"
+        " silicon/gold/silicon/gold/silicon=0.25/0.003/0.05/0.003/0.25"
+        "（族常量，§3.4 示例）、矩形腔贯通线长且关于带面对称（分层围合零"
+        "布尔，腔足印内非导体层挖除）、腔壁金属化四壁零厚 PEC（两端截面口"
+        "不金属化=端口见腔截面）、载带=导体层顶面零厚 PEC 片悬置于腔内、"
+        "双 StripLinePort（prop_dir=x/exc_dir=z，height=带面-腔顶壁）",
+        "param_semantics": "strip_w_mm=载带宽（Z0 由悬置闭式反解单源 "
+        "layered_stack_spec.design_params：50Ω@b=0.50/h=0.05/εr=11.9 → "
+        "w=0.5243362925046158，正向复算自洽 |ΔZ0|≤1e-9Ω；HFSS 反馈 §2.1 "
+        "实测 w=0.52→Z0≈50.2 经验锚背书），line_len_mm=腔管/线长（§2.1 "
+        "实测锚 5.1），wafer_width_mm=叠层横向总宽（§5 实测锚 1.2），"
+        "cavity_w_mm=腔宽（须 >带宽 且 <wafer 宽——spec 校验器守卫），"
+        "cavity_h_mm=腔高（腔关于带面对称=spec 校验器唯一合法形态，"
+        "z0=-h/2 派生；§3.4 示例 0.5）。layers 叠层=族常量不入参数表"
+        "（元组列表不适配 audit 布线机制；金属层作走线层留后续批）",
+        "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 "
+        "λ_sub/50@F_MAX（最高 εr 介质，SIW/sicl 同口径；95GHz 档 "
+        "BASE≈18.2µm）；特征线显式入网（带面/膜面/腔壁面/带缘/壁缘/晶圆"
+        "缘）+ 次胞界面剔除（#349 地板 10µm：3µm 键合层界面不入网）+ "
+        "NEAR≤带宽/3 守卫（#266）+ 全轴 1µm 近重合去重与落格断言"
+        "（#152/#283）",
+    },
 }
 
 # 各模板标称设计点（与 geometry_spec/render_script 默认参数一致；
@@ -419,6 +457,15 @@ TEMPLATE_NOMINAL: dict[str, dict[str, Any]] = {
     # TEMPLATE_META param_semantics）
     "gysel": {"w_arm_mm": 0.6035, "w_feed_mm": 1.1134,
               "arm_len_mm": 18.162, "iso_len_mm": 17.75},
+    # layered_stack（Q-X6 批 2）：strip_w_mm=design_params() 反解单源
+    # （50Ω 目标 → 悬置闭式二分反解，正向复算自洽 |ΔZ0|≤1e-9Ω 裁判+§2.1
+    # HFSS 实测 50.2Ω 对照；全精度字面量落表=ring_resonator r_mean 精算
+    # 先例，回代钉在 test_layered_stack_registry）；其余四键=反馈 §3.4/
+    # §2.1/§5 实测锚（spec 缺省同源）。layers 叠层=族常量不入 nominal
+    # （meta param_semantics 注记口径）
+    "layered_stack": {"strip_w_mm": 0.5243362925046158, "line_len_mm": 5.1,
+                      "wafer_width_mm": 1.2, "cavity_w_mm": 0.9,
+                      "cavity_h_mm": 0.5},
 }
 
 # 端口面所在轴（PML_8）；其余水平轴 MUR。z 恒为 PEC 底 + MUR 顶。
@@ -479,6 +526,10 @@ _TEMPLATE_PORT_AXES: dict[str, tuple[str, ...]] = {
     # 双 MSLPort 板边入（y 轴，inverted_ms 口径）；xcheb_bpf4 双抽头馈线
     # （x 轴，hairpin 口径）
     "embedded_ms": ("y",), "xcheb_bpf4": ("x",),
+    # layered_stack（Q-X6 批 2）：双 StripLinePort 面在 x=±DOM_X 域边界
+    # （FEED=16·BASE 出 PML_8）→ 单轴 x PML；y/z 横向 MUR（金属化腔封闭，
+    # 泄漏≈0，render_layered_stack 脚本 BC 字面同源）
+    "layered_stack": ("x",),
 }
 
 # 四端口"单激励列轮转"模板（#208 进程隔离：适配器层按 excite_port=1..4
@@ -552,6 +603,9 @@ _TEMPLATE_RADIATOR: dict[str, bool] = {
     # TA Wave C 席 D2（2026-10-03）：embedded_ms 嵌埋均匀线（guided，底 PEC）
     # 与 xcheb_bpf4 开路环 BPF（guided 滤波器，hairpin 同族）均非辐射器件
     "embedded_ms": False, "xcheb_bpf4": False,
+    # layered_stack（Q-X6 批 2）：金属化腔封闭 guided 结构（λ0/4 空气隙
+    # 不适用——横向 y/z 域余量 8·BASE 数值裕量口径，render 脚本同源）
+    "layered_stack": False,
 }
 
 

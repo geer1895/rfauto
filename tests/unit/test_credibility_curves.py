@@ -48,17 +48,20 @@ class TestCredibilityCurvesService:
         ov = c.credibility_curves()
         assert ov["ok"] is True
         assert ov["count"] == 9
-        # 配对态=双引擎曲线证据对（runs/ 湖在盘才可判 paired）——公开树无
-        # 证据湖，paired 诚实归零；单引擎计数随配对态联动（9-0）。
-        runs_lake = Path(__file__).resolve().parents[2] / "runs"
-        has_lake = (runs_lake / "hairpin_calib").is_dir()
-        assert ov["n_paired"] == (5 if has_lake else 0)
-        assert ov["n_single_engine"] == (4 if has_lake else 9)
+        # pairing_state=逐族在盘探测（runs/ 证据湖缺席的干净检出配对数
+        # 恒少）——满配环境钉 5/4 绝对口径；干净检出（零配对）钉守恒，
+        # 中间态只钉守恒不虚构。
         templates = {f["template"] for f in ov["families"]}
         assert {"wilkinson", "branchline", "ratrace",
                 "slotline_transitions"} <= templates
         for f in ov["families"]:
             assert f["pairing_state"] in ("paired", "single_engine")
+        assert ov["n_paired"] + ov["n_single_engine"] == 9
+        if ov["n_paired"] == 0:
+            assert ov["n_single_engine"] == 9
+        elif ov["n_paired"] == 5:
+            assert ov["n_single_engine"] == 4
+        # 部分湖（0<paired<5，证据区部分同步的检出态）：只钉守恒不虚构
 
     def test_registered_families_listing(self):
         from rfauto.service import credibility_curves_service as c

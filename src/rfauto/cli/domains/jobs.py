@@ -231,8 +231,17 @@ def report(
     汇总索引页 index.md（simci 是回归 diff 语义，与本批量并存不同用途）。
     """
     if batch_dir or batch_all or run_ids:
+        from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+        from rfauto.service.arg_guard_service import (
+            validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+        )
         from rfauto.service.batch_ops_service import discover_run_ids, report_runs_batch
 
+        # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝
+        # （limit 只在批量面消费——守卫随之放批量面分支内，单 run 面零变化）。
+        errs = validate_count_args({"--limit": limit})
+        if errs:
+            _emit_usage_error("; ".join(errs), json_output=json_output)
         ids = list(run_ids or [])
         if batch_dir and not ids:
             disc = discover_run_ids(batch_dir, limit=limit)

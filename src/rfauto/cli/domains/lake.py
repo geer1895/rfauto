@@ -71,8 +71,17 @@ def lake_query_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """湖索引只读查询（等值过滤+日期段；JSON 进出走 service，值只进 ? 绑定）。"""
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.lake_service import query_runs_index
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝
+    # （usage error 信封 + exit 2；合法值路径零变化）。
+    errs = validate_count_args({"--limit": limit})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     result = query_runs_index(
         db, template=template, adapter=adapter, study=study,
         campaign=campaign, date_from=date_from, date_to=date_to, limit=limit,

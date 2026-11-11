@@ -1,6 +1,6 @@
 """E9a 测量数据导入单元测试。
 
-验收标准（plan-extension_v2 §E9a）：
+验收标准（Plan_Extension_v2 §E9a）：
 ① Touchstone 文件导入（.s2p）
 ② CSV 格式导入
 ③ 元数据解析

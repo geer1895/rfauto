@@ -44,5 +44,5 @@ license_seats:
 
 # 单机资源帽（§10：单任务内存 ≤80GB；键=注册表机器名）。
 machine_caps:
-  sim_server:
+  lab_server:
     memory_gb: 80

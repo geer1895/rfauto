@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **297** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **357** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -132,6 +132,11 @@ sim_ci golden 基线三动作：pin 钉定 / compare 对照 / drift 漂移量化
 ## rfauto chat
 
 LLM 对话窗（方向 6j 双通道可选）：内嵌 service 直调 或 MCP 客户端。
+
+
+## rfauto chat-test-connection
+
+LLM 通道接通性检测（最小探针 + 分诊结论：额度/限速/认证/网关）。
 
 
 ## rfauto sparams-compare
@@ -620,9 +625,10 @@ MSL↔槽线过渡与 Marchand 巴伦设计（微带 HJ 综合 + 槽线闭式精
 
 双输出报告链（DP-13 U1：run → 同一报告模型双出 PDF+HTML）
 
-共 1 条叶子命令。
+共 2 条叶子命令。
 
 - `rfauto reports render` — 渲染 run 报告：同一报告模型（rfauto-report/v1）双出 typst PDF + plotly 自包含 HTML。
+- `rfauto reports run-figures` — HFSS run 四联图：S 参数幅值+相位+群时延+εeff 一张 PNG（反馈 P2）。
 
 ## rfauto mmt
 
@@ -735,7 +741,7 @@ Touchstone 互操作（ME-10'：TS 2.1 写出 + HFSS 注释块直读）
 
 HFSS → 可机加交付包（STEP/x_t + DXF 图 + 审计门禁，T43）
 
-共 9 条叶子命令。
+共 11 条叶子命令。
 
 - `rfauto fab go` — 一键交付包：--vars 离线链 / --project 真机链（自动审计，FAIL 禁发图）.
 - `rfauto fab pipeline` — 离线端到端轻量链：vars → dims → 轮廓/图纸 DXF → 审计 → 打包.
@@ -746,6 +752,8 @@ HFSS → 可机加交付包（STEP/x_t + DXF 图 + 审计门禁，T43）
 - `rfauto fab rules` — 显示工艺公差规则库（公差类/审计阈值/表面处理）.
 - `rfauto fab catalog` — 波导(WR/BJ)/法兰/嘉立创配合带/Kerr 规则标准库目录.
 - `rfauto fab export` — 连接 HFSS 导出 x_t/step + dims 快照（需 rfauto（hfss extra）+AEDT）.
+- `rfauto fab parse` — Gerber 光绘结构化解析（指令级+几何落地面；配 drill 时加跑交叉校验）.
+- `rfauto fab summary` — Gerber 层摘要（按 D 码分组计数+aperture 类型统计+包络盒）.
 
 ## rfauto remote
 
@@ -848,7 +856,7 @@ Zenodo 元数据导出与 CITATION.cff 校验（PR-11，零网络）
 
 ## rfauto pitfalls
 
-坑账检索面（AGENTS 踩坑速查全量索引，只读）
+坑账检索面（AGENTS.md 踩坑速查全量索引，只读）
 
 共 2 条叶子命令。
 
@@ -863,6 +871,24 @@ DAG 执行基座（断点续跑/CAS/watchdog/#261 互斥；pipeline.dag_runner�
 
 - `rfauto dag run` — 执行 DAG 计划（断点续跑内嵌；solve 节点过 #261 机器互斥）。
 - `rfauto dag status` — 状态期刊节点态摘要（与 journal 一致；done/failed/inconclusive 等）。
+
+## rfauto anim
+
+动图渲染（typed spec JSON→SVG 动画；service.animation 内核）
+
+共 1 条叶子命令。
+
+- `rfauto anim render` — 渲染动图 SVG（确定性：同 spec 两跑逐字节同，sha256 钉）。
+
+## rfauto vendor-docs
+
+厂商帮助文档检索（FTS5 索引+带引用检索+零入库审计）
+
+共 3 条叶子命令。
+
+- `rfauto vendor-docs build` — 构建厂商文档 FTS5 索引（增量 sha256 去重；rebuild 全量重建）。
+- `rfauto vendor-docs search` — 带引用检索（FTS5 trigram MATCH→短词 LIKE 回退；引用含 source/
+- `rfauto vendor-docs audit` — 索引库零入库审计（记录数/chunk 字符总量/来源清单——红线复核面）。
 
 ## rfauto fault-tree
 
@@ -976,9 +1002,10 @@ REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读）
 
 模板 golden 几何回归仓（EC-8：渲染哈希+CSX 摘要逐族对比）
 
-共 1 条叶子命令。
+共 2 条叶子命令。
 
 - `rfauto templates golden-diff` — 模板渲染产物 vs golden 快照逐族对比（脚本 sha256+CSX 几何摘要+网格）。
+- `rfauto templates export-recipe` — 模板族 → 配方 YAML 一键导出（T-Q14 模板→配方通路单源）。
 
 ## rfauto em
 
@@ -1054,3 +1081,250 @@ seat 粒度三证判活（watchdog 方法论 CLI 出口；service/watchdog_servi
 共 1 条叶子命令。
 
 - `rfauto cal-wizard trl` — TRL 校准件设计单（频带+介质 → Thru/Reflect/Line 几何+覆盖核算）。
+
+## rfauto liberty
+
+Liberty (.lib) 时序库结构化解析（cells/pins/timing 查找表/功率）
+
+共 2 条叶子命令。
+
+- `rfauto liberty parse` — 结构化解析 Liberty 库（NLDM 查找表/功率/工况/模板，缺省紧凑面）。
+- `rfauto liberty list` — 库清单（cell 名/面积/pin 数/表数+模板与工况名录，只读零写盘）。
+
+## rfauto spice
+
+SPICE 网表深度解析（ngspice/HSPICE/Spectre 三格式统一结构化；service/spice_netlist_service 薄壳）：parse=五维度解析（元件/子电路/控制语句/模型卡/拓扑）
+
+共 1 条叶子命令。
+
+- `rfauto spice parse` — SPICE 网表深度解析（三格式统一五维度结构化输出+拓扑摘要）。
+
+## rfauto skill
+
+SKILL 代码模板生成（Python→.il 脚手架；零 Virtuoso 依赖，执行侧在用户本地 Virtuoso）
+
+共 3 条叶子命令。
+
+- `rfauto skill list` — SKILL 模板目录（注册表只读视图：名称/分类/变量面/函数面）。
+- `rfauto skill render` — 渲染 SKILL 代码（模板+变量直出，零手拍电路数值；含语法守卫）。
+- `rfauto skill lint` — SKILL 语法守卫（括号/引号/let 绑定/函数名白名单/赋值目标）；有
+
+## rfauto sdc
+
+SDC（Synopsys Design Constraints）约束结构化解析（时钟/IO 延迟/路径例外/负载驱动，Tcl 语法子集只读面）
+
+共 2 条叶子命令。
+
+- `rfauto sdc parse` — 结构化解析 SDC 约束（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto sdc list` — SDC 清单（命令名录+计数、时钟名录、对象 pattern 计数，只读）。
+
+## rfauto exploded-view
+
+版图 3D 爆炸视图（layered_stack/KiCad→SVG/JSON/PNG+lint 闭环）
+
+共 1 条叶子命令。
+
+- `rfauto exploded-view render` — 渲染 3D 爆炸视图（lint 零 ERROR 才渲染；确定性 sha256 落档）。
+
+## rfauto layer-3d
+
+KiCad .kicad_pcb 逐层 3D 渲染导出（铜/阻焊/丝印/钻孔逐层 PNG+叠层合成预览 PNG/SVG；service/layer_3d_render_service 薄壳）
+
+共 1 条叶子命令。
+
+- `rfauto layer-3d render` — KiCad 板逐层 3D 渲染导出（逐层 PNG+合成预览；零 pcbnew 零 license）。
+
+## rfauto drc
+
+DRC 规则文件结构化解析（JSON/CSV/自由文本统一 schema+RF 特化检查：阻抗精度/焊盘间距/地过孔围栏/屏蔽罩间距，只读面）
+
+共 2 条叶子命令。
+
+- `rfauto drc parse` — 结构化解析 DRC 规则文件（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto drc validate` — design × 规则集校验（verdict=issues/attention/clean；违规≠exit 1）。
+
+## rfauto lvs
+
+LVS 网表对照（Layout vs Schematic，netgen 思想借鉴化用；service/lvs_compare_service 薄壳）：compare=两份网表拓扑一致性（图同构+missing/extra/mismatched+RF 特化）
+
+共 1 条叶子命令。
+
+- `rfauto lvs compare` — LVS 网表对照（图同构+元件/参数/端口差异清单+对照报告）。
+
+## rfauto ibis
+
+IBIS (.ibs) IO buffer 模型结构化解析（IV 查找表/暂态表/引脚）
+
+共 2 条叶子命令。
+
+- `rfauto ibis parse` — 结构化解析 IBIS 模型（缺省紧凑面：表计数在、表体不在）。
+- `rfauto ibis list` — 清单（component/model 名录+表计数+选择器名录，只读零写盘）。
+
+## rfauto verilog
+
+Verilog 网表结构化解析（数字后端网表只读面：module/port/wire/assign/实例/参数+拓扑三件套）
+
+共 2 条叶子命令。
+
+- `rfauto verilog parse` — 结构化解析 Verilog 网表（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto verilog list` — Verilog 清单（模块名录+逐模块计数、顶层候选、实例化边，只读）。
+
+## rfauto citi
+
+CITIfile（HP/Keysight 仪器数据格式）读取：结构化解析+skrf 桥接探针
+
+共 3 条叶子命令。
+
+- `rfauto citi info` — 包级结构化信息（header/版本/变量/段概览；--max-values 截断值列）。
+- `rfauto citi segments` — 数据段解码值读取（complex 值 JSON 形态=re、im 成对）。
+- `rfauto citi network` — skrf 桥接探针（条件匹配才桥；不满足走 skipped 信封如实给原因）。
+
+## rfauto sdf
+
+SDF（IEEE 1497 标准延迟格式）时序标注解析：头部/CELL 段/IOPATH·INTERCONNECT·PORT 延迟+TIMINGCHECK 只读面
+
+共 2 条叶子命令。
+
+- `rfauto sdf parse` — 结构化解析 SDF 文件（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto sdf report` — 报告：头部+逐 celltype 计数+TIMINGCHECK 十二类计数与最坏值（只读）。
+
+## rfauto gdsii
+
+GDSII 版图交换格式结构化解析（二进制记录流只读面：边界/路径/引用/文本六桶+层级统计+层汇总）
+
+共 2 条叶子命令。
+
+- `rfauto gdsii parse` — 结构化解析 GDSII 文件（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto gdsii layers` — 层汇总（逐 (layer,datatype) 元素计数+包围盒，只读）。
+
+## rfauto touchstone
+
+Touchstone（.sNp）结构化解析：格式嗅探/rank 三规则推断/RI·MA·DB 解码只读面
+
+共 1 条叶子命令。
+
+- `rfauto touchstone info` — 格式嗅探+rank 三规则结果+冲突报告（缺省紧凑；--json 恒全结构信封）。
+
+## rfauto ipc356
+
+IPC-D-356/356A 裸板电气测试网表解析：头部/记录/net 测试点拓扑+统计+Gerber/Excellon 配对只读面
+
+共 1 条叶子命令。
+
+- `rfauto ipc356 report` — 报告：统计+单点 net 开路嫌疑清单；配对旗标切换 356×Gerber/Excellon
+
+## rfauto lefdef
+
+LEF/DEF 物理设计交换格式结构化解析（科技库 LEF 层/via/macro/引脚几何+版图 DEF 组件/引脚/网/走线+交叉校验三件套，只读面）
+
+共 2 条叶子命令。
+
+- `rfauto lefdef parse` — 结构化解析 LEF/DEF（--lef/--def 可单给可组合；缺省紧凑汇总，--json 恒全结构信封）。
+- `rfauto lefdef check` — LEF×DEF 交叉校验（单元闭合/网连接度/引脚名对齐；verdict=clean/attention/issues，违规不改退出码）。
+
+## rfauto stil
+
+STIL 测试向量解析（IEEE 1450 只读面：Signals/SignalGroups/Timing/Pattern 结构化提取+向量与时序事件联查+覆盖统计）
+
+共 2 条叶子命令。
+
+- `rfauto stil parse` — 结构化解析 STIL（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto stil report` — STIL 统计与 timing/pattern 清单报告（逐 WFT 周期+逐 pattern 账目）。
+
+## rfauto skill_parse
+
+SKILL/OCEAN 源码 S-expression 解析（只读静态面：define/defun 盘点/API 前缀桶/全局赋值/静态调用图；零执行零 Virtuoso 依赖）
+
+共 2 条叶子命令。
+
+- `rfauto skill_parse parse` — 结构化解析 SKILL/OCEAN 文件（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto skill_parse report` — 报告：define/defun 盘点+API 前缀四桶+全局赋值面（只读静态分析）。
+
+## rfauto odbpp
+
+ODB++ 目录结构与制造库存解析：matrix 层清单/step 特征统计/cadnet 网表/net 库存（悬空 pad+空 net）/层叠对齐校验
+
+共 1 条叶子命令。
+
+- `rfauto odbpp report` — 报告：matrix 层清单+逐 step 统计+stack 对齐+悬空 pad/空 net 双清单。
+
+## rfauto bsdl
+
+BSDL 边界扫描描述解析（IEEE 1149.1 只读面：entity/port/TAP/引脚映射/指令表/边界寄存器单元+控制链校验+长度一致性三数字）
+
+共 2 条叶子命令。
+
+- `rfauto bsdl parse` — 结构化解析 BSDL（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto bsdl report` — BSDL 统计与指令/边界一致性报告（指令表+function 分桶+长度三数字）。
+
+## rfauto spectre
+
+Spectre 网表解析（Cadence 模拟仿真器原生语法只读面：parameters/subckt 层次/器件库存/选项块登记，表达式只保留原文不求值）
+
+共 2 条叶子命令。
+
+- `rfauto spectre parse` — 全结构化解析（parameters 声明表/subckt 层次表/顶层实例/选项块+引用登记）。
+- `rfauto spectre report` — 统计聚合（器件库存+参数键频次 top+层次摘要+参数引用点计数）。
+
+## rfauto veriloga
+
+Verilog-A 模拟行为级结构子集解析（只读面：模块/端口/net/参数/analog 行为块+贡献语句表+表达式前缀归一）
+
+共 2 条叶子命令。
+
+- `rfauto veriloga parse` — 结构化解析 Verilog-A（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto veriloga report` — Verilog-A 统计报告（逐模块摘要+全模块参数表+贡献对清单）。
+
+## rfauto stdf
+
+STDF 产线测试数据解析（Teradyne V4 只读面：FAR 字节序自描述/MIR 摘要/PIR-PRR 器件/PTR-FTR 测试两记录面/良率两口径+查询）
+
+共 2 条叶子命令。
+
+- `rfauto stdf parse` — 结构化解析 STDF（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto stdf report` — STDF 盘点报告（良率两口径+fail parts+记录计数+截断态）。
+
+## rfauto ibis-ami
+
+IBIS-AMI (.ami) 参数文件解析（IBIS 7.0 只读面：Reserved 保留参数字典+必备键缺失清单、Model_Specific 五键逐参+type 分派+in-bounds 开闭区间结构化、DLL/SoC 引用登记）
+
+共 2 条叶子命令。
+
+- `rfauto ibis-ami parse` — 结构化解析 AMI 参数文件（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto ibis-ami report` — AMI 统计报告（逐保留参数行+逐参数行+DLL/SoC 引用+缺失清单）。
+
+## rfauto spef
+
+SPEF 寄生交换格式解析（IEEE 1481 寄生网络只读面：头部/NAME_MAP/PORTS/D_NET 四段+拓扑与耦合统计）
+
+共 2 条叶子命令。
+
+- `rfauto spef parse` — 结构化解析 SPEF（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto spef report` — SPEF 拓扑与耦合统计报告（逐 net 连通分量/孤立节点+耦合 top-k）。
+
+## rfauto vcd
+
+VCD 波形解析（IEEE 1364 Value Change Dump 只读面：声明段/scope 层次/信号事件流+活跃度与时间窗统计）
+
+共 2 条叶子命令。
+
+- `rfauto vcd parse` — 结构化解析 VCD（缺省紧凑汇总；--json 恒全结构信封）。
+- `rfauto vcd report` — VCD 时间跨窗与信号活跃度报告（时间窗直方+top 活跃度聚合）。
+
+## rfauto tri-view
+
+原理图↔版图↔3D 三视图联动（位号 ref 为键 1:1 映射+交叉高亮+联动 SVG 三联）
+
+共 1 条叶子命令。
+
+- `rfauto tri-view link` — 三视图联动：位号键 1:1 映射+交叉高亮数据+联动 SVG 三联（同输入逐字节同）。
+
+## rfauto aedt-migrate
+
+老版本 .aedt 工程批量迁移：五阶段决策树+迁移报告（help 明细见各叶）
+
+共 3 条叶子命令。
+
+- `rfauto aedt-migrate run` — 批量迁移编排：收集→S0 盘点→逐工程决策树→报告落 reports。
+- `rfauto aedt-migrate status` — 迁移报告结构化摘要（verdict/阶段链/体检/对比/引擎指纹）。
+- `rfauto aedt-migrate report` — 迁移报告人读全文（分节 rich 面；--json=报告原文逐键透传）。

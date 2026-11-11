@@ -10,7 +10,7 @@
 > below is preserved verbatim (the server's own messages stay in
 > Chinese); only the narrative is translated. When you finish you will
 > know: how to start it, how to configure the client, how to find your
-> way among the 157 tools, what a typical call looks like, and how MCP
+> way among the 152 tools, what a typical call looks like, and how MCP
 > relates to the CLI.
 
 ## 0. Prerequisites
@@ -70,8 +70,8 @@ form recommended; escape Windows paths with `\\`):
 {
   "mcpServers": {
     "rfauto": {
-      "command": "C:\\rfauto\\.venv\\Scripts\\rfauto-mcp.exe",
-      "cwd": "C:\\rfauto"
+      "command": "E:\\rfauto_workspace\\.venv\\Scripts\\rfauto-mcp.exe",
+      "cwd": "E:\\rfauto_workspace"
     }
   }
 }
@@ -85,7 +85,7 @@ The generic stdio JSON form (README's form, module entry):
     "rfauto": {
       "command": "python",
       "args": ["-m", "rfauto.mcp_server"],
-      "cwd": "C:\\rfauto"
+      "cwd": "E:\\rfauto_workspace"
     }
   }
 }
@@ -103,7 +103,7 @@ check the client log for the JSON-RPC handshake. **stdout must be pure
 protocol**: wrapping the entry point in a shim that prints a banner
 will break it every time.
 
-## 3. The surface: 157 tools + 10 resources
+## 3. The surface: 152 tools + 10 resources
 
 Where the number comes from: `scripts/check_numbers.py` measured output
 `MCP=152+10res` (tools = facade + the `@mcp.tool` registration surface
@@ -142,7 +142,7 @@ The 10 resources (read-only; URIs quoted from the registration surface):
 | `rfauto://knowledge/materials` | materials library (configs/materials.yaml structure) |
 | `rfauto://knowledge/compat_matrix` | version compatibility matrix |
 | `rfauto://knowledge/terminology` | terminology cards |
-| `rfauto://knowledge/metric-glossary` | metric glossary (38 metric keys + machine-readable gates, W3.5-K3 batch) |
+| `rfauto://knowledge/metric-glossary` | metric glossary (38 metric keys + machine-readable gates, aurora_i W3.5-K3) |
 | `rfauto://toolsets/definition` | toolset catalog (name/description/skill/tools per entry) |
 | `rfauto://calculators/index` | calculator registry catalog (2026-10-14 MCP-B seat) |
 | `rfauto://datasets/index` | dataset registry overview (2026-10-14 MCP-B seat) |
@@ -173,9 +173,9 @@ Input `{}`. Returned envelope (structured-content excerpt):
 {"ok": true, "checks": [
   {"name": "Python", "status": "ok", "detail": "3.12.14"},
   {"name": "AEDT", "status": "ok",
-   "detail": "<drive>:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
+   "detail": "C:\\Program Files\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
   {"name": "ADS", "status": "ok",
-   "detail": "E:\\ADS\\ADS27（版本 2027，verified）"},
+   "detail": "C:\\Program Files\\Keysight\\ADS2027（版本 2027，verified）"},
   {"name": "缓存模式", "status": "ok", "detail": "readwrite"}]}
 ```
 

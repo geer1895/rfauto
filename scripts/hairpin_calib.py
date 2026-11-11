@@ -1,4 +1,4 @@
-"""hairpin 电气标定（WP2.3 真机 FAIL 归因轮；Devlog（一百零三）续做建议③）。
+"""hairpin 电气标定（WP2.3 真机 FAIL 归因轮；DEVLOG（一百零三）续做建议③）。
 
 背景：pt1 冒烟（runs/hairpin_smoke/pt1/，solve_s=1235，β 金标准 PASS）响应
 FAIL——@2.5GHz |S21|=-44.89dB / |S11|=+0.1dB，2.485GHz 有 -46dB 传输零点、

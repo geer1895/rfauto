@@ -32,13 +32,13 @@ _SPEC.loader.exec_module(scl)
 # ── 禁③：外部路径静态扫 ─────────────────────────────────────────────────
 
 def test_drive_letter_detected():
-    text = "notes: '校准基准取自 E:\\rfauto-workspace\\runs\\x.csv'"
+    text = "notes: '校准基准取自 E:\\rfauto_workspace\\runs\\x.csv'"
     kinds = [f["kind"] for f in scl.scan_external_paths(text)]
     assert "drive_letter" in kinds
 
 
 def test_unc_and_posix_and_home_detected():
-    unc = "file=\\\\sim_server\\share\\netlist.ssp"
+    unc = "file=\\\\lab_server\\share\\netlist.ssp"
     posix = "ref: /home/user/calib.json"
     home = "out: ~/results/x.csv"
     assert "unc" in [f["kind"] for f in scl.scan_external_paths(unc)]
@@ -96,7 +96,7 @@ def test_baseline_detects_added_and_removed(tmp_path):
 
 
 def test_lint_fail_on_external_path_in_file(tmp_path):
-    p = _mk(tmp_path, "recipe.yaml", "notes: 'C:\\Users\\<local-user>\\x.csv'\n")
+    p = _mk(tmp_path, "recipe.yaml", "notes: 'C:\\Users\\demo\\x.csv'\n")
     r = scl.lint_paths([p])
     assert r["verdict"] == "FAIL"
     assert r["findings"][0]["rule"] == "external_path"

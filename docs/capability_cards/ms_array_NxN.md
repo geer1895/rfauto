@@ -6,7 +6,7 @@
 
 - 拓扑：有限 N×N 反射阵（ms_patch 单元平铺）：接地基板（z 底 PEC 边界，地连续 由边界构造性保证）+ cell_map 逐单元贴片表；上方 λ0/4 空气隙软激励平面 照明（exc_type=0 全口径，官方 PPW 教程口径，法向入射 E∥x 极化前提）； 侧向 MUR（有限口径，无 PEC/PMC 对壁——那是单胞无限阵技巧）
 - f0：10.0 GHz ｜ 端口：0 ｜ 时长 ≤60.0 ns ｜ 网格档：0.0 mm
-- 提取口径：无端口（软平面照明散射体）：产物=farfield_cut.csv/farfield3d.csv/ farfield_meta.json/array_meta.json；J2 峰值方向 vs 闭式 φ_mn 指向 ≤3° （真机轨，内部证据档 §3）；farfield=总出射场 （镜面反射+赋形波束，判读面在 J2 分解）
+- 提取口径：无端口（软平面照明散射体）：产物=farfield_cut.csv/farfield3d.csv/ farfield_meta.json/array_meta.json；J2 峰值方向 vs 闭式 φ_mn 指向 ≤3° （真机轨，runs/df6_dp10ms/criteria.md §3）；farfield=总出射场 （镜面反射+赋形波束，判读面在 J2 分解）
 - 参数：n_x, n_y, period_mm, cell_map, h_mm
 - 基板：{"er":3.66,"h_mm":1.524,"tan_d":0.0037}
 
@@ -56,9 +56,9 @@
 ## 已知边界
 
 - 参数语义：n_x/n_y=x/y 向胞数，period_mm=胞周期，cell_map=n_y 行 × n_x 列逐单元 参数表（每胞 px_mm/py_mm 必填、cell_id 可选仅 ms_patch），h_mm=基板厚； n 与 cell_map 行列数逐维相等（覆盖完备守卫，违反渲染抛 ValueError）； er/tan_d 走 substrate/nominal
-- 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 内部证据档
+- 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 runs/df6_dp10ms/handoff.md
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞 （#246/#261）；J2 真机轨另派
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

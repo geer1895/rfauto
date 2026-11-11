@@ -1,0 +1,4 @@
+MATRIX
+0 0 F.Cu f_cu SIGNAL
+1 0 Edge.Cuts edge_cuts SIGNAL
+UNITS=MM

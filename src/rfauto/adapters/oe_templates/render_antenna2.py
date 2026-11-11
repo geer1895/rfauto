@@ -32,7 +32,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    HJ @W，与 patch 谐振轴同口径，铁律 1c）。文献通式 L + W − Ws ≈ λ/4
 #    （Ollikainen 1999 / Zürcher & Gardiol）**前提是角部短路板**（电流自短路
 #    板沿贴片宽度绕行再折向开路边）；本布局短路板居中（Ws=2 于 W=8 中央），
-#    电流不绕行，有效路径≈L——两轮真机实证（Devlog（一百四十五）/AGENTS
+#    电流不绕行，有效路径≈L——两轮真机实证（DEVLOG（一百四十五）/AGENTS
 #    antenna2 坑③）：通式标称 L=11.0785 谐振在 2.9GHz 之上 FAIL，L 路径式
 #    override 17.08 → −8.79dB@2.26GHz PASS（runs/antenna2_smoke/pifa_override）。
 #    Ws 仍是几何输入（短路板宽定馈阻抗/带宽），不进谐振式。馈针位置定匹配

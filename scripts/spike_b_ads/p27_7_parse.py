@@ -1,14 +1,14 @@
 """2027 e2e final: parse the simulated .ds -> DataFrame -> S-param sanity."""
 import os
 
-os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
+os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027")
 import keysight.ads.dataset as dataset
 
-path = r"E:\rfauto-workspace\scripts\spike_b_ads\sim_out_2027\swept_s_parameter.ds"
+path = r"E:\rfauto_workspace\scripts\spike_b_ads\sim_out_2027\swept_s_parameter.ds"
 data = dataset.open(path)
 print("traces:", list(data.keys()))
 df = data[list(data.keys())[0]].to_dataframe().reset_index()
-out = open(r"E:\rfauto-workspace\scripts\spike_b_ads\p27_parse_report.txt", "w", encoding="utf-8")
+out = open(r"E:\rfauto_workspace\scripts\spike_b_ads\p27_parse_report.txt", "w", encoding="utf-8")
 out.write(f"columns: {list(df.columns)}\nrows: {len(df)}\n")
 out.write(df.head(3).to_string())
 # S 参数量级 sanity

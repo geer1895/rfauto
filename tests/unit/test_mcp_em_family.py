@@ -141,7 +141,7 @@ class TestEmFamilyRegistration:
 
     def test_tools_count_matches_server_anchor(self, mcp_server):
         tools = asyncio.run(mcp_server.list_tools())
-        assert len(tools) == 166  # 与 test_mcp_server 主钉同源（2026-11-01 aurora_p 席 B2 ads_circuit_annotate+design_report +2；上锚 aurora_o o_ads ADS 前仿链 +2）
+        assert len(tools) == 208  # 与 test_mcp_server 主钉同源（aurora_r R-26 2026-11-10 重钉 200→208：解析五批扩展 parser_ext.py 六面；上锚 aurora_r 合流笔 2026-11-10 重钉 171→200：Q-X69/Q-X73/Q-X76/Q-X85 MCP 四批 +29；上上锚 2026-11-06 T-Q5+T-Q19 批 2 +4）
 
     def test_five_tools_registered(self, mcp_server):
         tools = asyncio.run(mcp_server.list_tools())

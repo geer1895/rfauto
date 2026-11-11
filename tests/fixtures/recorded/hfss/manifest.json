@@ -1,0 +1,37 @@
+{
+  "schema_version": "aurora_r_recorded_fixtures_v1",
+  "tool": "hfss",
+  "tool_version": "2025.1.0",
+  "tool_version_source": "sNp 头注 '! Touchstone file exported from HFSS <ver>'",
+  "recorded": "2026-11-10",
+  "recorder": "record_real_fixtures v1 (aurora_r R-16, VB-5)",
+  "restricted_data": null,
+  "source_run": "runs/<RUN>",
+  "cleaning": {
+    "replacements": {
+      "userdir": 0,
+      "drive": 1,
+      "repo": 1,
+      "run_id": 1,
+      "host": 0,
+      "user": 0,
+      "ip": 0
+    },
+    "total": 3,
+    "judge": "release/scan_release.py FAIL+WARN 双零口径"
+  },
+  "expectations": {
+    "n_ports": 1,
+    "n_freqs": 11,
+    "freq_hz_min": 2300000000.0,
+    "freq_hz_max": 2500000000.0,
+    "s11_db_min": -3.110894681869347
+  },
+  "files": [
+    {
+      "name": "params.s1p",
+      "sha256_12": "830f570452e9",
+      "bytes": 1554
+    }
+  ]
+}

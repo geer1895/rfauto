@@ -376,9 +376,7 @@ def test_vv_attach_is_best_effort(tmp_path: Path,
 def test_v2_pilot_does_not_touch_frozen_md_or_index() -> None:
     # 冻结面存在性核对（内容零改写由 git status 抽查承担，这里钉机器源指向）
     if not (REPO / "runs" / "df6_dp10ms" / "criteria.md").exists():
-        # 公开分发视图：runs/ 冻结证据档不入公开仓——如实 skip
-        import pytest
-        pytest.skip("runs/df6_dp10ms 冻结证据档缺席（公开分发视图）")
+        pytest.skip("runs/df6_dp10ms/criteria.md 不在（干净检出）")
     assert (REPO / "knowledge" / "criteria" / "index.yaml").exists()
 
 

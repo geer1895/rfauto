@@ -106,7 +106,7 @@ def _viz3d_available() -> bool:
     return viz3d_available()
 
 
-# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，Devlog（二百零五）followUp ⑤）──
+# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，DEVLOG（二百零五）followUp ⑤）──
 #
 # 数字依据链（坑 #118：裁判 = 收敛真跑实测 + 独立来源解析式，不是自己的推导）：
 # * 解析式（Balanis 单腔损耗分解，PEC 导体 Q_c→∞）：η = Q_d/(Q_d+Q_rad)，
@@ -395,7 +395,7 @@ def _run_dir_or_error(run_id: str) -> tuple[Path | None, dict[str, Any] | None]:
 def pareto_view(run_id: str) -> dict[str, Any]:
     """E9 Pareto 前沿视图（优化洞察页，只读）。
 
-    双源（Devlog（六十四）登记的"optimizer 有 pareto_points 但未接 UI"）：
+    双源（DEVLOG（六十四）登记的"optimizer 有 pareto_points 但未接 UI"）：
     - results/pareto_front.json 存在（nsga2 run，E9 起落盘）→ 直读；
     - 缺产物（旧 run / TPE run）→ 从 trials/*.json 现算约束 Pareto：
       目标向量 = 逐 objective 违约量（与 run_multi_optimization 同口径，

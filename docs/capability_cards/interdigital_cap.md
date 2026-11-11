@@ -61,7 +61,7 @@
 - 参数语义：n_fingers=总齿数 N（渲染取整，≥2 且 A/B 排各半），lf_um=齿长 L （μm），wf_um=齿宽 W（μm），sf_um=齿间距 S（μm），e_tip_um=B 排尖部 外伸（μm，Clears 左汇流排、不产生相邻缝；闭式耦合长度 l_c=lf−e_tip）， h_mm=基板厚（仓内基板惯例 mm，GaAs 100μm 档）；er/tan_d 走 substrate/nominal（GaAs 半绝缘）——N/L/W/S 全 μm 为 IPD 工艺口径， 经 core.stackup.to_mm(v,'um') 单源换算（μm 帮手函数）；汇流排宽=wf、 馈盘宽=3·wf（派生值不单列参数）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(wf,sf,port_gap)/4 （μm 尺度几何驱动网格，禁 λ_sub/50 口径）；齿缘/汇流排/馈盘/端口盒 边+中线精确入网（#198）；NEAR≤min(sf,port_gap)/3 渲染期守卫（#266）； 全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、激励向 ≥2 格 （#174/#283）
 - 冒烟现状：未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记 （C/SRF 串联提取对拍+渲染零厚 vs CALC 侧壁 t_um 差异注记待真机批， 本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

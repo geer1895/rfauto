@@ -19,9 +19,6 @@ import pytest
 _REPO = Path(__file__).resolve().parents[2]
 _BUILDER = _REPO / "scripts" / "build_fe1_candidate.py"
 _CANDIDATE = _REPO / "release" / "fe1_candidate"
-#: scrub/transform 面经 asset_tokens() 惰性加载 ground 扫描器（主机资产
-#: 清单单源）——本 checkout 未随仓分发该文件时这两个用例诚实 skip
-_SCANNER = _REPO / "release" / "scan_release.py"
 
 
 def _builder():
@@ -49,14 +46,14 @@ def test_run_to_id_mapping() -> None:
 
 def test_strip_ledger_tokens_keeps_technical_text() -> None:
     b = _builder()
-    # DEV"LOG（三六九）wf:df5f 形态
+    # DEVLOG（三六九）wf:df5f 形态
     s = b.strip_ledger_tokens(
-        "DEV" "LOG（三六九）wf:df5f：HFSS 反解 0.12-0.13nH 区间中点=对齐基准")
-    assert "DEV" "LOG" not in s and "wf:" not in s
+        "DEVLOG（三六九）wf:df5f：HFSS 反解 0.12-0.13nH 区间中点=对齐基准")
+    assert "DEVLOG" not in s and "wf:" not in s
     assert "HFSS 反解 0.12-0.13nH 区间中点=对齐基准" in s
-    # DEV"LOG+CJK 数字序号无括号形态（mmwave/ ms_cross 批实况）
-    s2 = b.strip_ledger_tokens("冒烟（76.20GHz vs 设计 78=−2.31%，DEV" "LOG 四四五）")
-    assert "DEV" "LOG" not in s2 and "76.20GHz" in s2
+    # DEVLOG+CJK 数字序号无括号形态（mmwave/ ms_cross 批实况）
+    s2 = b.strip_ledger_tokens("冒烟（76.20GHz vs 设计 78=−2.31%，DEVLOG 四四五）")
+    assert "DEVLOG" not in s2 and "76.20GHz" in s2
     # 裸 TODO 指针（consumption_note 实况）
     s3 = b.strip_ledger_tokens("接入排期按 TODO anchor_family_service 批计划推进")
     assert "TODO" not in s3 and "anchor_family_service 批计划" in s3
@@ -67,16 +64,16 @@ def test_strip_ledger_tokens_keeps_technical_text() -> None:
 
 # ── 3. 主机资产清洗 + 仓路径剥离（SI §2.3 sanctioned 机械脱敏）──────────────
 
-@pytest.mark.skipif(not _SCANNER.is_file(),
-                    reason="release/scan_release.py (host asset inventory "
-                           "source) not shipped in this checkout")
-def test_scrub_text_assets_and_repo_prefix() -> None:
+def test_scrub_text_assets_and_repo_prefix(monkeypatch) -> None:
     b = _builder()
-    s = b.scrub_text("sim_host DrivenModal 同几何收敛（host=10.20.30.40）")
-    assert "sim_host" not in s and "172.26" not in s
+    # 干净检出资产清单注入（机器档 gitignored 不随仓——机制钉不依赖本机档）
+    monkeypatch.setattr(b, "asset_tokens",
+                        lambda: ("lab_server", "192.0.2.10"))
+    s = b.scrub_text("lab_server DrivenModal 同几何收敛（host=192.0.2.10）")
+    assert "lab_server" not in s and "172.26" not in s
     assert "remote-node" in s
-    s2 = b.scrub_text(r"证据在 E:\HFSS_" r"Connect\runs\df5_c3fix\x.json")
-    assert "HFSS_" "Connect" not in s2 and "E:" not in s2
+    s2 = b.scrub_text(r"证据在 E:\rfauto_workspace\runs\df5_c3fix\x.json")
+    assert "rfauto_workspace" not in s2 and "E:" not in s2
     assert "runs/df5_c3fix/x.json" in s2 or "runs\\df5_c3fix\\x.json" in s2 \
         or "df5_c3fix" in s2
 
@@ -95,8 +92,8 @@ def _sample_anchor() -> dict:
         "provenance": {
             "arbitration_runs": ["runs/demo_run"],
             "commit": "abc1234",
-            "devlog": "DEV" "LOG（一）wf:x：Demo 依据 #11",
-            "machine": "sim_host",
+            "devlog": "DEVLOG（一）wf:x：Demo 依据 #11",
+            "machine": "lab_server",
             "server_cleanup": "schtasks /delete …（内部运营语义）",
             "replaces": "无（首登记）",
         },
@@ -106,11 +103,9 @@ def _sample_anchor() -> dict:
     }
 
 
-@pytest.mark.skipif(not _SCANNER.is_file(),
-                    reason="release/scan_release.py (host asset inventory "
-                           "source) not shipped in this checkout")
-def test_transform_anchor_policy_full() -> None:
+def test_transform_anchor_policy_full(monkeypatch) -> None:
     b = _builder()
+    monkeypatch.setattr(b, "asset_tokens", lambda: ("lab_server",))
     ids = {"demo_run"}
     out = b.transform_anchor(_sample_anchor(), ids)
     # 公开面零损（值/形态）
@@ -119,7 +114,7 @@ def test_transform_anchor_policy_full() -> None:
     # 映射面
     assert out["provenance"]["machine"] == "remote-node"  # 枚举替换
     assert out["provenance"]["arbitration_runs"] == ["demo_run"]  # id 映射
-    assert "DEV" "LOG" not in out["provenance"]["devlog"]  # 中性重写
+    assert "DEVLOG" not in out["provenance"]["devlog"]  # 中性重写
     assert "#11" in out["provenance"]["devlog"]  # D1 保留
     assert "wf:" not in out["provenance"]["devlog"]
     # 删除面
@@ -146,7 +141,7 @@ def test_transform_anchor_unknown_key_fails_closed() -> None:
 def test_transform_json_drops_host_keys_keeps_physics() -> None:
     b = _builder()
     data = {
-        "hostname": "DESKTOP-X", "user": "someone", "machine": "sim_host",
+        "hostname": "DESKTOP-X", "user": "someone", "machine": "lab_server",
         "server_path": r"E:\rfauto_remote\job1",
         "metrics": {"s11_db": -20.5},
         "g_dual_path": 1.25,  # 物理键（dual path≠文件路径）不误伤
@@ -192,8 +187,8 @@ def test_candidate_payload_loads_and_spot_checks() -> None:
     assert store.get("patch.f_dip_l.openems-v1").value == 76.8
     # 敏感字面零残留（候选面全文）
     raw = yml.read_text(encoding="utf-8")
-    for tok in ("sim_" "server", "DEV" "LOG", "TO" "DO", "hand" "off", "server_cleanup",
-                "HFSS_" "Connect", "172." "26"):
+    for tok in ("lab_server", "DEVLOG", "TODO", "handoff", "server_cleanup",
+                "rfauto_workspace", "172.26"):
         assert tok not in raw, tok
 
 

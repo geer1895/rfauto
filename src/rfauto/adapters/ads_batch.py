@@ -9,7 +9,7 @@ hpeesofsim 通道的 one-shot 批处理执行面：每求解一个独立短命�
   （HPEESOF_DIR + PATH 前置 bin / adsptolemy\\lib.win32_64 / tools\\python，
   0xC0000135 缺 DLL 同根因）；ads_python_api 该逻辑是方法内联不可导入，
   且其 PATH 顺序为"bin 前置、adsptolemy/tools 后置"，而 ads_netlist 三者
-  全前置是 hpeesofsim 真机实证口径（Devlog（二百一十）真跑 exit 0），
+  全前置是 hpeesofsim 真机实证口径（DEVLOG（二百一十）真跑 exit 0），
   故复用后者。目录解析链=显式参数 > RFAUTO_HPEESOF_DIR env >
   configs/settings.local.yaml 的 hpeesof_dir > 兜底默认（_resolve_ads_dir
   既有链，含存在性校验）。
@@ -187,7 +187,7 @@ def check_remote_path_safe(label: str, value: str) -> str:
     与 service.remote_ads_service._check_remote_safe 同款纪律（分层不可
     import，同形实现并注记）：远端命令零双引号（G5）、路径单引号包裹，
     含单引号/空白的值无法安全引用——fail-closed 拒绝（登记路径如
-    E:\\rfauto_remote / E:\\ADS\\ADS27 均天然满足）。
+    E:\\rfauto_remote / C:\\Program Files\\Keysight\\ADS2027 均天然满足）。
     """
     v = value.replace("/", "\\")
     if "'" in v or any(ch.isspace() for ch in v):
@@ -450,7 +450,7 @@ def ads_batch_solve(
     - ``ssh_host``/``ssh_port``/``ssh_exe``/``ssh_options``：ssh 发射参数
       （host 可 ``user@host`` 形态；凭据零持有走 BatchMode）。
     - ``remote_hpeesof_dir``/``remote_work_dir``：远端 ADS 安装根 / 批次
-      工作目录（禁 D:\\CloudDrive 语义由调用方遵守；路径禁单引号/空白）。
+      工作目录（禁生产云盘直写语义由调用方遵守；路径禁单引号/空白）。
 
     返回（hfss_batch.solve_project_batch 同形结构化 dict，零数值面）：
     ``{ok, rc, timed_out, launcher, command, ads_dir, netlist, workdir,

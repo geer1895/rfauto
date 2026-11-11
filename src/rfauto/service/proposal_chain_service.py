@@ -1055,7 +1055,7 @@ def run_template_draft_chain(request: dict[str, Any],
                              llm_call: Callable[[str], str], *,
                              sandbox: Any = None,
                              z0_ohm: float = Z0_DEFAULT_OHM) -> dict[str, Any]:
-    """F8 一站式：生成 → 验证 → 三层 Gate promote（JSON 进出）。"""
+    """F8 全流程：生成 → 验证 → 三层 Gate promote（JSON 进出）。"""
     gen = generate_template_draft(request, llm_call, sandbox=sandbox)
     if not gen.get("ok"):
         return {"ok": False, "stage": gen.get("stage", "generate"),

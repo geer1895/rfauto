@@ -86,6 +86,7 @@ predict_curve n_points<2 或 t_end≤t0——全部显式 ValueError/RuntimeErro
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -375,6 +376,96 @@ class CfcNet:
             p -= lr * m_hat / (np.sqrt(v_hat) + eps)
 
 
+def hidden_state_doc(
+    net: CfcNet,
+    theta_u: Sequence[float] | np.ndarray,
+    n_steps: int,
+    dt: float | np.ndarray,
+    *,
+    time_grid: Sequence[float] | None = None,
+    params: dict[str, float] | None = None,
+    provenance: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """rollout 逐 step 隐态快照 → JSON 原生 doc（内存面，零落盘，Q-R3R）。
+
+    Q-W4-1 登记的 LNN 遗留清偿出口：CfC 门控隐态轨迹此前从未持久化
+    （runs/aurora_q/qw41_examples/RECON_NOTES.md 侦察结论），本函数把
+    :meth:`CfcNet.rollout` 的隐态序列 (T,H) 转成 JSON 原生 doc——**只算
+    不写**；落盘走 service/lnn_cfc_export_service.export_cfc_hidden_states
+    （输出路径调用方显式给、缺省 None 拒写，#144 同族）。
+
+    Args:
+        net: 已初始化 :class:`CfcNet`（固定权重前向=确定性；训练归 fit 面）。
+        theta_u: 单参数点（一维 (d,) 或 (1,d) 单位归一；多维点批显式拒绝
+            ——隐态轨迹导出面向单点可视化）。
+        n_steps: 快照步数（≥2，与 curve_samples 契约同族）。
+        dt: 门控步长（标量或长度 n_steps−1 向量；:meth:`CfcNet.rollout`
+            契约透传）。
+        time_grid: 可选 [t0, t1]——给出时 doc["time"] =
+            linspace(t0, t1, n_steps)（:meth:`LnnCfcSurrogate.predict_curve`
+            网格语义同构）；None 时 doc 无 time 键（渲染端按 step 序号横轴）。
+        params: 可选参数点原值（float 归一并有限校验后进 doc["params"]，
+            溯源用零改写）。
+        provenance: 可选溯源 dict（原样并入 doc["provenance"]；须为 dict）。
+
+    Returns:
+        JSON 原生 dict：``{"hidden_dim", "n_steps", "dt", "hidden"(T×H),
+        "time"?, "params"?, "provenance"?}``——hidden[k]=第 k 步隐态行
+        （Eq.(10) 两路 tanh 有界 ⇒ |x|≤1，LTC Thm.2 有界态精神）。
+
+    Raises:
+        ValueError: n_steps<2 / theta_u 形状不合或含非有限值 / time_grid
+            非 [t0,t1] 或 t1≤t0 / params 非有限 / provenance 非 dict /
+            rollout 隐态含非有限值——全部显式报错不静默（负例契约同族）。
+    """
+    theta = np.asarray(theta_u, dtype=float)
+    if theta.ndim == 1:
+        theta = theta[None, :]
+    if theta.shape != (1, net.n_in):
+        raise ValueError(
+            f"theta_u 须为单参数点 (d,) 或 (1,d)（d=n_in={net.n_in}），"
+            f"实得 shape={np.asarray(theta_u).shape}")
+    if not bool(np.all(np.isfinite(theta))):
+        raise ValueError("theta_u 含非有限值（显式报错不静默）")
+    n = int(n_steps)
+    if n < 2:
+        raise ValueError(f"n_steps 须 ≥2，实得 {n_steps!r}")
+    xs, _ = net.rollout(theta, n, dt)                      # (1, n, H)
+    hidden = [[float(v) for v in row] for row in xs[0]]
+    if not all(math.isfinite(v) for row in hidden for v in row):
+        raise ValueError("rollout 隐态含非有限值（显式报错不静默）")
+    doc: dict[str, Any] = {
+        "hidden_dim": int(net.hidden),
+        "n_steps": n,
+        "dt": (float(dt) if np.isscalar(dt)
+               else [float(v) for v in np.asarray(dt, dtype=float).ravel()]),
+        "hidden": hidden,
+    }
+    if time_grid is not None:
+        tg = [float(v) for v in time_grid]
+        if len(tg) != 2 or not (math.isfinite(tg[0]) and math.isfinite(tg[1])) \
+                or tg[1] <= tg[0]:
+            raise ValueError(
+                f"time_grid 须为 [t0, t1] 且 t1>t0 有限，实得 {time_grid!r}")
+        doc["time"] = np.linspace(tg[0], tg[1], n).tolist()
+    if params is not None:
+        if not isinstance(params, dict):
+            raise ValueError(f"params 须为 dict，收到 {type(params).__name__}")
+        out_params: dict[str, float] = {}
+        for k, v in params.items():
+            fv = float(v)
+            if not math.isfinite(fv):
+                raise ValueError(f"params[{k!r}] 非有限：{v!r}（显式报错）")
+            out_params[str(k)] = fv
+        doc["params"] = out_params
+    if provenance is not None:
+        if not isinstance(provenance, dict):
+            raise ValueError(
+                f"provenance 须为 dict，收到 {type(provenance).__name__}")
+        doc["provenance"] = dict(provenance)
+    return doc
+
+
 def _clip_global_norm(grads: list[np.ndarray], max_norm: float) -> float:
     """全局梯度范数裁剪（原位缩放；返回裁剪前范数）。"""
     total = math.sqrt(sum(float(np.sum(g * g)) for g in grads))
@@ -616,6 +707,43 @@ class LnnCfcSurrogate(SurrogateModel):
         ys = self._net.forward(theta_u, n, dt_unit)[0]
         y = ys * self._y_std + self._y_mean
         return {"time": grid.tolist(), "response": y.tolist()}
+
+    def hidden_states(
+        self, params: dict[str, float], *, n_points: int | None = None,
+        t_end: float | None = None,
+    ) -> dict[str, Any]:
+        """θ → 隐态轨迹 doc（Q-R3R 隐态导出出口，拟合模型消费面）。
+
+        网格/外推契约与 :meth:`predict_curve` 逐字同：n_points 缺省=训练
+        网格点数；t_end 缺省=训练窗终点（更大即同 Δt 时域外推）；细于训练
+        网格（Δt_unit<1）不在验证包络内（模块诚实边界第一条）。
+
+        Returns:
+            :func:`hidden_state_doc` 形态 + ``response``（**原单位**读出
+            轨迹；与 :meth:`predict_curve` 同参数同计算路径 ⇒ 逐位一致，
+            单测钉）——hidden 本体为标准化网络空间（Eq.(10) 门控态，
+            有界 |x|≤1；非物理原单位，渲染/解读时按此口径声明）。
+
+        Raises:
+            RuntimeError: 未拟合先调用（同 predict_curve）。
+            ValueError: 参数/网格违约（同 predict_curve 与
+                hidden_state_doc 负例契约）。
+        """
+        self._check_fitted()
+        t0, t1 = self.time_grid
+        t_end_v = t1 if t_end is None else float(t_end)
+        if not np.isfinite(t_end_v) or t_end_v <= t0:
+            raise ValueError(f"t_end 须 >t0={t0} 且有限，实得 {t_end_v}")
+        n = self.n_steps if n_points is None else int(n_points)
+        if n < 2:
+            raise ValueError(f"n_points 须 ≥2，实得 {n}")
+        dt_unit = ((t_end_v - t0) / (n - 1)) / self._dt_train_s
+        theta_u = self._unit_row(params)[None, :]
+        doc = hidden_state_doc(self._net, theta_u, n, dt_unit,
+                               time_grid=[t0, t_end_v], params=params)
+        ys = self._net.forward(theta_u, n, dt_unit)[0]
+        doc["response"] = (ys * self._y_std + self._y_mean).tolist()
+        return doc
 
     def predict(self, params: dict[str, float]) -> dict[str, Any]:
         """训练网格轨迹的标量摘要：{key}_final / {key}_max / {key}_min。"""

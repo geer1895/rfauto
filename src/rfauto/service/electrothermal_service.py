@@ -1,4 +1,4 @@
-"""WP4.4a 电-热链 service 编排（continuation-plan_20260907 §4 WP4.4a）。
+"""WP4.4a 电-热链 service 编排（continuation_plan_20260907 §4 WP4.4a）。
 
 JSON 进出薄编排：把 core/electrothermal 的确定性内核串成首案例链路
 

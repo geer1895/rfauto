@@ -1,0 +1,93 @@
+(kicad_pcb
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(paper "A4")
+	(layers
+		(0 "F.Cu" signal)
+		(31 "B.Cu" signal)
+		(44 "Edge.Cuts" user)
+	)
+	(net 0 "")
+	(net 1 "GND")
+	(net 2 "VCC")
+	(net 3 "SIG")
+	(footprint "Resistor_SMD:R_0603"
+		(layer "F.Cu")
+		(at 10 10)
+		(attr smd)
+		(property "Reference" "R1"
+			(at 0 -1)
+			(layer "F.SilkS")
+		)
+		(property "Value" "10k"
+			(at 0 1)
+			(layer "F.Fab")
+		)
+		(property "Footprint" "Resistor_SMD:R_0805"
+			(at 0 0)
+			(layer "F.Fab")
+			(hide yes)
+		)
+		(pad "1" smd rect
+			(at -0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 2 "VCC")
+		)
+		(pad "2" smd rect
+			(at 0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 1 "GND")
+		)
+	)
+	(footprint "Resistor_SMD:R_0603"
+		(layer "F.Cu")
+		(at 20 10)
+		(attr smd)
+		(property "Reference" "R2"
+			(at 0 -1)
+			(layer "F.SilkS")
+		)
+		(property "Value" "10k"
+			(at 0 1)
+			(layer "F.Fab")
+		)
+		(pad "1" smd rect
+			(at -0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 3 "SIG")
+		)
+		(pad "2" smd rect
+			(at 0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 1 "GND")
+		)
+	)
+	(footprint "Capacitor_SMD:C_0603"
+		(layer "F.Cu")
+		(at 30 10)
+		(attr smd)
+		(property "Reference" "C1"
+			(at 0 -1)
+			(layer "F.SilkS")
+		)
+		(pad "1" smd rect
+			(at -0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 3 "SIG")
+		)
+		(pad "2" smd rect
+			(at 0.75 0)
+			(size 0.8 0.8)
+			(layers "F.Cu" "F.Paste" "F.Mask")
+			(net 1 "GND")
+		)
+	)
+	(segment (start 10 12) (end 20 12) (width 0.2) (layer "F.Cu") (net 1))
+	(gr_rect (start 0 0) (end 40 20) (stroke (width 0.1) (type solid)) (fill none) (layer "Edge.Cuts"))
+)

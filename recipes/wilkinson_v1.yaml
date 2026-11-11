@@ -1,0 +1,33 @@
+# Wilkinson 功分器 — 模型形态配方（T-Q18 模板→配方闭环预置件，aurora_q Q-W9-1R）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增：从 wilkinson 模板卡到第一次仿真的可跑配方。wilkinson
+# 族在 75 族映射表中绑定优化模型插件 wilkinson_power_divider（TemplateSpec
+# hfss_plugin 面）——本配方=model: 形态，validate/run/tune 既有优化链全可用。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe wilkinson --out recipes/wilkinson_v1.yaml --force
+#   画廊页 wilkinson 卡「导出配方」按钮 / POST /api/template-recipe/export
+#   同源 service/template_recipe_service 单源。
+# · 与既有手写实例 wilkinson_pd_v1.yaml 的分工：那份带 objectives 判据段
+#   与 optimization 调参段（附录 A 教学范本）；本份=export-recipe 直出样例
+#   （无 objectives——plain run 出 S 参数/报告不评 cost，判读演示位参照
+#   pifa_v1 objectives 段）。
+# · run 通道: fake（解析近似零 license）或 hfss（真 AEDT 全链，规则 0）。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；
+#   通路全程实录：docs/tutorials/from-template-to-first-sim.md。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+recipe_version: 1
+notes: wilkinson 模板导出配方（rfauto templates export-recipe，名义参数=TEMPLATE_NOMINAL 注册表归档值，f0=2.5GHz；单端口族缺省宽带
+  ±4%）——整带无谷时应放宽频段复查（谐振可能在带外）
+params:
+  series_w_mm: 0.604
+  shunt_w_mm: 1.113
+  arm_len_mm: 18.1
+setup:
+  solver: openEMS
+  freq_range_ghz:
+  - 2.4
+  - 2.604167
+  points: 401
+model: wilkinson_power_divider
+schema_version: 1

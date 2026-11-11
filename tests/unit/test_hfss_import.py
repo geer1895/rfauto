@@ -420,7 +420,7 @@ def test_import_project_recipe_excludes_derived_variables(monkeypatch, tmp_path)
 class _RemoteCfg:
     """infra.remote_machines.RemoteMachineConfig 的 duck（免真实注册表）。"""
 
-    name = "sim_server"
+    name = "lab_server"
     host = "198.51.100.20"
     hfss_grpc_port = 15555
     hfss_project_root = "E:/rfauto_remote"
@@ -486,14 +486,14 @@ def test_import_spec_remote_machine_passthrough(tmp_path, remote_registry,
     """remote_machine=注册表名 → Hfss(machine=,port=) 透传 + 服务器侧路径语义。"""
     remote_path = "E:/rfauto_remote/proj/remote.aedt"  # 本地不存在=服务器侧路径
     spec = hfss_import.import_project_spec(remote_path, version="2025.1",
-                                           remote_machine="sim_server")
+                                           remote_machine="lab_server")
 
     assert spec["ok"], spec.get("error")
     assert remote_open_spy["ctor"]["machine"] == "198.51.100.20"
     assert remote_open_spy["ctor"]["port"] == 15555
     # 服务器侧路径语义：本地不存在不被拒（本地存在性检查跳过）
     assert spec["project"] == remote_path
-    assert spec["remote"]["name"] == "sim_server"
+    assert spec["remote"]["name"] == "lab_server"
     assert spec["remote"]["port"] == 15555
     # 构造窗四开关（hfss_session 同款）与 Hfss 前置 None
     assert remote_open_spy["grpc_local_in_window"] is False
@@ -513,7 +513,7 @@ def test_import_spec_remote_version_mismatch_fails_closed(monkeypatch, tmp_path,
 
     spec = hfss_import.import_project_spec("E:/x/whatever.aedt",
                                            version="2023.1",
-                                           remote_machine="sim_server")
+                                           remote_machine="lab_server")
 
     assert spec["ok"] is False
     assert "版本配对失配" in spec["error"]
@@ -553,7 +553,7 @@ def test_readonly_remote_skips_local_copy(tmp_path, remote_registry,
     remote_path = "E:/rfauto_remote/proj/remote2.aedt"
     spec = hfss_import.import_project_spec_readonly(
         remote_path, version="2025.1", timeout_s=10.0,
-        remote_machine="sim_server")
+        remote_machine="lab_server")
 
     assert spec["ok"], spec.get("error")
     assert spec["project"] == str(Path(remote_path))
@@ -582,10 +582,10 @@ def test_import_recipe_remote_passthrough(tmp_path, remote_registry,
     """端到端链：import_project_recipe 把 remote_machine 传进只读导入。"""
     result = hfss_import.import_project_recipe(
         "E:/rfauto_remote/proj/remote3.aedt", version="2025.1",
-        remote_machine="sim_server")
+        remote_machine="lab_server")
 
     assert result["ok"], result.get("error")
-    assert result["spec"]["remote"]["name"] == "sim_server"
+    assert result["spec"]["remote"]["name"] == "lab_server"
     assert remote_open_spy["ctor"]["port"] == 15555
 
 

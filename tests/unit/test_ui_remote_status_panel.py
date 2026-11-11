@@ -42,7 +42,7 @@ _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "stati
 _QUEUE = _STATIC / "pages" / "view_queue.js"
 _NODE = shutil.which("node")
 
-# sim_server 注册表实况五端口形态（configs/remote_machines.yaml 语义名+号）；
+# lab_server 注册表实况五端口形态（configs/remote_machines.yaml 语义名+号）；
 # open/latency 为桩值——形态（键集/子键）与服务契约逐键对齐。
 _PROBE_PORTS = {
     "ssh": {"port": 22, "open": True, "latency_ms": 1.2},
@@ -56,8 +56,8 @@ _PROBE_PORTS = {
 def _probe_row(**kw) -> dict:
     """remote_status 信封 machines[0] 实况形态基线（零凭据字段）。"""
     row = {
-        "name": "sim_server",
-        "host": "198.51.100.20",
+        "name": "lab_server",
+        "host": "192.0.2.10",
         "reachable": True,
         "probe_s": 0.05,
         "ports": dict(_PROBE_PORTS),
@@ -92,8 +92,8 @@ class TestEndpointThinShell:
             rsvc, "remote_status",
             lambda machine=None: (seen.append(machine), {"ok": True,
                                                         "machines": []})[1])
-        client.get("/api/remote/status?machine=sim_server")
-        assert seen[-1] == "sim_server"
+        client.get("/api/remote/status?machine=lab_server")
+        assert seen[-1] == "lab_server"
         client.get("/api/remote/status")
         assert seen[-1] is None
 
@@ -108,11 +108,11 @@ class TestEndpointThinShell:
         """真服务链（探活/SSH 桩）：五端口表+SSH 认证态逐键透传（面板数据源）。"""
         monkeypatch.setattr(
             rsvc, "load_remote_machines",
-            lambda *a, **k: {"sim_server": SimpleNamespace()})
+            lambda *a, **k: {"lab_server": SimpleNamespace()})
         monkeypatch.setattr(
             rsvc, "probe_machine",
-            lambda cfg, **k: {"name": "sim_server",
-                              "host": "198.51.100.20",
+            lambda cfg, **k: {"name": "lab_server",
+                              "host": "192.0.2.10",
                               "reachable": True, "ports": dict(_PROBE_PORTS),
                               "probe_s": 0.05})
         monkeypatch.setattr(
@@ -121,7 +121,7 @@ class TestEndpointThinShell:
         r = client.get("/api/remote/status").json()
         assert r["ok"] is True
         m = r["machines"][0]
-        assert m["name"] == "sim_server" and m["reachable"] is True
+        assert m["name"] == "lab_server" and m["reachable"] is True
         assert set(m["ports"]) == set(_PROBE_PORTS)
         assert m["ports"]["ads_license"]["open"] is False
         assert m["ssh"]["auth"] == "missing_credentials"
@@ -131,7 +131,7 @@ class TestEndpointThinShell:
         同口径；HTTP 200 + ok=False，不 500 不裸 traceback）。"""
         monkeypatch.setattr(
             rsvc, "load_remote_machines",
-            lambda *a, **k: {"sim_server": SimpleNamespace()})
+            lambda *a, **k: {"lab_server": SimpleNamespace()})
         r = client.get("/api/remote/status?machine=nope")
         assert r.status_code == 200
         body = r.json()

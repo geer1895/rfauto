@@ -166,7 +166,28 @@ class TestMCPToolsRegistered:
         # aurora_p 席 B2 +2（2026-11-01）：ads_circuit_annotate（annotate 叶
         #   v2 扩展位落位，离线反标注）+ design_report（CLI design-report 叶
         #   同源设计回放报告，零逻辑转发 design_replay_report）= 166
-        assert len(tools) == 166
+        # T-Q3 接线席 Q-W5-2R +1（2026-11-04）：anim_render（aurora_q 方向 B
+        #   动图渲染 agent 面，CLI anim render 同源同名 service 函数，零逻辑
+        #   转发新建 service/anim_render_service）= 167
+        # T-Q5+T-Q19 批 2 接线席 Q-W9-3 +4（2026-11-06）：format_overview
+        #   （T-Q5 批 3 格式速览 agent 面，8 kind，零逻辑转发
+        #   format_overview_service.overview_format）+ vendor_docs_build/
+        #   vendor_docs_search/vendor_docs_audit（T-Q19 批 2 厂商帮助文档
+        #   检索三面，零逻辑转发 Q-W6-4 vendor_doc_service 三函数）= 171
+        # Q-X69/Q-X73/Q-X76/Q-X85 MCP 四批（aurora_q 2026-11-07/08）+29：
+        #   解析器暴露八只读+二批十工具+三批八工具+四批 odbpp/bsdl 三面
+        #   （197→200）= 200
+        # aurora_r AM-S4 +2（2026-11-10）：aedt_migrate_run/aedt_migrate_
+        #   report（老版本 .aedt 批量迁移通道两面——S1 service docstring
+        #   挂账处方原文落位，run 消费 migrate_batch、report 消费
+        #   read_migration_report；CLI aedt-migrate 域同源）= 202
+        # aurora_r R-26 +6（2026-11-10）：解析五批扩展 parser_ext.py——
+        #   drc_design_validate（``rfauto drc validate`` 同源校验面锚）+
+        #   veriloga_module_detail（veriloga 域 MCP 面零覆盖补齐）+
+        #   skill_call_graph（Q-X69 九域清单 skill 域只读面二线查询锚，
+        #   无 CLI 叶）+网表语义 overlay 三件套（R-02 AX-2 三 service
+        #   函数零 agent 面）= 208
+        assert len(tools) == 208
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -181,6 +202,26 @@ class TestMCPToolsRegistered:
             "warm_start_optimize",
             "synthesize_bpf",
             "export_report_pdf",
+            # aurora_q MCP 四批（Q-X69 八只读/Q-X73 二批十/Q-X76 三批八/
+            # Q-X85 四批 odbpp+bsdl 三面，171→200；aurora_r 合流笔
+            # 2026-11-10 名单集收编）
+            "spice_netlist_parse", "liberty_parse", "citi_info",
+            # aurora_r AM-S4（2026-11-10）aedt_migrate 批量迁移通道两面
+            "aedt_migrate_run", "aedt_migrate_report",
+            # aurora_r R-26（2026-11-10）解析五批扩展 parser_ext.py 六面
+            "drc_design_validate", "veriloga_module_detail",
+            "skill_call_graph", "netlist_overlay_file",
+            "spectre_overlay_file", "netlist_overlay_text",
+            "sdc_parse", "ibis_parse", "verilog_netlist_parse",
+            "drc_rules_parse", "lvs_compare_files",
+            "spef_parse", "spef_report", "spef_net_detail",
+            "lef_def_parse", "lef_def_check", "sdf_parse", "sdf_report",
+            "sdf_cell_detail", "gdsii_parse", "gdsii_layers",
+            "gdsii_hierarchy", "vcd_parse", "vcd_report",
+            "gerber_excellon_pair_check", "ipc356_report",
+            "ipc356_fab_pair_check", "touchstone_info",
+            "stil_pattern_detail", "odbpp_report", "bsdl_report",
+            "bsdl_boundary_detail",
             # WP3.3 模板库/战役状态/数据集查询/bands 薄壳
             "list_template_specs", "draft_recipe_from_spec",
             "plan_campaign", "save_campaign_plan", "get_campaign_status",
@@ -304,6 +345,16 @@ class TestMCPToolsRegistered:
             # aurora_p 席 B2 两工具（2026-11-01）——annotate v2 扩展位落位
             # +design_report（CLI design-report 叶同源回放报告）
             "ads_circuit_annotate", "design_report",
+            # 动图渲染（T-Q3 Q-W5-2R，2026-11-04）——CLI anim render 同源，
+            # 零逻辑转发新建 service/anim_render_service
+            "anim_render",
+            # 格式速览（T-Q5 批 3 Q-W9-3，2026-11-06）——8 kind 一屏看懂，
+            # 零逻辑转发 service/format_overview_service.overview_format
+            "format_overview",
+            # 厂商帮助文档检索三面（T-Q19 批 2 Q-W9-3，2026-11-06）——
+            # 零逻辑转发 Q-W6-4 vendor_doc_service 三函数（build=显式
+            # db_path 写索引库，search/audit 只读）
+            "vendor_docs_build", "vendor_docs_search", "vendor_docs_audit",
         }
         assert names == expected
 
@@ -326,6 +377,15 @@ class TestMCPResources:
             # EDB 快车道资源两件（2026-10-08）：状态/数据集清单只读面
             "rfauto://edb/status",
             "rfauto://edb/datasets",
+            # VB-6 R-13 席（aurora_r 2026-11-10）：skills/ 7 包 SKILL.md 只读
+            # 资源（含模板 skill://{name}/references/{path*} 不进 list_resources）
+            "skill://rfauto-branchline-coupler/SKILL.md",
+            "skill://rfauto-cpw/SKILL.md",
+            "skill://rfauto-mline-synthesis/SKILL.md",
+            "skill://rfauto-patch-antenna/SKILL.md",
+            "skill://rfauto-pifa/SKILL.md",
+            "skill://rfauto-wilkinson-power-divider/SKILL.md",
+            "skill://veriloga-authoring/SKILL.md",
             # MCP-B 席两件（2026-10-14）：calculators/datasets 目录发现面
             "rfauto://calculators/index",
             "rfauto://datasets/index",
@@ -659,7 +719,7 @@ _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 
 class TestCalculatorExperimentalPassthrough:
     """list_calculators/run_calculator 的 experimental 标签与 allow_experimental
-    三态透传（Devlog（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
+    三态透传（DEVLOG（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
 
     def test_list_default_includes_experimental_with_label(self, mcp_server):
         data = _call(mcp_server, "list_calculators", {})
@@ -696,7 +756,7 @@ class TestCalculatorExperimentalPassthrough:
             "allow_experimental": True})
         assert data["ok"] is True
         assert data["experimental"] is True
-        # Devlog（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
+        # DEVLOG（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
         assert data["result"]["f0_ghz"] == pytest.approx(1.918754, abs=2e-6)
 
     def test_run_explicit_false_beats_env(self, mcp_server, monkeypatch):
@@ -945,7 +1005,7 @@ _SLOT_SUB = {"h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}
 
 class TestSlotlineTransitionTools:
     """W2⑨ 槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
-    确定性内核（锚 Devlog（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
+    确定性内核（锚 DEVLOG（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
     Z0=110.92Ω、εeff=1.6462、λ'=93.462mm；名义两节 Marchand (w,s,ℓ)=
     (1.7616,0.1016,18.467)mm）；越域/不可达如实进信封不抛出。"""
 
@@ -1241,15 +1301,15 @@ class TestRemoteTools:
 
         def fake_probe(machine):
             captured["machine"] = machine
-            return {"ok": True, "machines": [{"name": "sim_server",
+            return {"ok": True, "machines": [{"name": "lab_server",
                                               "reachable": True}]}
 
         monkeypatch.setattr(rsvc, "remote_probe", fake_probe)
         data = self._call(mcp_server, "remote_probe_machine",
-                          {"machine": "sim_server"})
+                          {"machine": "lab_server"})
         assert data["ok"] is True
-        assert data["machines"][0]["name"] == "sim_server"
-        assert captured["machine"] == "sim_server"
+        assert data["machines"][0]["name"] == "lab_server"
+        assert captured["machine"] == "lab_server"
 
     def test_remote_machine_status_missing_credentials_envelope(
             self, mcp_server, monkeypatch):

@@ -162,7 +162,7 @@ def extract_drive_letter(parts: tuple[str, ...]) -> str:
 
 
 def _wsl_helper_path() -> str:
-    """helper 的 WSL 侧绝对路径（固定安装布局：<盘>:/rfauto-workspace → /mnt/<盘>/...）。"""
+    """helper 的 WSL 侧绝对路径（固定安装布局：<盘>:/rfauto_workspace → /mnt/<盘>/...）。"""
     parts = BIN_DIR.parts
     drive = extract_drive_letter(parts)
     return "/mnt/" + drive + "/" + "/".join(parts[1:]) + "/palace_wsl.sh"

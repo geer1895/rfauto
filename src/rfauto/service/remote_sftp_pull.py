@@ -10,7 +10,7 @@
   文件系统解释）；服务器侧一切临时目录/中间文件的唯一合法根是
   ``E:\\rfauto_remote``（AGENTS 规则 0b，E 盘口径）——本模块不臆造缺省
   远端根，``remote_dir`` 必须由调用方从配置给出。服务器云盘
-  ``D:\\CloudDrive`` 为生产资料库，禁测试写入（服务器说明 §11.7）。
+  ``生产云盘`` 为生产资料库，禁测试写入（服务器说明 §11.7）。
 - **依赖**：sftp 通道复用 :class:`rfauto.infra.remote_machines.SshTransport`
   （paramiko 懒加载，可选依赖 ``rfauto[remote]``）——本模块零直接
   paramiko import，未装时经 SshTransport 的明确报错转为 error 信封。

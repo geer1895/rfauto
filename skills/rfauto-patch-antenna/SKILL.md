@@ -1,7 +1,24 @@
 ---
 name: rfauto-patch-antenna
-description: 用 rfauto 调优 patch_antenna（2 个可调参数，带内目标 1 项）
-version: 1
+description: >-
+  Use when the user wants to design, run or tune a rectangular microstrip patch antenna
+  with rfauto — cavity-model resonance, patch width/length synthesis and feed inset,
+  recipe-driven run/tune/autotune/calibrate workflows. Triggers: patch antenna, microstrip
+  antenna, patch width, inset feed, resonance frequency ｜ 中文触发: 贴片天线 微带天线 谐振频率 馈电. Do NOT
+  use for PIFA/IFA or patch arrays (other rfauto cards) or for generic PCB antenna
+  questions. Numbers come only from the rfauto kernel and the card files under
+  references/.
+license: Complete terms in LICENSE.txt
+compatibility: Requires the rfauto CLI on PATH (pip install rfauto). Closed-form synthesis steps run offline; engine-backed steps need openEMS or HFSS installed locally.
+metadata:
+  author: rfauto
+  version: '2'
+  rfauto_model: patch_antenna
+  card_kind: recipe+capability+kernel
+  generator: 'curated from recipe_to_skill; spec: agentskills.io / rfauto T-Q10'
+  source_recipe: recipes/patch_antenna_v1.yaml
+  source_cards: docs/capability_cards/patch.md, docs_site/kernel_cards/patch.md
+allowed-tools: Bash(rfauto:*) Read
 ---
 
 # rfauto skill：patch_antenna
@@ -10,14 +27,14 @@ version: 1
 
 - 模型插件：`patch_antenna`；扫频 1.5–3.5 GHz。
 - 带内目标（objectives）：
-  - `s11_db` max_below -10 @ [2.3, 2.5] GHz
+  - `s11_db_min` max_below -10 @ [1.8, 2.1] GHz
 
 ## 可调参数（optimization.params）
 
 | 参数 | low | high |
 |---|---|---|
-| patch_len_mm | 35.0 | 45.0 |
-| feed_offset_mm | 5.0 | 15.0 |
+| patch_len_mm | 37.5 | 42.5 |
+| patch_w_mm | 40.0 | 45.0 |
 
 ## 标准工作流（typed 命令，数值由确定性内核产出）
 
@@ -51,3 +68,17 @@ result = solver.solve()
 - LLM/agent 不产生物理数字：所有指标来自求解器与确定性评判器。
 - 对配方的任何修改走沙箱草稿 → 三层 Gate 审批（agent 写面隔离）。
 - FAIL 如实记录，不凑绿。
+
+## When to open the reference files
+
+| you need | open |
+|---|---|
+| the full capability card (playbook, all anchors, engine precision) | `references/capability_card.md` |
+| formulas, docstring pins, precision profile, code entries, test surface | `references/kernel_card.md` |
+| a symptom → pitfall → fix lookup | `references/pitfalls.md` |
+| the read-only stackup facts behind this recipe | `configs/materials.yaml` (source of truth) |
+
+## Verify before you finish
+
+Run `python scripts/verify_output.py --json <saved.json> [--expect KEY=VALUE ... --tol 1e-3]`.
+FAIL is reported as FAIL (rfauto rule #122); never retry a FAIL into green.

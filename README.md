@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-30000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-36000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -24,15 +24,15 @@ provenance. AI assistants can drive all of it over MCP, under one iron rule:
 Measured counts for this revision (exact; verifiable with `scripts/check_numbers.py`):
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` ·
-`EXPECTED_TEMPLATES 75` · `ANCHORS 87` · CLI commands 297 (leaves) ·
-(166 MCP tools + 10 resources)
+`CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 76` ·
+`EXPECTED_TEMPLATES 76` · `ANCHORS 87` · CLI commands 357 (leaves) ·
+(208 MCP tools + 17 resources)
 <!-- numbers-end -->
 
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 166 (+10 resources) | CLI commands 297 (leaves) | CALCULATOR_REGISTRY 340 [with experimental 341] | device templates 75 | anchors 87
+**Scale numbers**: MCP tools 208 (+17 resources) | CLI commands 357 (leaves) | CALCULATOR_REGISTRY 340 [with experimental 341] | device templates 76 | anchors 87
 <!-- AUTO-NUMBERS:END -->
 
 **Contents** · [Capability map](#1-capability-map-nine-domains) · [Quick start](#quick-start) ·
@@ -50,7 +50,7 @@ below is copy-pasteable.
 
 ### 1.1 Device modeling and synthesis
 
-**75 parameterized device templates** — dividers, couplers, filters, antennas,
+**76 parameterized device templates** — dividers, couplers, filters, antennas,
 transitions, lumped IPD passives. Each template synthesizes first-cut dimensions
 from closed-form physics and registers the acceptance criteria for that family, so
 you can tell a real result from a grid artifact. Line widths are never copied from
@@ -167,7 +167,7 @@ rfauto remote status
 
 ### 1.8 AI orchestration (MCP)
 
-**166 MCP tools** and 10 resources: Claude Desktop, Cursor or your own agent can
+**208 MCP tools** and 17 resources: Claude Desktop, Cursor or your own agent can
 operate the framework. Agent changes land in a sandbox draft and must pass
 validation gates before touching the workspace; the agent emits typed tool calls
 only, and the kernel fills in the physics.
@@ -188,7 +188,7 @@ boards, calibration, datasets, reports and a microwave toolbox. Command palette
 
 ![Template gallery (75 families, each card a plain-language parameter guide)](docs/assets/ui/gallery.png)
 
-![Microwave toolbox (341 calculators: pick a key, fill parameters, read the result — every key carries its formula source)](docs/assets/ui/tools.png)
+![Microwave toolbox (pick a key, fill parameters, read the result — every key carries its formula source)](docs/assets/ui/tools.png)
 
 ---
 
@@ -277,7 +277,7 @@ rfauto ui --port 8643     # use another port if a stale instance holds 8642
 ```
 
 The left rail is the workspace: **Dashboard**, **Run History**, **S-Parameters**,
-**Template Gallery**, **Microwave Tools** (341 calculators), **Calibration**,
+**Template Gallery**, **Microwave Tools**, **Calibration**,
 **Datasets**… The zh/EN switch sits at the top right.
 
 ### Step 6 · Tune one round
@@ -417,8 +417,8 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 
 ```text
 src/rfauto/
-├── cli/            # command line (297 leaf commands)
-├── mcp_server/     # MCP server (166 tools + 10 resources)
+├── cli/            # command line (358 leaf commands)
+├── mcp_server/     # MCP server (208 tools + 17 resources)
 ├── ui/             # browser workbench (24 views, zero-build native ESM)
 ├── service/        # business layer: JSON in, JSON out
 ├── linkage/        # HFSS ↔ circuit linkage
@@ -427,7 +427,7 @@ src/rfauto/
 ├── adapters/       # 16 engine/tool channels + template renderers
 ├── pipeline/       # run pipeline
 ├── infra/          # infrastructure (runs paths / cache / logging)
-└── core/           # deterministic kernel: 341 calculators + physics criteria
+└── core/           # deterministic kernel: calculator registry + physics criteria
 ```
 
 ### Calculators by domain
@@ -515,6 +515,89 @@ the openEMS bindings — build them from the official openEMS sources.
 
 ## Changelog
 
+### v0.14.0 (2026-11-10)
+
+Added:
+
+- EDA/IC parser suite (~30 formats): structured, schema-stamped parsers
+  for SPICE, Liberty, CITI, SDC, IBIS, IBIS-AMI, Verilog netlists,
+  SPECTRE, Verilog-A, GDSII, LEF/DEF, SPEF, SDF, Gerber, Excellon,
+  IPC-D-356, Touchstone, VCD, STIL, SKILL/OCEAN, BSDL, ODB++, STDF,
+  DRC rule files and LVS comparison - each with a dedicated CLI domain
+  and read-only MCP tools
+- Animation pipeline: 17 deterministic chart types (S-parameter
+  evolution, Smith trajectory, tuning race, field heatmap, VSWR
+  history, constellation/eye, budget funnel, ...) with a self-check
+  loop and `rfauto anim render` CLI/MCP tools
+- EM benchmark suite: deterministic-judge tasks (closed-form
+  arbitration, anchor re-verification, prompt-variant campaigns) with
+  hidden/visible check layers, negative-variant probes, task admission
+  gates (no-op must fail, oracle stability) and out-of-distribution
+  envelope flags; analog-side families (spec-to-VA, testbench
+  generation, end-to-end, bugfix) and inverse-design scoring
+- Neural surrogates: MLP training with leave-one-out evaluation
+  (optional torch extra with numpy fallback), batch evaluation with
+  top-k ranking over LHS candidates, and an active-learning loop that
+  nominates the most-uncertain points for full-wave follow-up
+- AEDT project migration: `rfauto aedt-migrate` walks legacy projects
+  through a five-stage decision tree (direct open -> health check ->
+  baseline comparison -> bridge -> CAD re-export) with honest verdicts
+  and a per-project report
+- gm/ID lookup sizing kernel: table build, lookup / size /
+  size-from-fT APIs, fingerprint caching and clamped out-of-range
+  flags
+- Session capture: record a working session and compile it into a
+  recipe draft inside the sandbox (production recipes stay untouched)
+- Toolchain lock: capture the local solver fingerprint (HFSS/ADS/
+  openEMS/python packages) and diff a remote machine against it
+- MCP surface grows to 208 read-only tools and 17 resources: parser
+  tools, SKILL package resources and workflow prompts; every tool now
+  carries annotations (read-only/destructive hints verified by static
+  analysis) and launch-class tools get sliding-window rate limits with
+  a merge-calls hint; stdio channel purity is enforced at runtime
+- Request receipts: idempotency keys with four outcome states
+  (not_started / completed / failed / unknown) for remote and async
+  runs - unknown outcomes are never silently replayed
+- Strict result accessors: `read_touchstone(strict=True)` validates
+  the read boundary (unique file match, path-escape and symlink
+  escape rejection, ULP-level duplicate frequencies, exact key lookup
+  without alias guessing)
+- veriloga-authoring skill package: teaches agents to write .va
+  models the built-in parser accepts (all examples verified in tests)
+- KiCad schematic generation with ERC parsing and a round-trip
+  certificate; vendor documentation retrieval (SQLite FTS5 over
+  PDF/CHM/HTML with a zero-ingest audit)
+- Engine identity: runs can carry a machine-readable engine/version
+  block; netlist parsing gains an optional semantic overlay
+  (source / confidence / evidence annotations with a coverage gate)
+
+Fixed and improved:
+
+- CLI grows to 358 leaves: 16 new parser domains wired in one batch
+  with help panels, registration-order snapshots and count anchors
+  re-pinned in the same commit
+- The fake branchline model upgrades to an ideal TL-matrix closed form
+  (Pozar even/odd half-circuit) - benchmark verdicts flip from
+  as-recorded FAIL to PASS with machine-precision physics checks
+- SPEF parser accepts three-value (min:typ:max) entries, scaled
+  products and line continuations with bit-exact recovery pins;
+  SPEF errors now derive from ValueError
+- Schema keys unified across the parser suite (`"schema": "domain/1.0"`)
+  with `n_warnings` stats completed; verilog keeps a dual-key compat
+  release
+- Exit-code verdicts centralized: a zero exit code with fatal log
+  markers now fails loudly across the SPICE/ADS/openEMS adapters
+- The layered-stack template family closes its root-cause chain
+  (feed-wall structure fix + window-dominance proof); the branchline/
+  hairpin knowledge notes extend accordingly
+- A recorded-fixture test tier lands: cleaned, manifest-stamped
+  real-machine artifacts replay offline (new `recorded` marker next
+  to `unit` / `real_edt`)
+- Docs: parser-cluster user guide (zh/en) plus an integration guide
+  for the whole suite; docs_site regenerates in the same commit
+
+Current version: v0.14.0 (previous: v0.13.0).
+
 ### v0.13.0 (2026-11-02)
 
 Added:
@@ -559,7 +642,6 @@ Fixed and improved:
   timeouts in multi-thread environments
 - A failed comparison gate no longer reports "ADS stage failed"; the two
   failure kinds now have distinct messages
-- 297 CLI commands, 166 MCP tools, 30738 unit tests (same source as the
+- 358 CLI commands, 208 MCP tools, 36454 unit tests (same source as the
   README badge)
 
-Current version: v0.13.0 (previous: v0.12.1).

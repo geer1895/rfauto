@@ -36,6 +36,10 @@ theme:
         icon: material/brightness-4
         name: "切换到亮色主题"
 
+# 门面微调样式（长表滚动盒+粘性表头+斑马纹；审查报告轮 1）
+extra_css:
+  - stylesheets/extra.css
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -63,25 +67,36 @@ nav:
           - compose 组合链与引擎联赛: tutorials/compose_and_league.md
           - DAG 战役编排: tutorials/dag_orchestration.md
           - RECAST 走查: tutorials/recast-walkthrough.md
+          - 电路图、ADS 前仿与设计报告: tutorials/circuit_diagrams_and_reports.md
+          - 设计回放报告: tutorials/design_report.md
+          - 动图渲染: tutorials/rf-animation.md
       - 数据与判读:
           - 数据集与健康门: tutorials/datasets_and_health_gates.md
           - 数据工厂: tutorials/data_factory.md
           - 数据湖与查询面: tutorials/data_lake.md
           - UQ 与代理模型: tutorials/uncertainty_and_surrogates.md
+          - 代理建模与主动学习进阶: tutorials/advanced_surrogates_bo.md
           - 锚导览: tutorials/anchor-guide.md
           - 判读语义: tutorials/verdict_semantics.md
       - 平台与扩展:
           - UI 工作台导览: tutorials/ui_workbench_tour.md
           - MCP 实战: tutorials/mcp_in_practice.md
+          - SKILL 能力包: tutorials/skill-packages.md
           - 远程仿真服务器协同: tutorials/remote_server.md
           - 扩展 rfauto: tutorials/extending-rfauto.md
       - English Tutorials:
+          - CAD/EDA Format Parser Guide: guide/cad-parsers_en.md
           - Getting Started: tutorials/getting-started_en.md
           - First Optimization Loop: tutorials/first_optimization_loop_en.md
           - Real Simulation: tutorials/real-simulation_en.md
           - Campaign Walkthrough: tutorials/campaign-walkthrough_en.md
           - DAG Campaign Orchestration: tutorials/dag_orchestration_en.md
+          - Compose Chains and Engine League: tutorials/compose_and_league_en.md
+          - Circuit Diagrams, ADS Pre-sim and Design Reports: tutorials/circuit_diagrams_and_reports_en.md
+          - Design Replay Report: tutorials/design_report_en.md
+          - RF Animation: tutorials/rf-animation_en.md
           - Data Factory: tutorials/data_factory_en.md
+          - Data Lake and Query Surface: tutorials/data_lake_en.md
           - Anchor Guide: tutorials/anchor-guide_en.md
           - Verdict Semantics: tutorials/verdict_semantics_en.md
           - Datasets and Health Gates: tutorials/datasets_and_health_gates_en.md

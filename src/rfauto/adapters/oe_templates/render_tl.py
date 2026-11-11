@@ -258,6 +258,21 @@ _port2 = StripLinePort(CSX, port_nr=2, metal_prop=ssl,
 for _prim in ssl.GetAllPrimitives():
     if _prim.GetPriority() < 10:
         _prim.SetPriority(10)
+# ── 线端 nm 级精确入网守卫（Q-X21，#152 家法 fail-loud）────────────────────
+# SSL 均匀带名义分点 Y0/Y1 必须落在终网格线上（残差 ≤1nm，容差字面与
+# runner audit line_end_on_grid/判读面 LINE_END_GRID_TOL_M 同源 1e-9）。
+# Q-RM-4 G5 实证（runs/aurora_q/qx9_anchor/verdict.json）：网格特征线集
+# 缺线端坐标时 Y0/Y1 脱网 µm 级 → 端口面均匀带分点错位、细档网格带缘
+# 曲率分辨不足 → |S|>1 数值噪声 306 点。缺失即 ValueError，不许静默
+# 错位起跑；在位正常路径零行为变化（纯读复核，不改网格）。
+for _ssl_end in (Y0, Y1):
+    _ssl_res = float(np.min(np.abs(np.asarray(mesh.GetLines("y"),
+                                              dtype=float) - _ssl_end)))
+    if not _ssl_res <= 1e-9:
+        raise ValueError(
+            "suspended_stripline 线端 Y=%r m 未精确入网（残差 %.3e m > 1nm，"
+            "网格特征线集缺线端坐标——Q-X21 G5 带缘噪声根治守卫）"
+            % (_ssl_end, _ssl_res))
 '''
 
 
@@ -556,7 +571,7 @@ def _gysel_layout(params: dict[str, Any]) -> dict[str, float]:
     # 台阶缺口（45° 切角的阶梯网格近似），几何恒等=金属并集减两缺口，竖直段/
     # 桥带/端口/电长度口径不动。守卫 0≤c<W_F（c≥W_F 缺口段降高非正；c<W_F
     # 亦蕴含缺口必落在 jog 段全长 |arm−iso|+W_F 内）。缺口语义见
-    # _gysel_jog_lines。真机对照轮（待办清单 排空五轮 followUps）用它做 A/B。
+    # _gysel_jog_lines。真机对照轮（TODO 排空五轮 followUps）用它做 A/B。
     _miter_raw = params.get("_jog_miter_mm")
     c_mit = float(_miter_raw) if _miter_raw is not None else 0.0
     if not (math.isfinite(c_mit) and 0.0 <= c_mit < wf):
@@ -830,7 +845,7 @@ def _patch_lines(p: dict[str, Any]) -> str:
     #   (0,-feed_offset) 谐振轴、综合 off=(L/π)·arcsin√(Rin_t/Rin_edge)
     #   四面同基——原"fake/HFSS 自边 cos²"异语义分裂已收口）。
     # 旧边缘微带馈（MSLPort）两处结构性错误（冒烟证据
-    # 内部证据档 谷位 3.08GHz、s11@2.4=+0.4dB
+    # runs/audit_freq_scale/smoke_patch_auto/ 谷位 3.08GHz、s11@2.4=+0.4dB
     # 非物理）：①辐射器件 AIR_SIDE 把域扩到 ±(BOARD+λ0/4)，而端口面仍贴
     # ±BOARD——馈线止于域中，违反"端口面贴 PML 边界"铁律，入射/反射分解
     # 失效；②馈点 x=0 是 patch_len 谐振模的场节点，谐振根本激励不起来。

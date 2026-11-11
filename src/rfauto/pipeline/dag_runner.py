@@ -80,6 +80,21 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
   不判死下游）。skip 策略的 skipped 不复活语义不变（PARTIAL 注记不
   冒充 COMPLETE）；失败分支本轮新标的 aborted 仍由主循环守卫挡住。
 
+T-Q9（aurora_q Q-W4-3，2026-11-04；Temporal journal-replay 思想级增量）：
+
+- 事件账本 ``<run_dir>/dag.events.jsonl``（append-only JSONL，runs/<run>/
+  增量文件零改写既有证据面）：每次状态机迁移追加一行事件（词表
+  DAG_EVENT_KINDS 预声明）。与状态期刊的分工：期刊=权威状态**快照**
+  （_resume_decision 消费面不变；重跑会覆盖节点 notes、快照不含中间态），
+  账本=观测/取证**迁移史**（补快照丢中间态的一面）。
+- 确定性重放（纯函数 fold）：``load_dag_events``+``replay_dag_events``——
+  同一事件序列重放逐键同状态（节点 status/key + run 级 verdict/累计计数；
+  产物 digest/注记正文不在账本粒度，产物校验仍走键+digest 权威面）。
+  词表外事件跳过（向后兼容）；尾行半写（崩溃中断残留）跳过不炸。
+- best-effort（#105）：账本落盘失败不阻塞执行主路径（_journal_event 吞
+  OSError 不占号）；**重放不驱动执行**——断点续跑语义仍是 _resume_decision
+  （键+digest），账本只多一面镜子，零行为变化（既有钉全绿为门）。
+
 分层（AGENTS #3）：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
 schema/拓扑在 core.compose.dag_schema。
 """
@@ -133,6 +148,20 @@ MESH_TIERS: tuple[str, ...] = ("coarse", "mid", "fine")
 #: 超预算 PARTIAL 判据 = wall_s > wall_budget_s；wall_budget_s 缺省派生
 #: timeout_s × SAFETY_BUDGET（scripts/c3_fullcurve_runner.py:108 先例）。
 SAFETY_BUDGET = 1.5
+
+#: 事件账本文件与 schema（T-Q9 增量 2026-11-04：Temporal journal-replay
+#: 思想级——append-only 事件账 + 纯函数确定性重放；权威状态面仍是
+#: dag.state.json，账本=观测/取证面，#105 best-effort 落盘不阻塞执行）。
+DAG_EVENTS_FILE = "dag.events.jsonl"
+DAG_EVENTS_SCHEMA = "rfauto-dag-events-v1"
+
+#: 事件词表（预声明映射口径，QW-7 同风格：fold 分派按词表，词表外事件
+#: 跳过不炸——向后兼容新事件词，旧重放不被新词打红）。
+DAG_EVENT_KINDS: tuple[str, ...] = (
+    "run_start", "state_reset", "node_running", "node_skip",
+    "node_cache_hit", "node_exec", "node_downstream", "node_revive",
+    "run_verdict",
+)
 
 
 class NodeAbortedError(RuntimeError):
@@ -440,6 +469,125 @@ class SolveMachineMutex:
             self._owner_pid = None
 
 
+# ─── 事件账本（T-Q9 增量：append-only JSONL + 确定性重放 fold）───────────────
+
+def count_dag_events(path: str | Path) -> int:
+    """账本行数（seq 续号用；文件缺席/不可读=0，best-effort #105）。"""
+    try:
+        with open(path, encoding="utf-8") as f:
+            return sum(1 for line in f if line.strip())
+    except (OSError, UnicodeDecodeError):
+        return 0
+
+
+def append_dag_event(run_dir: str | Path, event: str, *,
+                     node: str = "", seq: int | None = None,
+                     **detail: Any) -> int | None:
+    """事件账本追加一行（append-only JSONL；返回落盘 seq，失败 None）。
+
+    best-effort（#105）：落盘失败返回 None 不抛——观测面不得成为执行主
+    路径故障点。seq=None 按既有行数自增（外部调用形态）；DagRunner 走
+    _journal_event 进程内续号（免逐次重数行，跨会话由 __init__ 续号）。
+    """
+    path = Path(run_dir) / DAG_EVENTS_FILE
+    if seq is None:
+        seq = count_dag_events(path) + 1
+    rec: dict[str, Any] = {
+        "schema": DAG_EVENTS_SCHEMA,
+        "seq": int(seq),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "event": str(event),
+        "node": str(node or ""),
+    }
+    if detail:
+        rec["detail"] = detail
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+    except OSError:
+        return None
+    return int(seq)
+
+
+def load_dag_events(path: str | Path) -> list[dict[str, Any]]:
+    """读事件账本（JSONL 逐行 dict 列表；观测面容错：尾行半写/损坏行跳过）。
+
+    跳过不炸的理由（#105 同源）：账本是观测面，权威状态在 dag.state.json；
+    半写尾行=崩溃中断的常见残留，跳过后重放仍可重建已确认迁移。"""
+    events: list[dict[str, Any]] = []
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return events
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(rec, dict):
+            events.append(rec)
+    return events
+
+
+def replay_dag_events(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """事件账本确定性重放（纯函数 fold；Temporal journal-replay 思想级）。
+
+    同一事件序列 → 逐键同状态（确定性钉=tests/unit/test_dag_reentrancy.py：
+    同账本两轮重放 JSON 逐字节同；重放节点 status/key 与权威期刊逐键同）。
+    重建面=状态机迁移：节点 status/key（cache 命中带 source 溯源）与 run 级
+    verdict/累计计数；产物 digest/注记正文不在账本粒度（产物校验仍走键+
+    digest 权威面 _resume_decision，重放不驱动执行）。词表外事件跳过；
+    ``state_reset`` 清空节点面（期刊损坏重置留痕，后续缓存命中/重算事件
+    回填——与 _load_state 损坏重置→CAS 恢复的实际次序同构）。"""
+    state: dict[str, Any] = {"schema": DAG_EVENTS_SCHEMA, "nodes": {}}
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
+        kind = str(ev.get("event") or "")
+        node = str(ev.get("node") or "")
+        raw_detail = ev.get("detail")
+        detail = raw_detail if isinstance(raw_detail, dict) else {}
+        if kind == "state_reset":
+            state["nodes"] = {}
+            state["state_reset"] = True
+        elif kind == "node_running":
+            state["nodes"][node] = {"status": "running",
+                                    "key": str(detail.get("key") or "")}
+        elif kind == "node_skip":
+            state["nodes"][node] = {
+                "status": str(detail.get("status") or "done"),
+                "key": str(detail.get("key") or "")}
+        elif kind == "node_cache_hit":
+            state["nodes"][node] = {
+                "status": str(detail.get("status") or "done"),
+                "key": str(detail.get("key") or ""), "source": "cache"}
+        elif kind == "node_exec":
+            state["nodes"][node] = {
+                "status": str(detail.get("status") or ""),
+                "key": str(detail.get("key") or "")}
+        elif kind == "node_downstream":
+            down = str(detail.get("down") or "")
+            if down:
+                state["nodes"][down] = {
+                    "status": str(detail.get("status") or ""), "key": ""}
+        elif kind == "node_revive":
+            for rid in detail.get("revived") or []:
+                state["nodes"][str(rid)] = {"status": "pending", "key": ""}
+        elif kind == "run_verdict":
+            state["verdict"] = str(detail.get("verdict") or "")
+            state["n_hit_total"] = int(detail.get("n_hit_total") or 0)
+            state["n_recompute_total"] = int(
+                detail.get("n_recompute_total") or 0)
+            state["inconclusive_count"] = int(
+                detail.get("inconclusive_count") or 0)
+            state["skipped_count"] = int(detail.get("skipped_count") or 0)
+    return state
+
+
 # ─── DAG 执行器 ─────────────────────────────────────────────────────────────
 
 class DagRunner:
@@ -485,6 +633,9 @@ class DagRunner:
         self.lock_path = self.run_dir / DAG_RUN_LOCK_NAME
         self.log = log or (lambda msg: None)
         self.state = self._load_state()
+        # T-Q9 事件账本：seq 按既有账本行数续号（跨会话单调；_load_state 的
+        # state_reset 留痕已落账，此处计数含之）。
+        self._event_seq = count_dag_events(self.run_dir / DAG_EVENTS_FILE)
 
     # ---- 状态期刊（原子写 + 运行级文件锁）────────────────────────────────
 
@@ -515,8 +666,21 @@ class DagRunner:
             # 不采信任何不可判状态（判据 ④，不猜）
             with contextlib.suppress(OSError):
                 path.replace(path.with_name(DAG_STATE_FILE + ".corrupt"))
+            # T-Q9 事件账本：期刊损坏重置留痕（观测面；重放 fold 见
+            # replay_dag_events——reset 清空节点面，后续会话的缓存命中/
+            # 重算事件回填，与损坏→CAS 恢复的实际次序同构）。
+            append_dag_event(self.run_dir, "state_reset",
+                             corrupt=DAG_STATE_FILE)
         return {"schema": DAG_STATE_SCHEMA, "plan_schema": DAG_SCHEMA,
                 "nodes": {}, "n_hit": 0, "n_recompute": 0}
+
+    def _journal_event(self, event: str, node: str = "",
+                       **detail: Any) -> None:
+        """事件账本追加（T-Q9 观测面 best-effort #105：失败不占号不阻塞）。"""
+        self._event_seq += 1
+        if append_dag_event(self.run_dir, event, node=node,
+                            seq=self._event_seq, **detail) is None:
+            self._event_seq -= 1
 
     def _write_state(self) -> None:
         """原子写期刊（tmp + os.replace；Windows 单写者安全）。"""
@@ -796,6 +960,9 @@ class DagRunner:
                           "复位回队（断点续跑复活，A7 P1-1）"],
             }
             revived.append(d)
+        if revived:
+            self._journal_event("node_revive", node=node_id,
+                                status=str(new_status), revived=list(revived))
         return revived
 
     # ---- 主循环 ──────────────────────────────────────────────────────────
@@ -815,6 +982,7 @@ class DagRunner:
         n_hit = 0
         n_recompute = 0
         try:
+            self._journal_event("run_start", n_nodes=len(self.order))
             for node_id in self.order:
                 prev_status = (self.state["nodes"].get(node_id) or {}).get(
                     "status", "")
@@ -833,6 +1001,9 @@ class DagRunner:
                     prev = self.state["nodes"][node_id]
                     self.state["nodes"][node_id] = {**prev, "key": key}
                     self._write_state()
+                    self._journal_event("node_skip", node=node_id, key=key,
+                                        status=str(prev.get("status") or ""),
+                                        reason=str(reason))
                     self.log(f"[hit] {node_id}: {reason}")
                     continue
                 self.log(f"[rerun] {node_id}: {reason}")
@@ -840,12 +1011,18 @@ class DagRunner:
                 if cached is not None:
                     n_hit += 1
                     self._accept_cache_hit(node_id, key, cached)
+                    self._journal_event(
+                        "node_cache_hit", node=node_id, key=key,
+                        status=str((self.state["nodes"].get(node_id) or {})
+                                   .get("status") or ""),
+                        source_run=str(cached.get("run_dir") or ""))
                     continue
                 n_recompute += 1
                 prev_entry = self.state["nodes"].get(node_id) or {}
                 self.state["nodes"][node_id] = {
                     "status": "running", "key": key, "attempt": 0}
                 self._write_state()
+                self._journal_event("node_running", node=node_id, key=key)
                 work_dir = node_work_dir(self.run_dir, node_id)
                 work_dir.mkdir(parents=True, exist_ok=True)
                 status, outputs, notes, has_manifest = self._run_node(
@@ -882,6 +1059,8 @@ class DagRunner:
                 if status in ("done", "partial", "inconclusive"):
                     revived = self._revive_aborted_downstream(node_id, status)
                 self._write_state()
+                self._journal_event("node_exec", node=node_id, key=key,
+                                    status=str(status))
                 self.log(f"[exec] {node_id}: {status}（{reason}）")
                 for d in revived:
                     self.log(f"[revive] {d}: 上游 {node_id} 本轮转 "
@@ -905,6 +1084,8 @@ class DagRunner:
                         self.state["nodes"][down] = {
                             "status": down_status, "key": "",
                             "notes": [down_note]}
+                        self._journal_event("node_downstream", node=node_id,
+                                            down=down, status=down_status)
                         self.log(f"[{down_status}] {down}: "
                                  f"上游 {node_id} failed")
                     self._write_state()
@@ -947,6 +1128,12 @@ class DagRunner:
         self.state["skipped_count"] = n_skipped
         self.state["verdict"] = verdict
         self._write_state()
+        self._journal_event(
+            "run_verdict", verdict=str(verdict), n_hit=int(n_hit),
+            n_recompute=int(n_recompute), n_hit_total=int(total_hit),
+            n_recompute_total=int(total_recomp),
+            inconclusive_count=int(n_inconclusive),
+            skipped_count=int(n_skipped))
         done_msg = (f"[done] verdict={verdict} hit={n_hit} "
                     f"recompute={n_recompute}（累计 hit={total_hit} "
                     f"recompute={total_recomp}）")

@@ -19,6 +19,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from rfauto.core.exit_code_verdict import FAMILY_ADS, evaluate_exit_code
+
 logger = logging.getLogger(__name__)
 
 
@@ -161,11 +163,22 @@ else:
             cwd=str(Path(netlist_path).parent),
         )
 
+        # P4-1-1（aurora_r R-21）："退出码 0 不足信"——ok 门从纯 rc 升格为
+        # rc+fatal-marker 白名单复核（hpeesofsim 真机实录：rc=0 与
+        # "Error detected by hpeesofsim ..."/"terminated due to an error."
+        # 并存=假绿形态）。日志干净时 verdict.ok≡(rc==0)，缺省行为不变；
+        # 命中即失败（fail-closed，#316 方向：宁可误报失败让人看，不放过
+        # 假绿）。verdict 信封随返回值落档供上游归因。
+        verdict = evaluate_exit_code(
+            result.returncode, result.stdout or "", result.stderr or "",
+            fatal_marker_patterns=FAMILY_ADS,
+        )
         return {
-            "ok": result.returncode == 0,
+            "ok": verdict.ok,
             "returncode": result.returncode,
             "stdout": result.stdout,
             "stderr": result.stderr,
+            "verdict": verdict.as_dict(),
         }
 
     def read_dataset(self, dataset_path: str) -> dict[str, Any]:

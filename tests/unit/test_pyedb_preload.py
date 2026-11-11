@@ -51,14 +51,6 @@ def _isolate(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(pp, "_configs_aedt_path", lambda: "")
     monkeypatch.setattr(pp, "_win_dll", lambda p: object())
     monkeypatch.setattr(pp, "_file_version", lambda p: "0.0.0-teststub")
-    # 非 Windows 解释器（Linux CI）：ctypes 无 WinDLL 属性 → preload_ansys_openssl
-    # 的平台闸门 hasattr(ctypes, "WinDLL") 先于 _win_dll 替身短路，解析链/信封/
-    # 幂等/fail-soft 逻辑整体失测（aurora_p H4 实证 10 红）。本 fixture 已把真实
-    # 加载面钉成替身（零真 DLL），补一个同名占位让闸门按 Windows 语义放行——
-    # 受测逻辑本身平台无关；Windows 下属性本就存在零变化（仅缺席时注入）。
-    # test_non_windows_fail_soft 自行 delattr 覆盖本占位以钉非 Windows 分支。
-    if not hasattr(pp.ctypes, "WinDLL"):
-        monkeypatch.setattr(pp.ctypes, "WinDLL", lambda p: object(), raising=False)
     pp.reset_loaded_registry()
     yield
     pp.reset_loaded_registry()

@@ -11,7 +11,7 @@
 - 逐工具可调用性烟测（静态）：函数体全局名引用与惰性 import 目标
   必须可解析（diagnose 死壳实证的系统性盲区，confirm_2 第 1 条）。
 
-Devlog 记 18 个工具，本文件以源码/运行时实测为准。
+DEVLOG 记 18 个工具，本文件以源码/运行时实测为准。
 """
 
 from __future__ import annotations
@@ -45,10 +45,10 @@ _DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(")
 _ARGS_ENTRY_RE = re.compile(r"^\s{4,}([A-Za-z_]\w*)\s*(?:\([^)]*\))?\s*:")
 _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes):\s*$")
 
-# Devlog 记录值，仅作交叉核对；实测不符时断言会直接暴露
-# （18→19：2026-09-13 export_report_pdf 工具入库，Devlog（一百零八）/090e631）
+# DEVLOG 记录值，仅作交叉核对；实测不符时断言会直接暴露
+# （18→19：2026-09-13 export_report_pdf 工具入库，DEVLOG（一百零八）/090e631）
 # （19→36：2026-09-13 WP3.3 MCP 工具面全量开放 +17——模板库 2/战役 3/
-#   数据集 2/bands 10（D9 归口）；Devlog 数字待主控合流轮同步）
+#   数据集 2/bands 10（D9 归口）；DEVLOG 数字待主控合流轮同步）
 # （36→62：2026-09-15 cli-mcp-api-shell-bundle +26——回归门 2（goldset/agentbench）
 #   /多 Agent 4 内核工具+multi_agent_run/autotune_self_verify/uq 3/farfield 2/
 #   kicad 2/electrothermal/parasitic/topology/dataset 4/vna_offline_replay/
@@ -143,7 +143,26 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 #   circuit_sim_service.annotate_circuit_diagram）+design_report（CLI
 #   design-report 叶同源设计回放报告，零逻辑转发
 #   design_replay_report.generate_design_report））
-_Devlog_DECLARED_TOOL_COUNT = 166
+# （166→167：2026-11-04 T-Q3 接线席 Q-W5-2R +1——anim_render（aurora_q
+#   方向 B 动图渲染 agent 面，CLI anim render 同源同名 service 函数，
+#   零逻辑转发新建 service/anim_render_service.anim_render））
+# （167→171：2026-11-06 T-Q5+T-Q19 批 2 接线席 Q-W9-3 +4——format_overview
+#   （T-Q5 批 3 格式速览 agent 面，8 kind 一屏看懂，零逻辑转发
+#   format_overview_service.overview_format）+vendor_docs_build/
+#   vendor_docs_search/vendor_docs_audit（T-Q19 批 2 厂商帮助文档检索
+#   三面，零逻辑转发 Q-W6-4 vendor_doc_service 三函数；build=显式
+#   db_path 写索引库，search/audit 只读））
+# （171→200：aurora_q MCP 四批 Q-X69 八只读/Q-X73 二批十工具/Q-X76 三批
+#   八工具/Q-X85 四批 odbpp/bsdl 三面 +29——aurora_r 合流笔 2026-11-10
+#   重钉落账）
+# （200→202：aurora_r AM-S4 2026-11-10 +2——aedt_migrate_run/
+#   aedt_migrate_report，老版本 .aedt 批量迁移通道两面（S1 service
+#   docstring 挂账处方原文落位，CLI aedt-migrate 域同源））
+# （202→208：aurora_r R-26 2026-11-10 +6——解析五批扩展 parser_ext.py
+#   drc_design_validate/veriloga_module_detail/skill_call_graph/
+#   netlist_overlay_file/spectre_overlay_file/netlist_overlay_text，
+#   Q-X69 报告 §8 建议清单+交接书 §二-8 扩展池方向接地差集）
+_DEVLOG_DECLARED_TOOL_COUNT = 208
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:
@@ -346,7 +365,7 @@ class TestMcpToolRegistryConsistency:
     def test_source_decorator_count_matches_registered(self, source_text, mcp_tools):
         source_names = _decorated_function_names(source_text, _TOOL_DECORATOR_RE)
         assert len(source_names) == len(mcp_tools)
-        assert len(mcp_tools) == _Devlog_DECLARED_TOOL_COUNT
+        assert len(mcp_tools) == _DEVLOG_DECLARED_TOOL_COUNT
 
     def test_source_function_names_equal_registered_names(self, source_text, mcp_tools):
         source_names = set(_decorated_function_names(source_text, _TOOL_DECORATOR_RE))
@@ -487,6 +506,15 @@ class TestMcpResourceBodyCallability:
             "rfauto://calculators/index",
             "rfauto://datasets/index",
             "rfauto://knowledge/metric-glossary",
+            "skill://rfauto-branchline-coupler/SKILL.md",
+            "skill://rfauto-cpw/SKILL.md",
+            "skill://rfauto-mline-synthesis/SKILL.md",
+            "skill://rfauto-patch-antenna/SKILL.md",
+            "skill://rfauto-pifa/SKILL.md",
+            "skill://rfauto-wilkinson-power-divider/SKILL.md",
+            "skill://veriloga-authoring/SKILL.md",
+            # VB-6 R-13 席（aurora_r 2026-11-10）：skills/ 7 包 SKILL.md 只读
+            # 资源（含模板 skill://{name}/references/{path*} 不进 list_resources）
         }
 
     def test_load_global_names_resolve_for_every_resource(self, mcp_function_resources):

@@ -216,7 +216,7 @@ class TestSpecTranslation:
         （每次插到全栈最底→列表首项落物理顶层；configuration.py:863-868 +
         dotnet/database/stackup.py:97-130 源码实证；__update_stackup 同口径
         layers.pop(0) 走 add_layer_top）；官方示例 TOP,DE,BOTTOM 首项=顶层；
-        docs/pyedb_distilled.md §3.1/§6-2（「adapter 翻转一次」处方）；
+        pyedb 精炼笔记（内部档）§3.1/§6-2（「adapter 翻转一次」处方）；
         真机冒烟（runs/edblane85/w1_smoke/build_pyaedt.py）以 GND=elevation0
         验证的正确物理序=信号层在上。未翻转时发射族叠层整体上下颠倒
         （GND 落物理顶层=倒置微带，综合 λ/4 几何全错且无报错）。
@@ -354,7 +354,7 @@ class TestSpecValidation:
     def test_via_must_be_through_span(self):
         """v1 边界（2026-10-08 审查批 P1）：pyedb CfgPadstackDefinition.
         hole_range 未透传（缺省 through 语义，cfg_padstacks.py:196，
-        docs/pyedb_distilled.md §3.2）——盲埋孔 spec 会静默错落整叠通孔，
+        pyedb 精炼笔记（内部档）§3.2）——盲埋孔 spec 会静默错落整叠通孔，
         fail-fast 不虚报。"""
         spec = _base_spec()  # Bot/Sub/Top，信号层极端=Bot/Top
         spec["vias"][0]["start_layer"] = "Bot"

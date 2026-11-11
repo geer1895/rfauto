@@ -498,7 +498,7 @@ def recipe_save(
     updates 允许的键：params（{name: value} 平铺，逐项带 bounds 校验）、
     setup、objectives、optimization（整段替换）。
 
-    写面守卫（配方污染根修，处置账 TODO「fix-recipe-pollution」条）：
+    写面守卫（配方污染根修，处置账 TODO.md「fix-recipe-pollution」条）：
     整文档 ``yaml.safe_dump`` 会丢注释/
     引号并把表单归一化的 optimization 段整段写回——2026-09-17 17:18 正是此链把
     recipes/branchline_coupler_v1.yaml 重序列化（diff 85 行）。recipes/ 原件

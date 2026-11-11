@@ -573,7 +573,7 @@ class TestOfflineReportAndCli:
         report = td.offline_report(spec, temps)
         assert report["mode"] == "offline"
         assert report["stage1_within_20pct_all"] is True
-        # Devlog（六十一）stage-1 hairpin 口径同值（CTE=14/TCDk=50/ΔT=−65/+60）
+        # DEVLOG（六十一）stage-1 hairpin 口径同值（CTE=14/TCDk=50/ΔT=−65/+60）
         assert report["by_temp"]["-40"]["oneway_drift_ppm"] == pytest.approx(
             2541.284, rel=1e-4)
         assert report["by_temp"]["85"]["oneway_drift_ppm"] == pytest.approx(

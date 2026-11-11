@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "title": "sample RF DRC ruleset",
+    "revision": "A"
+  },
+  "groups": ["rf_general", "empty_group"],
+  "rules": [
+    {
+      "name": "min_width_sig",
+      "type": "min_width",
+      "value": 0.15,
+      "unit": "mm",
+      "layer_scope": ["F.Cu", "B.Cu"],
+      "priority": 5,
+      "group": "rf_general",
+      "notes": "信号线最小线宽"
+    },
+    {
+      "name": "min_clearance_all",
+      "type": "min_clearance",
+      "value": 3,
+      "unit": "mil",
+      "priority": 0,
+      "notes": "全层最小间距（mil 归一档）"
+    },
+    {
+      "name": "imp_band_rf",
+      "type": "impedance",
+      "value": [49, 51],
+      "unit": "ohm",
+      "layer_scope": ["F.Cu"],
+      "priority": 10,
+      "group": "rf_general",
+      "notes": "RF 走线阻抗带"
+    },
+    {
+      "name": "via_style_std",
+      "type": "via_style",
+      "value": ["through", "blind"],
+      "notes": "过孔样式白名单"
+    },
+    {
+      "name": "min_drill_std",
+      "type": "min_drill",
+      "value": 0.2,
+      "unit": "mm",
+      "enabled": false,
+      "notes": "最小钻孔（本规则集停用档）"
+    },
+    {
+      "name": "annular_ring_min",
+      "type": "min_annular_ring",
+      "value": 0.05,
+      "unit": "mm",
+      "notes": "最小环域"
+    },
+    {
+      "name": "rf_imp_50",
+      "type": "rf_impedance",
+      "value": 50,
+      "unit": "ohm",
+      "tolerance_pct": 5,
+      "priority": 3,
+      "group": "rf_general",
+      "notes": "RF 走线阻抗 50 ohm ±5%"
+    },
+    {
+      "name": "rf_pad_gap",
+      "type": "rf_pad_clearance",
+      "value": 0.2,
+      "unit": "mm",
+      "notes": "同层焊盘间距 >=0.2 mm"
+    },
+    {
+      "name": "rf_gnd_fence",
+      "type": "rf_ground_via_fence",
+      "value": 2,
+      "unit": "count",
+      "radius_mm": 1.0,
+      "notes": "RF 走线 1.0 mm 半径内 >=2 个 GND 过孔"
+    },
+    {
+      "name": "rf_shield_gap",
+      "type": "rf_shield_clearance",
+      "value": 0.5,
+      "unit": "mm",
+      "notes": "RF 对象到屏蔽罩 >=0.5 mm"
+    },
+    {
+      "name": "exotic_custom",
+      "type": "exotic_unknown",
+      "value": 1,
+      "unit": "mm",
+      "notes": "面外类型如实保留（不判）"
+    },
+    {
+      "name": "weird_unit_rule",
+      "type": "min_isolation",
+      "value": 0.3,
+      "unit": "furlong",
+      "notes": "未知单位如实保留（求值面不判）"
+    }
+  ]
+}

@@ -172,8 +172,18 @@ def p0_cmd(
     硬门槛（跨保真 gate）：同一组参数在低/高保真下的排序一致性
     Spearman rho >= 0.8 且 top-5 recall >= 80％；不达标则方向 1 回退 fake-only。
     """
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
     from rfauto.service.api import run_p0_experiment
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args({
+        "--coarse": coarse, "--fine": fine, "--baseline": baseline,
+        "--edge-samples": edge, "--cross-samples": cross})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     if not json_output:
         console.print(f"[cyan]P0 实验: {recipe}[/cyan]")
         console.print(f"  基线: {baseline} trials | 粗筛: {coarse} + 精算: {fine}")

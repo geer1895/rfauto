@@ -1,0 +1,30 @@
+ERC report (2026-11-04T23:50:40, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+[pin_not_connected]: Pin not connected
+    ; error
+    @(67.62 mm, 60.00 mm): Symbol R1 Pin 1 [1, Passive, Line]
+[pin_not_connected]: Pin not connected
+    ; error
+    @(118.42 mm, 60.00 mm): Symbol R2 Pin 1 [1, Passive, Line]
+[endpoint_off_grid]: Symbol pin or wire end off connection grid
+    ; warning
+    @(52.38 mm, 60.00 mm): Symbol R1 Pin 2 [2, Passive, Line]
+[endpoint_off_grid]: Symbol pin or wire end off connection grid
+    ; warning
+    @(52.38 mm, 60.00 mm): Horizontal Wire, length 5.08 mm
+[lib_symbol_issues]: 当前配置不包含符号库 'rfauto_gen'
+    ; warning
+    @(60.00 mm, 60.00 mm): Symbol R1 [R]
+[endpoint_off_grid]: Symbol pin or wire end off connection grid
+    ; warning
+    @(103.18 mm, 60.00 mm): Horizontal Wire, length 5.08 mm
+[lib_symbol_issues]: 当前配置不包含符号库 'rfauto_gen'
+    ; warning
+    @(110.80 mm, 60.00 mm): Symbol R2 [R]
+[endpoint_off_grid]: Symbol pin or wire end off connection grid
+    ; warning
+    @(118.42 mm, 60.00 mm): Symbol R2 Pin 1 [1, Passive, Line]
+
+ ** ERC messages: 8  Errors 2  Warnings 6

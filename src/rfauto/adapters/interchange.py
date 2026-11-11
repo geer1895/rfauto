@@ -19,6 +19,7 @@ from skrf.networkSet import NetworkSet
 
 from rfauto.core.contracts import TouchstoneContract
 from rfauto.core.errors import ContractViolationError
+from rfauto.core.strict_access import validate_network_strict
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ INTERCHANGE_FORMATS = ("touchstone1", "touchstone2", "mdif", "citi")
 def read_touchstone(
     path: str | Path,
     contract: TouchstoneContract | None = None,
+    strict: bool = False,
 ) -> skrf.Network:
     """读取 Touchstone 文件并可选进行契约校验。
 
@@ -41,6 +43,15 @@ def read_touchstone(
         .sNp 文件路径。
     contract : TouchstoneContract, optional
         交换契约，提供时进行端口数和参考阻抗校验。
+    strict : bool, optional
+        严格读取边界（VB-3，缺省 False=既有行为逐位零变化）。True 时在
+        skrf 解析后追加 :func:`rfauto.core.strict_access.validate_network_strict`
+        全套校验：频轴实数有限非空+严格递增（ULP 级近重复显式报出，
+        #287/#294 族）、S 矩阵与 z0 全有限；违例抛 ValueError 子类家族
+        （core.strict_access.StrictAccessError），消息恒含文件名+违例规则名。
+        与 G11 健康门（core/solve_health）分工：本参数管"读到的是不是
+        那份数据、数值是否合法"，健康门管"物理可信"（#314 掩码口径在
+        彼处不变）——两者不互相替代。
 
     Returns
     -------
@@ -53,6 +64,8 @@ def read_touchstone(
         文件不存在。
     ContractViolationError
         契约校验失败（端口数或参考阻抗不匹配）。
+    rfauto.core.strict_access.StrictAccessError
+        strict=True 且读取边界校验失败（频轴/有限性等；ValueError 子类）。
     """
     path = Path(path)
 
@@ -62,6 +75,10 @@ def read_touchstone(
     # 读取 Touchstone 文件
     logger.info("读取 Touchstone 文件: %s", path)
     network = skrf.Network(str(path))
+
+    # 严格读取边界校验（VB-3 选通；缺省 False 零变化）
+    if strict:
+        validate_network_strict(network, source=str(path))
 
     # 契约校验
     if contract is not None:

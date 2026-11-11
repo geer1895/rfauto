@@ -1,4 +1,4 @@
-"""WP4.4b PCB 寄生提取链 service 编排（continuation-plan_20260907 §4 WP4.4b）。
+"""WP4.4b PCB 寄生提取链 service 编排（continuation_plan_20260907 §4 WP4.4b）。
 
 JSON 进出薄编排：把 KiCad pcell/DRC 链与 core/parasitic 确定性内核串成
 PCB 无源/互连 RLC 提取链路::

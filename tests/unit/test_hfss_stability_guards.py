@@ -503,7 +503,7 @@ def test_close_delivery_failure_raises_and_preserves_workdir(adapter, tmp_path,
 def test_cjk_path_remote_session_rejects(adapter, tmp_path):
     """远程会话=服务器侧路径语义，本地 %TEMP% 重定向不成立，显式拒绝。"""
     adapter.session._remote = {
-        "name": "sim_server", "machine": "198.51.100.20",
+        "name": "lab_server", "machine": "192.0.2.10",
         "port": 1055, "project_root": "E:/rfauto_remote", "version": "2025.1",
     }
     with pytest.raises(ValueError, match="服务器侧"):

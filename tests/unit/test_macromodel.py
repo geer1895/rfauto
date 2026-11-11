@@ -48,6 +48,7 @@ from rfauto.core.macromodel import (
     MIN_FREQ_POINTS,
     MacromodelFitError,
     MacromodelInputError,
+    _poles_residues,
     fit_macromodel,
     request_from_touchstone,
     validate_spice_subcircuit,
@@ -295,7 +296,7 @@ def test_spice_validator_detects_corruption(tmp_path) -> None:
 # --------------------------------------------------------------------------- #
 
 def test_known_nonpassive_enforcement_failure_reported_honestly(tmp_path) -> None:
-    """退化有源网络（0 实极点+1 复极点，无界违规）的无源化失败必须如实报告。
+    """退化有源网络（0 实极点+1 复极点，无界违规）的无源化结果必须如实报告。
 
     历史：numpy 2.5.3 下 skrf 的 passivity_enforce 能把带内清干净（旧断言
     enforced=True/after passive）。a7 批次引入 fdtdx→tidy3d 硬钉后 venv 降到
@@ -303,6 +304,11 @@ def test_known_nonpassive_enforcement_failure_reported_honestly(tmp_path) -> Non
     n_samples 1000→30 阶梯实测均不可绕）。按 #105/#122 纪律：能力不可用=
     如实上报（enforced=False+enforce_error），不制造假 pass。恢复条件=
     skrf/numpy 组合升级后重试（followUps 已登记）。
+
+    恢复实录（aurora_q 2026-11-04）：venv numpy 现值 2.5.4，passivity_enforce
+    恢复可用（实测 enforced=True、after 带内 passive、sigma_max=1.0）——本
+    测试改为**双 regime 严格分支**（两支断言均不放松）：enforcement 可用=
+    钉恢复后真值；不可用=钉诚实失败上报。
     """
     f = _freq()
     s = _nonpassive_rlc_s11(f)
@@ -314,11 +320,18 @@ def test_known_nonpassive_enforcement_failure_reported_honestly(tmp_path) -> Non
 
     assert before["passive_in_band"] is False
     assert before["sigma_max_in_band"] > 1.0
-    assert r["passivity"]["enforced"] is False
-    assert "LinAlgError" in (r["passivity"]["enforce_error"] or "")
-    assert after["passive_in_band"] is False
-    assert r["ok"] is False
     assert r["spice"]["valid"] is True
+
+    if r["passivity"]["enforced"] is True:
+        # 恢复 regime（numpy 2.5.4 实测）：无源化把带内违规清干净。
+        assert not (r["passivity"]["enforce_error"] or "")
+        assert after["passive_in_band"] is True
+        assert after["sigma_max_in_band"] <= 1.0 + 1e-9
+    else:
+        # 退化 regime：能力不可用=如实上报（不制造假 pass）。
+        assert "LinAlgError" in (r["passivity"]["enforce_error"] or "")
+        assert after["passive_in_band"] is False
+        assert r["ok"] is False
 
 
 def test_passive_network_not_enforced() -> None:
@@ -467,3 +480,49 @@ def test_input_forms_are_equivalent() -> None:
     assert _dumps(r_pair) == _dumps(r_dict)
     assert _dumps(r_pair) == _dumps(r_split)
     assert _dumps(r_pair) == _dumps(r_flat)
+
+
+# --------------------------------------------------------------------------- #
+# 16. poles_summary 计数口径（aurora_p H1 P2-3 回归钉：skrf 共轭对只存一个）
+# --------------------------------------------------------------------------- #
+
+class _StubVF:
+    """duck-typed VectorFitting：只提供 _poles_residues 消费的三个属性。"""
+
+    def __init__(self, poles: list[complex], n_ports: int = 1) -> None:
+        self.poles = np.asarray(poles, dtype=complex)
+        self.residues = np.ones((n_ports * n_ports, self.poles.size), dtype=complex)
+        self.constant_coeff = np.zeros((n_ports, n_ports), dtype=complex)
+
+
+def test_poles_summary_known_layout_2_pairs_plus_1_real() -> None:
+    """已知布局 1 实极点 + 2 复共轭对：skrf 存储 3 个极点（每对只存正虚部成员）
+    → n_complex_pairs 必须等于存储复极点数 2（旧式 (n_poles-n_real)//2 低报为 1）。"""
+    poles = [-1.0e9 + 0j, -2.0e9 + 3.0e9j, -3.0e9 + 5.0e9j]
+    summary = _poles_residues(_StubVF(poles), n_ports=1)["poles_summary"]
+    assert summary["n_poles"] == 3
+    assert summary["n_real_poles"] == 1
+    assert summary["n_complex_pairs"] == 2
+
+
+def test_poles_summary_all_real_layout_zero_pairs() -> None:
+    """全实极点布局 → 复对数 0（旧式 //2 对该布局同值，防取整语义漂移双向钉）。"""
+    summary = _poles_residues(_StubVF([-1.0e9, -2.0e9]), n_ports=1)["poles_summary"]
+    assert summary["n_poles"] == 2
+    assert summary["n_real_poles"] == 2
+    assert summary["n_complex_pairs"] == 0
+
+
+def test_poles_summary_identity_on_public_fit_path() -> None:
+    """公开拟合路径恒等式：复对数=存储复极点数=手数 poles_rad_s 虚部非零条数
+    （布局随拟合数据演化，但恒等式对任意布局成立——skrf 口径版本稳健）。"""
+    f = _freq()
+    s = _series_rlc_s11(f)
+    r = fit_macromodel(_request(s, f))
+    ps = r["poles_summary"]
+    n_cplx = sum(1 for _re, im in r["poles_rad_s"] if im != 0.0)
+    n_real = sum(1 for _re, im in r["poles_rad_s"] if im == 0.0)
+    assert ps["n_poles"] == len(r["poles_rad_s"])
+    assert ps["n_real_poles"] == n_real
+    assert ps["n_complex_pairs"] == n_cplx
+    assert ps["n_complex_pairs"] == ps["n_poles"] - ps["n_real_poles"]

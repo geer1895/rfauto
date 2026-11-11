@@ -504,7 +504,7 @@ def edb_build_solve(
     timeout_s: float = 3600.0,
     export: bool = True,
 ) -> dict[str, Any]:
-    """建库 + 可选批解一站式编排（MCP ``edb_build_solve`` 主语义）。
+    """建库 + 可选批解全流程编排（MCP ``edb_build_solve`` 主语义）。
 
     ``solve=False``（缺省）即 :func:`edb_build` 原样（含 dry_run 计划态）；
     ``solve=True`` 建库成功后接 :func:`edb_solve`（真机 opt-in：要 ansysedt

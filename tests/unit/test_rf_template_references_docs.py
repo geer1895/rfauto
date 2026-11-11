@@ -40,7 +40,8 @@ class TestThreeNewSections:
         nums = [int(m) for m in re.findall(r"^## (\d+)\.", _doc_text(),
                                            flags=re.MULTILINE)]
         assert nums == sorted(nums), f"章节号乱序：{nums}"
-        assert nums[-1] == 19  # 19=GaAs IPD 三模板（K11/K12 aurora_l）
+        assert nums[-1] == 22  # 22=AI-driven RF 设计方法论吸收（§20/§21/§22 依序落版 Q-X56/Q-X75/R-06/R-23；
+        #  上锚 19=GaAs IPD 三模板 K11/K12 aurora_l——§20 落版起该锚未随动，存量红 M-5 清偿）
 
 
 class TestCitedPathsExist:

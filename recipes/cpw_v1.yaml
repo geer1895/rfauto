@@ -1,0 +1,32 @@
+# 共面波导 CPW — 模板直跑配方（T-Q18 模板→配方闭环预置件，aurora_q Q-W9-1R）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增：从 cpw 模板卡到第一次仿真的可跑配方（template: 形态，
+# 与 pifa_v1/monopole_v1 同通路；2 端口传输线族，导出频带=缺省窄带 ±4%）。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe cpw --out recipes/cpw_v1.yaml --force
+#   画廊页 cpw 卡「导出配方」按钮 / POST /api/template-recipe/export 同源
+#   service/template_recipe_service 单源——UI 只回 YAML 文本，落盘走本文件
+#   同款 CLI --out 或复制粘贴。
+# · template: 形态 = openEMS 模板直跑（cpw 无 models 注册表优化模型，
+#   75 族映射表: service.template_recipe_service.template_model_mapping）。
+#   run 通道: fake（解析近似零 license）或 openems（真引擎）。
+# · tune 调参面暂不支持 template 形态——调参需求用有优化模型的 4 族
+#   （wilkinson/patch/branchline/mline，见同目录对应配方）。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；
+#   通路全程实录：docs/tutorials/from-template-to-first-sim.md。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+recipe_version: 1
+notes: cpw 模板导出配方（rfauto templates export-recipe，名义参数=TEMPLATE_NOMINAL 注册表归档值，f0=2.5GHz；单端口族缺省宽带
+  ±4%）——整带无谷时应放宽频段复查（谐振可能在带外）
+params:
+  w_mm: 0.849
+  gap_mm: 0.2
+  line_len_mm: 40.0
+setup:
+  solver: openEMS
+  freq_range_ghz:
+  - 2.4
+  - 2.604167
+  points: 401
+template: cpw

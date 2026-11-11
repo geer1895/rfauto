@@ -1,0 +1,51 @@
+/* rfauto 文档站门面微调（aurora_q Q-W7-3 / T-Q2 轮 1：间距与表格）。
+ *
+ * 审查依据：runs/aurora_q/qw73_review/FACADE_REVIEW.md（F3：模板库总表
+ * 76 行横向溢出 183px、无粘性表头、拓扑摘要列截断）。本文件纯增量 CSS，
+ * 不改主题结构与内容；全部规则可独立回滚（删文件 + 撤 mkdocs.yml
+ * extra_css 键即回到 Material 缺省）。
+ *
+ * 范围纪律：只动"表格可读性"一件事。全局间距/字号/主题色按审查报告
+ * §3.3 守门分支明示不动（Material 缺省节奏无实证问题）。
+ */
+
+:root {
+  /* 长表内部滚动盒高度上限（≥20 行的表才生效，见下方 :has 规则） */
+  --rfauto-table-max-h: 70vh;
+  /* 斑马纹两档（亮/暗 scheme 各自显式给值，不依赖主题 token 混合） */
+  --rfauto-zebra-light: rgba(0, 0, 0, 0.025);
+  --rfauto-zebra-dark: rgba(255, 255, 255, 0.045);
+}
+
+/* ── 长表（tbody ≥20 行）：内部滚动盒 + 粘性表头 ──────────────────────
+ * :has() 渐进增强——不支持的浏览器整条规则不生效，回退 Material 现状
+ * （整页滚动 + 表格自带 overflow:auto），零破坏。仅 screen 生效，打印
+ * 面（Material print 媒体查询 display:table）不受影响。 */
+@media screen {
+  .md-typeset table:not([class]):has(tbody tr:nth-child(20)) {
+    max-height: var(--rfauto-table-max-h);
+  }
+
+  .md-typeset table:not([class]):has(tbody tr:nth-child(20)) thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    /* 不透明底色（随 scheme 换肤），行内容从表头下滚过不透出 */
+    background: var(--md-default-bg-color);
+    border-bottom: 0.05rem solid var(--md-typeset-table-color);
+  }
+}
+
+/* ── 全表斑马纹（≥5 行才起纹，短表不加视觉噪声）───────────────────── */
+@media screen {
+  .md-typeset table:not([class]):has(tbody tr:nth-child(5))
+    tbody tr:nth-child(even) {
+    background: var(--rfauto-zebra-light);
+  }
+
+  [data-md-color-scheme="slate"]
+    .md-typeset table:not([class]):has(tbody tr:nth-child(5))
+    tbody tr:nth-child(even) {
+    background: var(--rfauto-zebra-dark);
+  }
+}

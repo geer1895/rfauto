@@ -349,13 +349,20 @@ def load_impedance_curve(
       （纯串联件两者数学恒等；诊断量 max 相对差存 series_crosscheck_rel）；
     - 其它端口数 ValueError。
     topology: None 自动按端口数判定；显式 "series_2port"/"one_port" 强制。
+
+    R-27 单源迁移（2026-11-10）：skrf.Network 直读 → core/touchstone_parser
+    单源解析 + skrf 桥（#248 rank 三规则判定取代扩展名推断——厂商外来
+    文件名/端口数驱动拓扑是 #248/#309 高危面；厂商语料经 to_skrf_network
+    等价：RI 逐位、MA/DB 解码舍入级（skrf ``exp(1jθ)`` vs parser
+    ``cos/sin`` 数学恒等、实测 ≤2 ulp），tests/unit/test_touchstone_
+    consumer_migration.py 等价钉）。
     """
-    import skrf
+    from rfauto.core.touchstone_parser import parse_touchstone, to_skrf_network
 
     path = Path(model_file)
     if not path.exists():
         raise KeyError(f"模型文件缺失: {path}")
-    net = skrf.Network(str(path))
+    net = to_skrf_network(parse_touchstone(path))
     freqs = np.asarray(net.f, dtype=float)
     if topology is None:
         topology = "series_2port" if net.nports == 2 else ("one_port" if net.nports == 1 else None)

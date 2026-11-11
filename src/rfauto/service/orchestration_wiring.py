@@ -1,6 +1,6 @@
 """B-29 编排接线：campaign 阶段事件 ↔ core.events 总线 ↔ G13 资源席位。
 
-背景（continuation-plan §10.23 补强第三批 B-29）：
+背景（continuation_plan §10.23 补强第三批 B-29）：
 service/campaign_manager 已能确定性拆解"校准→粗筛→精算→公差→报告"
 阶段队列，service/resource_scheduler（G13）已能对稀缺资源（license /
 FDTD / CPU）做确定性仲裁，但两者之间没有接线：战役阶段推进不会广播事件，

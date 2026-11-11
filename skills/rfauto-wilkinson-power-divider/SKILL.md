@@ -1,7 +1,23 @@
 ---
 name: rfauto-wilkinson-power-divider
-description: 用 rfauto 调优 wilkinson_power_divider（3 个可调参数，带内目标 3 项）
-version: 1
+description: >-
+  Use when the user wants to design, run or tune a Wilkinson power divider with rfauto —
+  two-way equal split, lambda/4 arm synthesis and isolation resistor, recipe-driven
+  run/tune/autotune/calibrate workflows. Triggers: wilkinson, power divider, splitter,
+  isolation resistor, arm length ｜ 中文触发: 威尔金森 功分器 等分 隔离电阻 臂长. Do NOT use for N-way or
+  unequal-split variants (other rfauto cards) or for branchline/ratrace/gysel couplers.
+  Numbers come only from the rfauto kernel and the card files under references/.
+license: Complete terms in LICENSE.txt
+compatibility: Requires the rfauto CLI on PATH (pip install rfauto). Closed-form synthesis steps run offline; engine-backed steps need openEMS or HFSS installed locally.
+metadata:
+  author: rfauto
+  version: '2'
+  rfauto_model: wilkinson_power_divider
+  card_kind: recipe+capability+kernel
+  generator: 'curated from recipe_to_skill; spec: agentskills.io / rfauto T-Q10'
+  source_recipe: recipes/wilkinson_pd_v1.yaml
+  source_cards: docs/capability_cards/wilkinson.md, docs_site/kernel_cards/wilkinson.md
+allowed-tools: Bash(rfauto:*) Read
 ---
 
 # rfauto skill：wilkinson_power_divider
@@ -54,3 +70,17 @@ result = solver.solve()
 - LLM/agent 不产生物理数字：所有指标来自求解器与确定性评判器。
 - 对配方的任何修改走沙箱草稿 → 三层 Gate 审批（agent 写面隔离）。
 - FAIL 如实记录，不凑绿。
+
+## When to open the reference files
+
+| you need | open |
+|---|---|
+| the full capability card (playbook, all anchors, engine precision) | `references/capability_card.md` |
+| formulas, docstring pins, precision profile, code entries, test surface | `references/kernel_card.md` |
+| a symptom → pitfall → fix lookup | `references/pitfalls.md` |
+| the read-only stackup facts behind this recipe | `configs/materials.yaml` (source of truth) |
+
+## Verify before you finish
+
+Run `python scripts/verify_output.py --json <saved.json> [--expect KEY=VALUE ... --tol 1e-3]`.
+FAIL is reported as FAIL (rfauto rule #122); never retry a FAIL into green.

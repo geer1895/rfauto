@@ -97,10 +97,21 @@ def _yield_dict_literals(path: Path) -> list[tuple[str, ...]]:
     return out
 
 
+# 守卫/装配面豁免（aurora_r M-7 合流笔 2026-11-10 精化）：资源面
+# （skill://，_resources.py）读取失败的 raise 是 MCP 协议资源错误的合法
+# 传播形态（fastmcp 包成 is_error 响应）；_annotations.py 的 RuntimeError
+# 是 import 期防漂移自证（非工具执行期）。不变量本义=**工具函数体**零
+# raise——机械全目录计数对首个带守卫的 mcp 模块（R-13/R-10）误报。
+_RAISE_EXEMPT_FILES = {"_annotations.py", "_resources.py"}
+
+
 def _raise_count_dir(directory: Path) -> int:
-    """目录下全部 .py 的 ast.Raise 节点总数（MCP 域零 raise 结构面）。"""
+    """目录下全部 .py 的 ast.Raise 节点总数（MCP 域零 raise 结构面；守卫/
+    装配面豁免见 _RAISE_EXEMPT_FILES）。"""
     total = 0
     for py in sorted(directory.glob("*.py")):
+        if py.name in _RAISE_EXEMPT_FILES:
+            continue
         tree = ast.parse(py.read_text(encoding="utf-8"))
         total += sum(isinstance(n, ast.Raise) for n in ast.walk(tree))
     return total
@@ -341,6 +352,16 @@ class TestMcpPins:
 
     def test_mcp_surface_matches_policy(self):
         assert_surface_matches(DOMAIN_MCP, self._mcp_observed())
+
+    def test_raise_exempt_files_have_no_tools(self):
+        # 豁免面收紧钉：豁免文件必须零真工具装饰（行首 @mcp.tool；docstring
+        # 提及合法——否则豁免通道可被滥用藏工具 raise）
+        import re as _re
+
+        for name in _RAISE_EXEMPT_FILES:
+            src = _read(_MCP_TOOLS_DIR / name)
+            hit = _re.findall(r"^@mcp\.tool", src, flags=_re.M)
+            assert not hit, f"{name} 持豁免却含工具装饰器（{len(hit)} 处）"
 
     def test_mcp_tools_never_raise(self):
         # 错误路径结构面：工具失败=返回信封，全包零 raise（docstring 提及

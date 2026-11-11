@@ -1,4 +1,4 @@
-"""G0 线宽定案单元测试（规划扩展_v2.md §3 G0 gate）。
+"""G0 线宽定案单元测试（Plan_Extension_v2.md §3 G0 gate）。
 
 验证三来源交叉检查的阻抗计算和线宽反解：
 1. skrf MLine (Hammerstad-Jensen)
@@ -88,7 +88,7 @@ def find_width(calc_fn, z0_target: float) -> float:
 
 
 class TestKnownWidths:
-    """验证已知线宽的阻抗值（规划扩展_v2.md §1.2 实测数据）。"""
+    """验证已知线宽的阻抗值（Plan_Extension_v2.md §1.2 实测数据）。"""
 
     @pytest.mark.parametrize("calc_fn", [calc_z0_skrf, calc_z0_pozar, calc_z0_schneider])
     def test_2_20mm_gives_approx_31ohm(self, calc_fn):
@@ -160,6 +160,7 @@ class TestMaterialsConfig:
         """rogers4350b_h0.508 应有 linewidth 子段。"""
         import yaml
 
+        # 仓根推导（绝对路径硬编码为早前债务——盘符路径不入公开树）
         path = Path(__file__).resolve().parents[2] / "configs" / "materials.yaml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         mat = data["materials"]["rogers4350b_h0.508"]
@@ -175,6 +176,7 @@ class TestMaterialsConfig:
 
         import yaml
 
+        # 仓根推导（绝对路径硬编码为早前债务——盘符路径不入公开树）
         path = Path(__file__).resolve().parents[2] / "configs" / "materials.yaml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         lw = data["materials"]["rogers4350b_h0.508"]["linewidth"]

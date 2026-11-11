@@ -275,7 +275,7 @@ def _patch_remote_session(monkeypatch, calls, bootstrap_ok=True):
         "machines": [{"ports": {"ansys_license": {"open": True}}}]})
     monkeypatch.setattr(rs, "hfss_remote_session_config", lambda m: {
         "ok": True,
-        "remote": {"remote_machine": m, "machine": "198.51.100.20",
+        "remote": {"remote_machine": m, "machine": "192.0.2.10",
                    "port": 50051, "project_root": "E:\\rfauto_remote",
                    "version": "2025.1"}})
     monkeypatch.setattr(aedt, "Desktop", _FakeDesktop)
@@ -306,8 +306,8 @@ def _patch_registry_transport(monkeypatch, sent: list, query_output: str = "",
 
     if cfg is None:
         cfg = types.SimpleNamespace(
-            name="sim_server", host="198.51.100.20",
-            hfss_ansysedt_exe="E:/ANSYSINC/ansysedt.exe",
+            name="lab_server", host="192.0.2.10",
+            hfss_ansysedt_exe="C:/Program Files/ANSYS Inc/ansysedt.exe",
             hfss_project_root="E:/rfauto_remote")
     uploads: list[tuple[str, bytes]] = []
 
@@ -332,7 +332,7 @@ def _patch_registry_transport(monkeypatch, sent: list, query_output: str = "",
     base = "rfauto.infra.remote_machines"
     monkeypatch.setattr(f"{base}.SshTransport", _T)
     monkeypatch.setattr(f"{base}.load_remote_machines",
-                        lambda: {"sim_server": object()})
+                        lambda: {"lab_server": object()})
     monkeypatch.setattr(f"{base}.resolve_machine",
                         lambda name, table: cfg)
     return uploads

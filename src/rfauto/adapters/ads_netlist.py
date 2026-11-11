@@ -130,15 +130,33 @@ def _build_ads_env(ads_dir: Path) -> dict[str, str]:
     return env
 
 def _read_snp_meta(s_params_path: Path) -> dict[str, Any]:
-    """读取 Touchstone 端口数 / 频段 / 点数（用于注入网表）。"""
-    import skrf
-    net = skrf.Network(str(s_params_path))
-    f_hz = net.frequency.f
+    """读取 Touchstone 端口数 / 频段 / 点数（用于注入网表）。
+
+    R-27 单源迁移（2026-11-10）：skrf.Network 直读 → core/touchstone_parser
+    单源解析（#248 rank 三规则判定取代扩展名推断——n_ports 直接注入 ADS
+    网表 Port 数是 rank 误判高危面；skrf 写盘语料等价：RI 逐位、MA/DB
+    解码舍入级（实测 ≤2 ulp），tests/unit/test_touchstone_consumer_
+    migration.py 等价钉）。rank 判不出显式 fail-loud 不猜（宁 UNKNOWN
+    不误判）。
+    """
+    from rfauto.core.touchstone_parser import parse_touchstone
+
+    if not s_params_path.is_file():
+        raise FileNotFoundError(f"Touchstone 文件不存在: {s_params_path}")
+    parsed = parse_touchstone(s_params_path)
+    n_ports = parsed["n_ports"]
+    if n_ports is None:
+        raise ValueError(
+            "Touchstone 端口数无法判定（rank 冲突，宁 UNKNOWN 不误判）: "
+            f"{s_params_path}")
+    f_hz = parsed["freqs_hz"]
+    if not f_hz:
+        raise ValueError(f"Touchstone 无数据行: {s_params_path}")
     return {
-        "n_ports": int(net.nports),
-        "fstart_hz": float(f_hz.min()),
-        "fstop_hz": float(f_hz.max()),
-        "npoints": int(net.frequency.npoints),
+        "n_ports": int(n_ports),
+        "fstart_hz": float(min(f_hz)),
+        "fstop_hz": float(max(f_hz)),
+        "npoints": int(parsed["n_freqs"]),
     }
 
 def _frequency_scale(unit: str) -> float:

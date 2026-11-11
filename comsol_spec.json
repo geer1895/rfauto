@@ -1,0 +1,25 @@
+{
+  "template": "parallel_plate",
+  "params": {
+    "length_mm": 20.0,
+    "width_mm": 6.0,
+    "height_mm": 1.154,
+    "eps_r": 2.1,
+    "z_ref_ohm": 50.0
+  },
+  "freq_ghz": [
+    2.2,
+    2.4,
+    2.6
+  ],
+  "comsol_parameters": {
+    "L": "20[mm]",
+    "W": "6[mm]",
+    "H": "1.154[mm]",
+    "eps_r": "2.1",
+    "Zref": "50[ohm]"
+  },
+  "comsol_version_pin": "6.3",
+  "port_sweep": false,
+  "closed_form_z0_ohm": 50.000630212399734
+}

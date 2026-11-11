@@ -113,8 +113,22 @@ class AgentChat:
                     self._pending_messages = None
                     response = self._llm_turn(message)
             except Exception as exc:  # LLM 故障回退关键词路由（#105 原则）
+                # T-Q15 错误透传（2026-11 真实用户反馈 P0）：不再只显通用文案——
+                # 归一层（llm_error_service.classify_llm_error）按响应体
+                # error.code > 异常类型 > HTTP 状态码分诊，code/HTTP 状态/
+                # 原始 message/分诊建议分行透出。首行保留 ``[LLM 调用失败``
+                # 前缀（few_shot 成功判据 _LLM_FALLBACK_MARK 与 UI
+                # parseChatJsonDump 剥前缀依赖，两消费面契约不变）。
+                from rfauto.service.llm_error_service import classify_llm_error
+                info = classify_llm_error(exc)
+                status_txt = ("HTTP ?" if info.http_status is None
+                              else f"HTTP {info.http_status}")
                 fallback = self._route_message(message)
-                fallback["text"] = f"[LLM 调用失败，已回退指令模式: {exc}]\n" + fallback["text"]
+                fallback["text"] = (
+                    f"[LLM 调用失败（{info.code}，{status_txt}）]\n"
+                    f"已回退指令模式。原始错误: {info.message}\n"
+                    f"{info.advice}\n") + fallback["text"]
+                fallback["llm_error"] = info.as_dict()  # 结构化字段（UI/API 消费）
                 response = fallback
         else:
             response = self._route_message(message)

@@ -148,6 +148,19 @@ from rfauto.mcp_tools.explain import explain_run as explain_run
 from rfauto.mcp_tools.explain import list_composable_templates as list_composable_templates
 from rfauto.mcp_tools.anchors import anchors_inspect as anchors_inspect
 from rfauto.mcp_tools.anchors import anchors_list as anchors_list
+# T-Q3 接线席 Q-W5-2R（aurora_q 方向 B，2026-11-04）：动图渲染 agent 面
+# （CLI anim render 同源同名 service 函数；166→167 计数链同笔）
+from rfauto.mcp_tools.anim import anim_render as anim_render
+# T-Q5 接线席 Q-W9-3（aurora_q 方向 C，2026-11-06）：格式速览 agent 面
+# （T-Q5 批 3 "MCP 工具化"列项——速览层只读零副作用故不上 CLI 叶，
+# Agent 直读面；167→171 计数链大合笔同笔）
+from rfauto.mcp_tools.format_overview import format_overview as format_overview
+# T-Q19 批 2 接线席 Q-W9-3（aurora_q，2026-11-06）：厂商帮助文档检索
+# agent 面（Q-W6-4 service 三函数薄壳；build=显式 db_path 写索引库，
+# search/audit 只读；167→171 计数链大合笔同笔）
+from rfauto.mcp_tools.vendor_docs import vendor_docs_audit as vendor_docs_audit
+from rfauto.mcp_tools.vendor_docs import vendor_docs_build as vendor_docs_build
+from rfauto.mcp_tools.vendor_docs import vendor_docs_search as vendor_docs_search
 from rfauto.mcp_tools.si_lake import lake_pack_campaign as lake_pack_campaign
 from rfauto.mcp_tools.si_lake import lake_query_runs as lake_query_runs
 from rfauto.mcp_tools.si_lake import si_channel_report as si_channel_report
@@ -255,6 +268,177 @@ from rfauto.mcp_tools.ads import ads_circuit_run as ads_circuit_run
 from rfauto.mcp_tools.ads import ads_circuit_annotate as ads_circuit_annotate
 
 
+# ─── EDA 格式解析八域 MCP 工具组（aurora_q Q-X69 席位，2026-11-08：+8 ──
+# 工具；append-only 金快照 diff 最小化惯例同 env_reliability/preflight/
+# edb/em/ads 组（facade 尾=注册序末尾）。Q-X33..X36+Q-X46..X49 八域解析
+# 器（SPICE/Liberty/CITI/SDC/IBIS/Verilog/DRC/LVS）service+CLI 双面已
+# 交付、MCP 面本组补齐：零逻辑转发各域 service 单函数（只读零副作用，
+# 信封进出在 service）；大输出裁面走 service 自带过滤/截断旋钮。在飞
+# 九域（spef/lefdef/sdf/gdsii/fab/ipc356/touchstone/skill/vcd）不在本
+# 组——归后续接线席。
+from rfauto.mcp_tools.parser_formats import citi_info as citi_info
+from rfauto.mcp_tools.parser_formats import drc_rules_parse as drc_rules_parse
+from rfauto.mcp_tools.parser_formats import ibis_parse as ibis_parse
+from rfauto.mcp_tools.parser_formats import liberty_parse as liberty_parse
+from rfauto.mcp_tools.parser_formats import lvs_compare_files as lvs_compare_files
+from rfauto.mcp_tools.parser_formats import sdc_parse as sdc_parse
+from rfauto.mcp_tools.parser_formats import spice_netlist_parse as spice_netlist_parse
+from rfauto.mcp_tools.parser_formats import verilog_netlist_parse as verilog_netlist_parse
+
+
+# ─── CAD 制造/数字后端/波形十域 MCP 工具组（aurora_q Q-X73 席位， ──
+# 2026-11-08：+10 工具；append-only 金快照 diff 最小化惯例同
+# parser_formats/env_reliability/preflight/edb/em/ads 组（facade 尾=
+# 注册序末尾）。Q-X73 二批：在飞九域（spef/lefdef/sdf/gdsii/fab/
+# ipc356/touchstone/vcd）service+CLI 双面已交付、MCP 面本组补齐（照抄
+# Q-X69 parser_formats.py 单组先例）：零逻辑转发各域 service 单函数
+# （只读零副作用，信封进出在 service）；截断旋钮 spef_report top_k。
+from rfauto.mcp_tools.cad_formats import gdsii_parse as gdsii_parse
+from rfauto.mcp_tools.cad_formats import gerber_excellon_pair_check as gerber_excellon_pair_check
+from rfauto.mcp_tools.cad_formats import ipc356_report as ipc356_report
+from rfauto.mcp_tools.cad_formats import lef_def_parse as lef_def_parse
+from rfauto.mcp_tools.cad_formats import sdf_parse as sdf_parse
+from rfauto.mcp_tools.cad_formats import sdf_report as sdf_report
+from rfauto.mcp_tools.cad_formats import spef_parse as spef_parse
+from rfauto.mcp_tools.cad_formats import spef_report as spef_report
+from rfauto.mcp_tools.cad_formats import touchstone_info as touchstone_info
+from rfauto.mcp_tools.cad_formats import vcd_parse as vcd_parse
+
+
+# ─── EDA 格式解析二线查询/校验 MCP 工具组（aurora_q Q-X76 席位， ──
+# 2026-11-08：+8 工具；append-only 金快照 diff 最小化惯例同
+# parser_formats/cad_formats 组（facade 尾=注册序末尾）。Q-X76 三批：
+# 解析器集群二线只读 service 函数（查询/校验面）MCP 补齐、完成全集群
+# 只读面收官（照抄 Q-X69/Q-X73 单组先例）：零逻辑转发各域 service 单
+# 函数（只读零副作用，信封进出在 service）；截断旋钮 vcd_report top_n；
+# gdsii_hierarchy/sdf_cell_detail/spef_net_detail/stil_pattern_detail
+# 系 service 二线查询面（无 CLI 叶）首次 agent 面暴露。
+from rfauto.mcp_tools.parser_queries import gdsii_hierarchy as gdsii_hierarchy
+from rfauto.mcp_tools.parser_queries import gdsii_layers as gdsii_layers
+from rfauto.mcp_tools.parser_queries import ipc356_fab_pair_check as ipc356_fab_pair_check
+from rfauto.mcp_tools.parser_queries import lef_def_check as lef_def_check
+from rfauto.mcp_tools.parser_queries import sdf_cell_detail as sdf_cell_detail
+from rfauto.mcp_tools.parser_queries import spef_net_detail as spef_net_detail
+from rfauto.mcp_tools.parser_queries import stil_pattern_detail as stil_pattern_detail
+from rfauto.mcp_tools.parser_queries import vcd_report as vcd_report
+
+
+# ─── 封装/测试封装域 MCP 三工具（aurora_q Q-X85 四批小席，2026-11-08： ──
+# +3 工具（197→200）；append-only 金快照 diff 最小化惯例同
+# parser_formats/cad_formats/parser_queries 组（facade 尾=注册序末尾）。
+# odbpp/bsdl 两域（Q-X68/X77 交付）MCP 面补齐：零逻辑转发 service 单源
+# （odbpp_service/bsdl_service，信封进出在 service）；与 CLI
+# ``rfauto odbpp report``/``rfauto bsdl report`` 同源同名；
+# bsdl_boundary_detail 系 service 二线查询面（无 CLI 叶）首次 agent 面
+# 暴露。
+from rfauto.mcp_tools.packaging_test import bsdl_boundary_detail as bsdl_boundary_detail
+from rfauto.mcp_tools.packaging_test import bsdl_report as bsdl_report
+from rfauto.mcp_tools.packaging_test import odbpp_report as odbpp_report
+
+# ─── aedt_migrate 批量迁移通道 MCP 两薄壳（aurora_r AM-S4 席位， ──────────
+# 2026-11-10：+2 工具（200→202）；append-only 金快照 diff 最小化惯例同
+# packaging_test 组（facade 尾=注册序末尾）。S1 service docstring 挂账
+# 处方原文落位：aedt_migrate_run（migrate_batch 编排，写 work_root，
+# 注解 mutating_non_destructive）+ aedt_migrate_report（read_migration_
+# report 报告全文只读）——与 CLI ``rfauto aedt-migrate run`` 同源。
+from rfauto.mcp_tools.aedt_migrate import aedt_migrate_report as aedt_migrate_report
+from rfauto.mcp_tools.aedt_migrate import aedt_migrate_run as aedt_migrate_run
+
+# ─── EDA 格式解析五批扩展 MCP 工具组（aurora_r R-26 席位，2026-11-10：──
+# +6 工具（202→208）；append-only 金快照 diff 最小化惯例同
+# parser_formats/cad_formats/parser_queries/packaging_test 组（facade
+# 尾=注册序末尾）。Q-X69 报告 §8 建议清单+交接书 §二-8 扩展池方向接地
+# 差集：DRC validate 校验面锚（``rfauto drc validate`` 同源）+
+# Verilog-A 单模块查询（veriloga 域 MCP 面零覆盖补齐）+SKILL 静态调用
+# 图（Q-X69 九域清单 skill 域只读面二线查询锚，无 CLI 叶）+网表语义
+# overlay 三件套（R-02 AX-2 三 service 函数零 agent 面）。全部复用既有
+# service 函数零逻辑转发（只读零副作用，信封进出在 service）。
+from rfauto.mcp_tools.parser_ext import drc_design_validate as drc_design_validate
+from rfauto.mcp_tools.parser_ext import netlist_overlay_file as netlist_overlay_file
+from rfauto.mcp_tools.parser_ext import netlist_overlay_text as netlist_overlay_text
+from rfauto.mcp_tools.parser_ext import skill_call_graph as skill_call_graph
+from rfauto.mcp_tools.parser_ext import spectre_overlay_file as spectre_overlay_file
+from rfauto.mcp_tools.parser_ext import veriloga_module_detail as veriloga_module_detail
+
+# ─── MCP 工具注解装配层注入（VB-1，aurora_r Wave2 席 R-10，2026-11-10）──
+# 单源分类表 src/rfauto/mcp_tools/_annotations.py：四类（read_only /
+# mutating_non_destructive / destructive / long_running）×两维（idempotent /
+# open_world 可选）→ mcp ToolAnnotations。注入只写 annotations 字段——
+# 工具名/注册序/描述/参数 schema 零触碰（注入函数内置前后元数据指纹自证，
+# 漂移即 RuntimeError）；既有 20 个装饰器注解工具跳过保真。表覆盖与
+# "未注解=0"棘轮由 tests/unit/test_mcp_annotations_readonly.py 裁决。
+# 归位在 _normalize_tool_registration_order() 之后（注册幂等化先收敛，
+# 注解对序零敏感）；import 置 facade 尾故 canon 序不变。
+from rfauto.mcp_tools._annotations import (
+    apply_tool_annotations as _apply_tool_annotations,
+)
+
+# ─── VB-6 SKILL 包 resources/prompts 暴露（aurora_r Wave2 席 R-13，──
+# 2026-11-10）：skills/ 七包零新工具再暴露（提案源 runs/aurora_q/
+# qx40_vbridge/PROPOSALS.md VB-6）。三件：①skill://<name>/SKILL.md 七
+# 静态只读资源（@mcp.resource 装饰器行与 list_resources() 条目 1:1——
+# R5-02 双口径同笔同移；包名字典序=注册序确定性）；②skill://{name}/
+# references/{path*} 子路径模板（add_template 程序化注册——模板不进
+# list_resources() 也不进 @mcp.resource 正则面，计数双口径零扰动）；
+# ③三条工作流提示词（解析器集群使用流/EM bench 任务流/配方草稿捕获
+# 流——既有工具调用序列固化，零物理数值字面量正则扫描钉）。
+# 守卫单源 mcp_tools/_resources.py（穿越/越界/绝对路径/背斜杠/超 2MB/
+# 缺失一律拒）；@mcp.tool 正则面零增量=工具数 200 不变。
+from rfauto.mcp_tools._resources import em_bench_task_flow as em_bench_task_flow
+from rfauto.mcp_tools._resources import list_skill_packages as list_skill_packages
+from rfauto.mcp_tools._resources import read_skill_md as read_skill_md
+from rfauto.mcp_tools._resources import read_skill_text as read_skill_text
+from rfauto.mcp_tools._resources import (
+    recipe_draft_capture_flow as recipe_draft_capture_flow,
+)
+from rfauto.mcp_tools._resources import resolve_skill_file as resolve_skill_file
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_branchline_coupler_resource as skill_md_rfauto_branchline_coupler_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_cpw_resource as skill_md_rfauto_cpw_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_mline_synthesis_resource as skill_md_rfauto_mline_synthesis_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_patch_antenna_resource as skill_md_rfauto_patch_antenna_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_pifa_resource as skill_md_rfauto_pifa_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_rfauto_wilkinson_power_divider_resource as skill_md_rfauto_wilkinson_power_divider_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_md_veriloga_authoring_resource as skill_md_veriloga_authoring_resource,
+)
+from rfauto.mcp_tools._resources import (
+    skill_parser_cluster_flow as skill_parser_cluster_flow,
+)
+from rfauto.mcp_tools._resources import (
+    SkillResourceError as SkillResourceError,
+)
+
+# ─── VB-7 MCP 运行期护栏（aurora_r Wave2 席 R-14，2026-11-10）───────────────
+# 单源 src/rfauto/mcp_tools/_ratelimit.py（提案源 runs/aurora_q/qx40_vbridge/
+# PROPOSALS.md VB-7）：(a) StdioChannelPurityMiddleware——stdio 会话首个
+# initialize 时（传输启动后，mcp 1.30.0 stdio_server 已自持
+# sys.stdout.buffer 协议流）一次性把 Python 级 sys.stdout 指向 stderr，
+# 工具执行期 print 不再污染 JSON-RPC 信道；(b) ToolRateLimitMiddleware——
+# on_call_tool 钩子逐工具 60s 滑窗限流（单源表只列求解/发射类 11 工具，
+# 只读工具永不在表；RFAUTO_MCP_UNLIMITED=1 解除；拒绝走 error_envelope
+# 附合并调用文案）。两中间件由 main()（stdio 会话面）**run 期间挂载、
+# 返回前摘除**——共享单例（cli/mcp_chat in-memory 通道、进程内消费者）
+# 在 main 返回后零泄漏；每次会话拿新限流器实例；限流表内容与注解分类
+# 一致性由 tests/unit/test_mcp_runtime_guardrails.py 裁决。
+from rfauto.mcp_tools._ratelimit import (
+    StdioChannelPurityMiddleware as StdioChannelPurityMiddleware,
+)
+from rfauto.mcp_tools._ratelimit import (
+    ToolRateLimitMiddleware as ToolRateLimitMiddleware,
+)
+
 
 # ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order/）═══
 # 根因：@mcp.tool 注册是工具组模块**首次 import** 的装饰器副作用——注册序
@@ -265,7 +449,7 @@ from rfauto.mcp_tools.ads import ads_circuit_annotate as ads_circuit_annotate
 # 测试收集期 test_mcp_longtask_wait.py 的模块级 ``from rfauto.mcp_tools
 # import jobs``（b74ec8cc 2026-10-03 落地；pytest 收集阶段 eager import
 # 全部测试模块，先于一切测试执行），症状即"组合跑红/单跑绿/同命令两轮
-# 不同结果"的顺序敏感偶发（Devlog 八百二十二）。
+# 不同结果"的顺序敏感偶发（DEVLOG 八百二十二）。
 # 对策：facade import 收尾按本文件 from-import 语句序对工具做**稳定重排**
 # （注册幂等化）——任意 import 顺序收敛到同一 facade 注册序；组内工具相对
 # 序由稳定排序保持；非工具组件（resource/prompt/template）整块后置且相互
@@ -302,6 +486,7 @@ def _normalize_tool_registration_order() -> None:
 
 
 _normalize_tool_registration_order()
+_apply_tool_annotations()
 
 
 def get_mcp_server() -> FastMCP:
@@ -309,14 +494,40 @@ def get_mcp_server() -> FastMCP:
     return mcp
 
 
+def _ensure_stdio_guardrails() -> None:
+    """挂 VB-7 运行期两护栏中间件（幂等：按类型查重，重复调用不叠加）。
+
+    只在 stdio 会话面（main）挂载：限流与 stdout 纯度面向外部 Agent
+    会话；in-memory 通道（mcp_chat）保持零行为变化。
+    """
+    if not any(isinstance(m, ToolRateLimitMiddleware) for m in mcp.middleware):
+        mcp.add_middleware(ToolRateLimitMiddleware())
+    if not any(isinstance(m, StdioChannelPurityMiddleware) for m in mcp.middleware):
+        mcp.add_middleware(StdioChannelPurityMiddleware())
+
+
+def _remove_stdio_guardrails() -> None:
+    """摘除两护栏中间件（main 返回时恢复单例面——进程内消费零泄漏）。"""
+    mcp.middleware[:] = [
+        m for m in mcp.middleware
+        if not isinstance(m, (ToolRateLimitMiddleware, StdioChannelPurityMiddleware))
+    ]
+
+
 def main() -> None:
     """console script 入口（pyproject ``[project.scripts] rfauto-mcp``）：
     stdio 传输启动 MCP Server。与 ``python -m rfauto.mcp_server`` 同源。
 
     保持零参数、零 stdout 打印：stdio 传输把 stdout 当协议信道，任何
-    额外输出都会污染 JSON-RPC 帧（F4 发布口径）。
+    额外输出都会污染 JSON-RPC 帧（F4 发布口径）。挂 VB-7 运行期两护栏
+    （stdio 信道纯度 + 逐工具滑窗限流，见 _ratelimit.py 模块注）——run
+    期间挂载、返回前摘除（共享单例零泄漏；每会话新限流器）。
     """
-    mcp.run(transport="stdio")
+    _ensure_stdio_guardrails()
+    try:
+        mcp.run(transport="stdio")
+    finally:
+        _remove_stdio_guardrails()
 
 
 if __name__ == "__main__":

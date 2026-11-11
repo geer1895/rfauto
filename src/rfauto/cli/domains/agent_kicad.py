@@ -39,8 +39,20 @@ def hfss_import_cmd(
         kwargs["version"] = version
     result = hfss_import_recipe(project, design, **kwargs)
     if json_output:
-        # VI-5 W6-B：--json 信封（成功+失败同构）；缺省 rich 路径逐字节不动
-        _emit(result, "导入失败", json_output=True)
+        # VI-5 W6-B：--json 信封（成功+失败同构）；缺省 rich 路径逐字节不动。
+        # T-Q17④：失败信封改走 error_envelope 构造器（信封契约 errors=
+        # list[str] 单源口径；缺装指引 pip install -e ".[hfss]" 随 errors
+        # 透传），spec/recipe 明细作附加字段保留，旧单数 error 键不再回传。
+        if result.get("ok"):
+            _emit(result, "导入失败", json_output=True)
+        else:
+            errors = [str(e) for e in (result.get("errors") or [])]
+            if result.get("error") and str(result["error"]) not in errors:
+                errors.append(str(result["error"]))
+            _emit(error_envelope(errors or "导入失败",
+                                 spec=result.get("spec"),
+                                 recipe=result.get("recipe")),
+                  "导入失败", json_output=True)
         return
     if not result.get("ok"):
         console.print(f"[red]✗ 导入失败: {result.get('error')}[/red]")

@@ -154,11 +154,11 @@ inside the factory body) with sys.modules pinning in tests.
 ## 4. Add an openEMS template
 
 The template single source is `adapters/oe_templates/registry.py`:
-`TEMPLATE_META` (75 templates: geometry parameter tables / port axes /
+`TEMPLATE_META` (76 templates: geometry parameter tables / port axes /
 mesh conventions — this count grows as templates are registered; never
 hardcode it) and `TEMPLATE_NOMINAL` (nominal value tables),
 re-exported for consumption via `adapters/openems_templates.py`.
-(Both counts measured 2026-10-24: 75/75.)
+(Both counts measured 2026-11-07: 76/76.)
 
 Two iron rules (both paid for historically — don't pay again):
 

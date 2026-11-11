@@ -1,4 +1,4 @@
-"""E9a 测量数据导入（plan-extension_v2 §E9a）。
+"""E9a 测量数据导入（Plan_Extension_v2 §E9a）。
 
 职责：
 - 导入 Touchstone 文件（.s1p/.s2p/.s3p/.s4p）

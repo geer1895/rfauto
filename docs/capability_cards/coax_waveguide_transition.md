@@ -66,7 +66,7 @@
 - 参数语义：a_mm=波导宽边（x 向，WR 表口径）；b_mm=波导窄边（y 向，WR 表口径）；l_wg_mm= 腔长（背短路内侧面 z=0 到腔端面）；wg_t_mm=壁厚（官方教程 2.0 直抄）； pin_len_mm=探针伸入深（壁内侧面起算，官方教程 0.55·b 比例档）；pin_r_mm= 探针截面半宽（官方教程 0.5 直抄）；port_h_mm=集总口隙高（壁内侧面到针底， 官方教程 1.0 直抄）；backshort_mm=探针中心距背短路内侧面（λg/4@f0 精算档）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，官方 base 级）；NEAR=base/4；全部壁面/探针特征站线（±a/2、±(a/2+wg_t)、±b/2、 ±(b/2+wg_t)、±pin_r、−b/2+port_h、−b/2+pin_len、背短路面、探针 z 缘、端口 校准面）显式入网（#198）+ 全轴 1µm 近重合去重（#152）；背面空气余量 6mm≈λ0/5（封闭腔无外漏场）
 - 冒烟现状：未冒烟（离线审计过，#212，test_coax_wg_template）；近似级别如实登记：①探针柱 为矩形盒阶梯化（官方教程亦为矩形截面 pin，非圆柱）；②同轴连接器理想化为探针基 集总桥（官方 Python 教程口径，不含连接器体/介质填充）；③S21 跨口阻抗校正按 wiki 教程 sqrt(ZL1/ZL2) 一阶口径；④真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

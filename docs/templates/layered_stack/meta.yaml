@@ -1,0 +1,103 @@
+f0_ghz: 95.0
+n_ports: 2
+template: layered_stack
+substrate:
+  er: 11.9
+  h_mm: 0.05
+  tan_d: 0.0
+params:
+- strip_w_mm
+- line_len_mm
+- wafer_width_mm
+- cavity_w_mm
+- cavity_h_mm
+nominal_params:
+  strip_w_mm: 0.5243362925046158
+  line_len_mm: 5.1
+  wafer_width_mm: 1.2
+  cavity_w_mm: 0.9
+  cavity_h_mm: 0.5
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11/S21 @ StripLinePort 1-2（腔端截面波端口，suspended_stripline/sicl
+  同法；β 金标准→εeff 对照闭式锚 |Δ|≤2% 口径同 stripline 族；|S11| 带谷=
+  Z0 锚（ref=50，闭式 Z0 偏差见渲染 meta closed_form 注）；port_beta.csv
+  8 列契约=SSL/sicl 逐字节同）
+topology: >-
+  晶圆键合叠层+空腔（外部用户实测反馈 §3.4/§2.1 锚，aurora_q 批 1
+  91ef1a1c 落渲染、批 2 注册）：五层叠层 silicon/gold/silicon/gold/
+  silicon=0.25/0.003/0.05/0.003/0.25mm（族常量，§3.4 示例）、矩形腔
+  （0.9×0.5×5.1mm）贯通线长且关于带面对称（分层围合零布尔，腔足印内
+  非导体层挖除、导体层完整横跨=膜悬置键合族定义性质）、腔壁金属化四壁
+  零厚 PEC（两端截面口不金属化=端口见腔截面，3µm 涂层 RF 等效）、载带=
+  导体层顶面零厚 PEC 片悬置于腔内、双 StripLinePort（prop_dir=x/
+  exc_dir=z，height=带面-腔顶壁）落腔端截面=模型端面；§2.2 真空约定=
+  普通盒完全包住（不布尔差直接重叠）
+param_semantics: >-
+  strip_w_mm=载带宽（Z0 由悬置闭式反解单源 design_params：50Ω@b=0.50/
+  h=0.05/εr=11.9 → w=0.5243362925046158，正向复算自洽 |ΔZ0|≤1e-9Ω；
+  HFSS 反馈 §2.1 实测 w=0.52→Z0≈50.2 经验锚背书，|S11|max=-23.5dB），
+  line_len_mm=腔管/线长（§2.1 实测锚 5.1），
+  wafer_width_mm=叠层横向总宽（§5 实测锚 1.2），cavity_w_mm=腔宽（须
+  >带宽 且 <wafer 宽——spec 校验器守卫），cavity_h_mm=腔高（腔关于带面
+  对称=spec 校验器唯一合法形态，z0=-h/2 派生；§3.4 示例 0.5）。layers
+  叠层=族常量不入参数表（元组列表不适配 audit 布线机制；金属层作走线
+  层留后续批）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50@F_MAX（最高
+  εr 介质 silicon 11.9，SIW/sicl 同口径；95GHz 档 BASE≈18.2µm）；特征线
+  显式入网（带面/膜面/腔壁面/带缘/壁缘/晶圆缘）+ 次胞界面剔除（#349
+  地板 10µm：3µm 键合层界面不入网）+ NEAR≤带宽/3 守卫（#266）+ 全轴
+  1µm 近重合去重与落格断言（#152/#283）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_template_geometry_audit 全门+
+  test_layered_stack_audit 批 1 审计）；真机发射留后续批（β/εeff 对照
+  闭式锚判读+跨引擎 HFSS 仲裁=批 2 锚判读口径，见 render_layered_stack
+  模块头判定注记）
+nominal_derivation: |-
+  全反解精算（铁律 7，Q-X6 批 2 design_params 单源）：Z0 目标 50Ω →
+  strip 宽 w 由 core.calculators._suspended_stripline_ri(w, b=0.50,
+  h=0.05, εr=11.9) 二分反解（w∈[0.02,2.0]mm 200 步，Z0(w) 严格单调降）
+  → w=0.5243362925046158mm，正向复算自洽 |Z0(w*)−50|=7.1e-15Ω ≤1e-9Ω
+  （#118 独立裁判）；εeff=1.6008。锚对照（经验锚非严格裁判）：闭式
+  现算 Z0(0.52)=50.2513Ω vs HFSS 反馈 §2.1 实测 ≈50.2Ω（|S11|max=
+  -23.5dB 背书 50Ω 点，偏差 0.05Ω）；line_len=5.1/wafer=1.2/cavity
+  0.9×0.5=反馈 §2.1/§5/§3.4 实测锚直取（spec 缺省同源）。近似面如实
+  登记：闭式假设膜对称居中+无限平面腔壁，本族膜在带下单侧+有限壁宽
+  0.9mm（薄膜二阶近似，真机批判读）
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 晶圆键合空腔传输线：多层叠层挖腔后膜片悬置于金属化腔内，载带在膜面把腔截面上下分开——准 TEM 模场主要落在腔内空气区（εeff 仅由膜的微小填充份额抬高），腔壁金属化封闭横向泄漏、两端截面口即波端口面。50Ω 点由带宽对腔高/膜厚/εr 的悬置闭式反解给出；常见误用=把腔高当基板厚直接套微带闭式（场在空气腔不在介质内，εeff≈1.6 而非 εr）。
+    derivations:
+    - claim: 悬置带线 Z0 闭式（共形电容比+softmin 串联饱和定标）
+      formula: q = K(k_b)/K'(k_b) ÷ K(k_h)/K'(k_h)，k=tanh(πw/2b)（b 腔/h 腔共形电容比）；εeff=1+(εr−1)·q_softmin；Z0 = Z0_air(w,b)/√εeff
+      source: 本仓 core/calculators._suspended_stripline_ri（FD 重定标批 2026-09-18，288 点拟合 max|err| 3.84%；docs/templates/suspended_stripline/meta.yaml 同源口径）
+    - claim: 名义带宽反解（Z0 目标→w 二分+正向复算自洽）
+      formula: w* = arg_w |Z0(w; b=0.50, h=0.05, εr=11.9) − 50Ω| → 0.5243362925046158mm，正向复算 |ΔZ0| ≤ 1e-9Ω
+      source: 本仓 adapters/layered_stack_spec.design_params（反解自洽链+#118 独立裁判；裁判量=core/calculators._suspended_stripline_ri 正向复算；HFSS 实测锚 w=0.52→Z0≈50.2 对照）
+    - claim: 腔-膜-带 z 账（带面系 z=0=导体层顶面）
+      formula: z0_cav = −cavity_h/2（腔关于带面对称=StripLinePort 对称探针唯一合法形态）；腔 z 区间完整包含导体层（膜悬置定义性质）
+      source: 本仓 adapters/layered_stack_spec.LayeredStackSpec 校验器（建模期 fail-loud，K7 哲学：报错而不是解出假结果；腔-带对称=StripLinePort 对称探针口径，同族 docs/templates/suspended_stripline/meta.yaml）
+  sensitivity_ranking:
+  - param: strip_w_mm
+    order: 1
+    basis: 带宽（Z0 主通道，dZ0/dw≈−58Ω/mm @名义点）
+  - param: cavity_h_mm
+    order: 2
+    basis: 腔高（b 进共形电容比与 Z0_air 双通道；同时约束腔对称 z 账）
+  - param: cavity_w_mm
+    order: 3
+    basis: 腔宽（有限壁宽近似面+端口截面尺寸；离带越远影响越弱）
+  - param: line_len_mm
+    order: 4
+    basis: 线长（相位/S21 主通道，不改变截面场型）
+  - param: wafer_width_mm
+    order: 5
+    basis: 叠层总宽（键合环足迹，弱通道——场限于腔区）
+  - param: er
+    order: 6
+    basis: 膜 εr（经填充份额弱通道，εeff≈1.6 附近）
+  quiz_refs: []

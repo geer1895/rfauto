@@ -1608,38 +1608,47 @@ def _render_pareto_scatter(
 ) -> tuple[bool, str]:
     """Pareto 散点 PNG（确定性：OO API（Figure+FigureCanvasAgg，infra/
     report.py 线程安全同款）+显式 metadata+固定 dpi，零时间戳零随机——
-    同输入两跑逐字节；标签 ASCII 化，前沿点与被支配点视觉区分）。"""
+    同输入两跑逐字节；标签 ASCII 化，前沿点与被支配点视觉区分）。
+
+    R11 Top4 论文图风格单源消费（Q-W8-4）：rcParams 经
+    core/plot_style.paper_figure_context 作用域施加（字号/字体栈/
+    unicode_minus 等 STYLE 常量单源），退出逐键还原零全局残留；显式
+    figsize/dpi 实参优先于 STYLE 缺省——同输入两跑逐字节确定性不变。
+    """
     try:
         from matplotlib.backends.backend_agg import FigureCanvasAgg
         from matplotlib.figure import Figure
 
-        fig = Figure(figsize=(6.0, 4.5), dpi=100)
-        FigureCanvasAgg(fig)
-        ax = fig.add_subplot(111)
-        if dominated_pts:
-            ax.scatter([p[0] for p in dominated_pts],
-                       [p[1] for p in dominated_pts],
-                       marker="x", c="#7f7f7f", s=36.0, label="dominated")
-        if front_pts:
-            ordered = sorted(front_pts, key=lambda p: (p[0], p[1]))
-            ax.plot([p[0] for p in ordered], [p[1] for p in ordered],
-                    linestyle="--", color="#d62728", linewidth=1.0,
-                    alpha=0.7)
-            ax.scatter([p[0] for p in front_pts], [p[1] for p in front_pts],
-                       marker="o", c="#d62728", s=42.0, label="front")
-        x_label = _ascii_label(obj_names[0]) if obj_names else "objective 1"
-        y_label = (_ascii_label(obj_names[1]) if len(obj_names) > 1
-                   else "objective 2")
-        ax.set_xlabel(x_label + " (violation)")
-        ax.set_ylabel(y_label + " (violation)")
-        ax.set_title(f"Pareto front: {len(front_pts)} points")
-        ax.grid(True, alpha=0.3)
-        if dominated_pts or front_pts:
-            ax.legend(loc="best")
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(str(out_path), format="png", dpi=150,
-                    metadata={"Software":
-                              "rfauto design-report pareto scatter"})
+        from rfauto.core.plot_style import paper_figure_context
+
+        with paper_figure_context():
+            fig = Figure(figsize=(6.0, 4.5), dpi=100)
+            FigureCanvasAgg(fig)
+            ax = fig.add_subplot(111)
+            if dominated_pts:
+                ax.scatter([p[0] for p in dominated_pts],
+                           [p[1] for p in dominated_pts],
+                           marker="x", c="#7f7f7f", s=36.0, label="dominated")
+            if front_pts:
+                ordered = sorted(front_pts, key=lambda p: (p[0], p[1]))
+                ax.plot([p[0] for p in ordered], [p[1] for p in ordered],
+                        linestyle="--", color="#d62728", linewidth=1.0,
+                        alpha=0.7)
+                ax.scatter([p[0] for p in front_pts], [p[1] for p in front_pts],
+                           marker="o", c="#d62728", s=42.0, label="front")
+            x_label = _ascii_label(obj_names[0]) if obj_names else "objective 1"
+            y_label = (_ascii_label(obj_names[1]) if len(obj_names) > 1
+                       else "objective 2")
+            ax.set_xlabel(x_label + " (violation)")
+            ax.set_ylabel(y_label + " (violation)")
+            ax.set_title(f"Pareto front: {len(front_pts)} points")
+            ax.grid(True, alpha=0.3)
+            if dominated_pts or front_pts:
+                ax.legend(loc="best")
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(str(out_path), format="png", dpi=150,
+                        metadata={"Software":
+                                  "rfauto design-report pareto scatter"})
         return True, ""
     except Exception as exc:  # 生成面故障如实降级（#105）
         return False, str(exc)

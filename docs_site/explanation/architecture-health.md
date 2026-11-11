@@ -10,11 +10,13 @@
 ## 一、一句话现状
 
 **骨架优秀、中段肥胖、语义漂移——方向纪律已经钉死，体量与同层环是
-主要存量债。** 分层上下方向由 import-linter 钉牢（实测 2 kept /
-0 broken，1055 文件 2582 依赖，契约覆盖 100%）；service 层是体量与
-耦合双高发区；AGENTS 分层链条文本 `service → linkage/optimization/
-models → adapters` 与代码现实（service 直编 adapters+core，中间层
-消费面近乎空转）存在结构性偏差（T4，尚未定）。
+主要存量债。** 分层上下方向由 import-linter 钉牢（2026-10-19 审计
+2 kept / 0 broken，1055 文件 2582 依赖；**2026-11-07 aurora_q Q-X24
+复核 3 kept / 0 broken，1260 文件 3293 依赖**——第三契约=aurora_h
+W2-S1 增设的 cli/mcp_tools 白名单棘轮，契约覆盖仍 100%）；service
+层是体量与耦合双高发区；AGENTS 分层链条文本 `service → linkage/
+optimization/models → adapters` 与代码现实（service 直编
+adapters+core，中间层消费面近乎空转）存在结构性偏差（T4，尚未定）。
 
 ## 二、六面记分卡（审计口径 + 清偿进度）
 
@@ -31,7 +33,7 @@ models → adapters` 与代码现实（service 直编 adapters+core，中间层
 
 | 指标 | 现值（2026-10-19 复核） | 消费门/复核方式 |
 |---|---|---|
-| 分层契约 | 13 层，2 kept / 0 broken | `lint-imports --config .importlinter`（merge_preflight 第 3 步） |
+| 分层契约 | 13 层，**3 kept / 0 broken**（2026-11-07 aurora_q Q-X24 复核：1260 文件 3293 依赖；第三契约=aurora_h W2-S1 T8 cli/mcp_tools 白名单棘轮，25 ignored 只收不放） | `lint-imports --config .importlinter`（merge_preflight 第 3 步） |
 | CALC 注册键 | 306（+1 实验键=307） | #231 五钉（test_calculators EXPECTED / test_physics_invariants / test_model_docs / test_experimental_calculators / 模板一致性），新键必同步 |
 | conftest 隔离单源 | `tests/conftest.py::isolated` + `isolated_cache_off` 两形态；本地余量 28 份（ALLOWLIST 只可删不可加） | tests/unit/test_conftest_fixture_hygiene.py（AST 棘轮） |
 | lazy import 约定 | 白名单三原因（startup-cost=cli/ui 专用 / cycle-break / run-path=service 专用）；示范钉零 6 文件（cli scattered/bands_uq/workflow 66 站 + service api/run_core、calibration_service、rest_api 86 处）；cli 层未标注预算 300（实测 271） | tests/unit/test_lazy_import_convention.py；约定文 docs/explanation/lazy-import-conventions.md |
@@ -74,3 +76,59 @@ models → adapters` 与代码现实（service 直编 adapters+core，中间层
 - **lazy import**：函数内 import 必须带白名单标注或迁模块顶——
   判定速查见 docs/explanation/lazy-import-conventions.md。
 - **注册面**：新键先查 #231 五钉消费者清单；新注册表用 RegistryKit。
+
+## 六、aurora_q 战役新增面（2026-11-07 Q-X24 实测追加）
+
+> aurora_q（2026-11-04 开工，收官终门 wf_gate_full_aurora_q_final2 =
+> 32195 passed / 0 failed / 23 skipped，GATE_RC=0）新增十二面逐项分层
+> 合规记录。测试覆盖两口径并列：**台账**=各席交付时主代理独立验收数
+> （runs/aurora_q/SEATS.md 交付摘要，pytest 展开口径）；**静态**=本次
+> `grep "def test_"` 计数（不含参数化展开，两差=参数化倍数非矛盾）。
+
+### 6.1 逐面台账（层位全部合规，零越级新边）
+
+| 新增面 | 层位（分层合规形态） | 测试覆盖（台账/静态） | 备注 |
+|---|---|---|---|
+| em_bench 扩容（T-Q24+Q-X15） | service/em_bench_service.py | 37+15 / 71 | 判据闭集实测 **8**（原 7+fsv_grade）；default 任务运行时实测 **9**（Q-X15 扩 6→8 后，Q-X22 在飞席增补 ssl_anchor 族——函数 docstring "8" 为其时点口径）；阈值预声明 fail-closed（#122） |
+| animation 动图管线（T-Q3） | service/animation/（spec/loaders/renderers） | ~214 / 220 | 渲染器实测 **17** 图型（第 17=cfc_state，Q-R3R 遗留清偿席补齐）；确定性显示变换零语义改写 |
+| format_overview（T-Q5） | service/format_overview_service.py | 75→115 / 80 | kind 实测 **8**（touchstone/kicad_pcb/drawio/gdsii/dxf/ipc2581/odbpp/ads_ds）；每 kind 独立 schema_version 常量 |
+| vendor_doc FTS5（T-Q19） | service/vendor_doc_service.py | 35 / 58 | SQLite FTS5 external-content 虚表（实测 L83）；PDF/CHM/HTML 三通道+LIKE 回退+zero_ingest_audit；真机冒烟召回 9/10 |
+| geometry_lint（T-Q26b） | service/geometry_lint_service.py | 32 / 32 | 六检查实测（端口三态/部分相交/长宽比/变量单位）；零 pyaedt 依赖 |
+| layered_stack 模板族（T-Q26d） | adapters/layered_stack_spec.py+hfss_builder_layered.py+openems 渲染+TEMPLATE_META 注册 | 57+20 / 84 | TEMPLATE_META 实测 **76**（八面同数）；双引擎渲染+反解 7.1e-15Ω（#118 家法） |
+| KiCad sch_gen（T-Q22） | adapters/kicad_sch_gen.py（纯 stdlib s-expr 生成器）+service/kicad_sch_service.py | 53 / 51 | adapters 面零第三方依赖（子进程封装在 service）；真机三方一致冒烟 |
+| roundtrip_certificate（T-Q23） | service/roundtrip_certificate.py | 21 / 21 | 通用"生成→回读→比对"二值证书件（fold_diff 确定性排序；pass 判定权与 diff 结构强一致） |
+| gradient_consistency（T-Q21 通道 1） | service/gradient_consistency_service.py | 49（三通道合计） / 21 | 零物理零引擎依赖，provider 注入缝（cosine≥0.999+rel-err≤5% 预声明） |
+| adjoint 双桥（T-Q21 通道 2/3） | service/adjoint_surrogate_bridge.py+adjoint_optimizer_link.py，内核 core/inverse_adjoint.py | （含上栏 49） / 53 | 梯度数值只出确定性内核（规则 7）；桥只做编排不产数 |
+| fd_judge（Q-X20） | 内核 core/suspended_stripline_fd_judge.py+服务壳 service/suspended_stripline_judge_service.py | 23 / 42（fd_judge 23+template 19） | 规则 4/7 标准形态：静流裁判内核在 core，服务壳只组装 JSON；外部观测锚冻结常量随行登记出处 |
+
+### 6.2 本役印证的分层约束（新增代码遵守既有约束的活例）
+
+- **adapters→service 禁直插**：geometry_lint 接线即范本——适配器层禁
+  import service（layers 契约），`hfss_adapter.build_and_setup` 的钩子
+  只消费调用方经 `lint_geometry` 预算好的报告信封（键 ok/lint_pass/
+  issues），ERROR 级在 build 出口抛 ModelBuildError 拦截；缺省关零行为
+  变化。凡"适配器要吃 service 判读"一律走此消费形态，不开新越级边。
+- **内核在 core、服务壳在 service**（规则 4+7 标准形态）：fd_judge——
+  静流收敛/裁判数学在 core（零仿真、铁律 7），service 壳只组装 JSON
+  信封；同族 adjoint（inverse_adjoint 内核+双桥编排）。
+- **信封契约全走构造器**：em_bench/geometry_lint/format_overview/
+  vendor_doc 等新面出口一律 ok_envelope/error_envelope（Q-R4 审查曾拦
+  em_bench 信封契约 P1 一处即此门的效力实证）。
+- **声明式输入+确定性显示变换**：animation 17 渲染器与 KiCad sch_gen
+  （按引脚名连通的 label 制表示法）均把坐标/布局参数钉为声明式 spec，
+  渲染层零语义改写——铁律 7 在展示面的推广。
+- **import-linter 三契约全 kept**（2026-11-07 实测）：layers 13 层
+  （10 ignored 白名单）+calc_families forbidden（12 ignored）+
+  cli/mcp_tools 白名单棘轮（25 ignored，aurora_h 起只收不放）；本役
+  新增面未新增任何 ignored import（棘轮零放行）。
+
+### 6.3 与存量账的关系
+
+- 本役新增面全部落在 service/adapters/core 既有层位，未改变 §二记分卡
+  各面等级；service 大文件面（T2 台账）2026-11-07 实测更新：>500 行
+  100 文件（service 总 368 文件；审计时 73/270）——增量主要来自本役
+  em_bench_service（1918 行，service 第二大，仅次于
+  design_replay_report 2686，后续拆分候选）与 format_overview/
+  vendor_doc 等单文件面。登记不展开。
+- §四改进路线各项（T1 同层环/T4 链条文本/T5 fixture 余量/T6 RegistryKit
+  扩面等）在本役期间未推进也未回潮，账面不变。

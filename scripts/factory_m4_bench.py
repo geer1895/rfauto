@@ -80,7 +80,7 @@ MAX_VERIFY = 5
 MIN_DIST_VERIFY = 0.02   # 归一化域 [0.5,2.0] 距离（criteria 预声明）
 GRID_STEP_MM = 0.001
 
-BASELINE_S = 1457.74     # wp39 mline pattern_search 15 评估（Devlog（一百八十五））
+BASELINE_S = 1457.74     # wp39 mline pattern_search 15 评估（DEVLOG（一百八十五））
 RATIO_GATE = 0.2         # T_factory ≤ 基线 1/5（wp39 内核取 0.2，严于主线 0.5）
 DEG_GATE_PCT = 5.0       # cost 劣化 ≤5%（wp39 同门）
 BUDGET_WALL_S = 90 * 60.0

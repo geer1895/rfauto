@@ -1,0 +1,34 @@
+# 微带贴片天线 patch — 模型形态配方（T-Q18 模板→配方闭环预置件，aurora_q Q-W9-1R）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增：从 patch 模板卡到第一次仿真的可跑配方。patch 族在
+# 75 族映射表中绑定优化模型插件 patch_antenna（TemplateSpec hfss_plugin 面）
+# ——本配方=model: 形态，validate/run/tune 既有优化链全可用。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe patch --out recipes/patch_v1.yaml --force
+#   画廊页 patch 卡「导出配方」按钮 / POST /api/template-recipe/export
+#   同源 service/template_recipe_service 单源。
+# · 频带=单端口族缺省宽带 ±30%（专利 4 Fix3，commit dc1c8761：窄带下真谐振
+#   落带外观感根治——[1.68, 3.428571]GHz ≈ 2f0 全带宽；patch n_ports=1 走
+#   _EXPORT_BAND_FRAC_WIDE=0.70 确定性派生）。
+# · 与既有手写实例 patch_antenna_v1.yaml 的分工：那份是 band×bounds 联合
+#   设计范本（objectives+optimization 调参面）；本份=export-recipe 直出样例
+#   （无 objectives——plain run 出 S 参数/报告不评 cost）。
+# · run 通道: fake（解析近似零 license）或 hfss（真 AEDT 全链，规则 0）。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+recipe_version: 1
+notes: patch 模板导出配方（rfauto templates export-recipe，名义参数=TEMPLATE_NOMINAL 注册表归档值，f0=2.4GHz；单端口族缺省宽带
+  ±30%）——整带无谷时应放宽频段复查（谐振可能在带外）
+params:
+  patch_len_mm: 34.9
+  patch_w_mm: 50.0
+  feed_offset_mm: 10.0
+setup:
+  solver: openEMS
+  freq_range_ghz:
+  - 1.68
+  - 3.428571
+  points: 401
+model: patch_antenna
+schema_version: 1

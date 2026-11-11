@@ -516,3 +516,58 @@ class TestJsonInputForms:
         payload["samples_path"] = str(jpath)
         assert spice_param_export(payload)["ok"] is True
         assert ref_out.read_bytes() == p_out.read_bytes() == j_out.read_bytes()
+
+
+# ─── 极点计数单源化（Q-R3R 遗留清偿席 Q-W8-2 登记） ───────────────────────────
+
+
+class TestPoleCountsSingleSource:
+    """_pole_counts 单源消费 core/macromodel poles_summary（#122 同键双实现
+    清偿）：计数式只在 core 一处（skrf 共轭对只存一个，n_complex_pairs=
+    n_poles_stored−n_real，#286 同源），service 面降为键名映射+effective_order
+    派生。既有端到端金字面（TestCThetaSensitivity 两 θ 拓扑钉的
+    vector_fit.poles 四键值）零变化由该测继续承担。"""
+
+    def test_pole_counts_maps_kernel_summary_exactly(self):
+        # 内核 summary 形态（fit_macromodel→_poles_residues 契约键 n_poles）
+        summary = {"n_poles": 5, "n_real_poles": 1, "n_complex_pairs": 2,
+                   "max_abs_pole_rad_s": -1.0}
+        assert svc._pole_counts(summary) == {
+            "n_poles_stored": 5, "n_real_poles": 1, "n_complex_pairs": 2,
+            "effective_order": 5}
+        # effective_order 派生口径（#286：get_model_order=N_real+2·N_complex）
+        assert svc._pole_counts({"n_poles": 1, "n_real_poles": 1,
+                                 "n_complex_pairs": 0}) == {
+            "n_poles_stored": 1, "n_real_poles": 1, "n_complex_pairs": 0,
+            "effective_order": 1}
+
+    def test_pole_counts_matches_independent_recount(self):
+        # #118 独立裁判：测试内独立重算（不经被测函数）对映射值互证
+        poles = [[-1.0, 0.0], [-2.0, 3.0], [-4.0, -5.0]]
+        n_real = sum(1 for _, im in poles if im == 0.0)
+        expect = {"n_poles_stored": len(poles), "n_real_poles": n_real,
+                  "n_complex_pairs": len(poles) - n_real,
+                  "effective_order": n_real + 2 * (len(poles) - n_real)}
+        summary = {"n_poles": len(poles), "n_real_poles": n_real,
+                   "n_complex_pairs": len(poles) - n_real}
+        assert svc._pole_counts(summary) == expect
+
+    def test_pole_counts_rejects_malformed_summary(self):
+        with pytest.raises(ValueError, match="poles_summary"):
+            svc._pole_counts({"n_poles": 3})  # 缺 n_real_poles/n_complex_pairs
+        with pytest.raises(ValueError, match="poles_summary"):
+            svc._pole_counts({"n_poles": "x", "n_real_poles": 0,
+                              "n_complex_pairs": 0})
+
+    def test_service_source_consumes_kernel_summary_not_recount(self):
+        # 防漂移棘轮（test_width_single_source 同风格）：service 源面不得再
+        # 出现独立计数式——单源纪律的源级钉（docstring 引用口径除外）
+        import inspect
+        svc_src = inspect.getsource(svc)
+        assert '"poles_summary"' in svc_src  # 单源消费内核 summary
+        assert 'fit.get("poles_rad_s") or []' not in svc_src  # 旧独立重算入口已拆
+        counts_src = inspect.getsource(svc._pole_counts)
+        counts_code = counts_src.split('"""')[-1]  # 去文档串，只看代码体
+        assert "n_stored - n_real" not in counts_code  # 计数式不再本面实现
+        assert "poles_rad_s" not in counts_code  # 代码体不再消费极点列表
+        assert "poles_rad_s: list" not in counts_src  # 签名不再收极点列表

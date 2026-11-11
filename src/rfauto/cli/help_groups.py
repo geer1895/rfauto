@@ -66,11 +66,13 @@ HELP_PANEL_OF: dict[str, str] = {
     "diagram": "综合与设计",
     "edb": "综合与设计",
     "em": "综合与设计",
+    "exploded-view": "综合与设计",  # T-Q37 席位 Q-X37 2026-11-07（版图 3D 爆炸视图渲染，SVG/JSON/PNG+lint 闭环）
     "fab": "综合与设计",
     "firmware": "综合与设计",
     "hfss-import": "综合与设计",
     "interop": "综合与设计",
     "kicad": "综合与设计",
+    "layer-3d": "综合与设计",  # aurora_q Q-X39 2026-11-07（KiCad .kicad_pcb 逐层 3D 渲染导出，逐层 PNG+合成 SVG）
     "layout": "综合与设计",
     "lint": "综合与设计",
     "nfc": "综合与设计",
@@ -100,6 +102,10 @@ HELP_PANEL_OF: dict[str, str] = {
     "oracle": "分析与研究",
     "p0": "分析与研究",
     "sar": "分析与研究",
+    "sdc": "分析与研究",  # T-Q36 Q-X36 2026-11-07（SDC 约束结构化解析，数字自动化借鉴面）
+    "drc": "分析与研究",  # aurora_q Q-X48 2026-11-07（DRC 规则文件结构化解析+RF 特化检查，DRC 自动化借鉴面）
+    "lvs": "分析与研究",  # aurora_q 同窗席落树折入 Q-X48 2026-11-07（LVS 对比域；并发席在树注册未入本表——Q-X39 折 Q-X37 先例同款收口）
+    "verilog": "分析与研究",  # T-Q47 Q-X47 2026-11-07（Verilog 网表结构化解析，数字自动化借鉴面）
     "self-heal": "分析与研究",
     "sensitivity": "分析与研究",
     "si": "分析与研究",
@@ -124,7 +130,13 @@ HELP_PANEL_OF: dict[str, str] = {
     "rag": "数据与知识",
     "rationale": "数据与知识",
     "teaching": "数据与知识",
-    # ── 报告与复现（11；report 在上方核心块内，面板归此域）──
+    "vendor-docs": "数据与知识",  # T-Q19 批 2 Q-W9-3 2026-11-06（厂商帮助文档检索，FTS5 索引+带引用检索）
+    "liberty": "数据与知识",  # T-Q34 Q-X34 2026-11-07（Liberty .lib 时序库结构化解析，数字自动化借鉴面）
+    "ibis": "数据与知识",  # T-Q46 Q-X46 2026-11-07（IBIS .ibs IO buffer 模型结构化解析，数字自动化借鉴面）
+    "spice": "分析与研究",  # T-Q22 Q-X33 2026-11-07（SPICE 网表深度解析；Q-X32 合流抢救补行——Q-X33 席已提交而面板行遗漏，TestCliHelpPanels 两红归因后收编）
+    # ── 报告与复现（12；report 在上方核心块内，面板归此域）──
+    "anim": "报告与复现",  # T-Q3 Q-W5-2R 2026-11-04（动图渲染 SVG，run 数据可视化复现面）
+    "skill": "综合与设计",  # T-Q27 Q-X32 2026-11-07（SKILL 代码模板生成，Python→.il 脚手架零 Virtuoso 依赖）
     "datasheet": "报告与复现",
     "design-report": "报告与复现",
     "export-report-pdf": "报告与复现",
@@ -150,6 +162,10 @@ HELP_PANEL_OF: dict[str, str] = {
     "audit": "自动化与协作",
     "campaign": "自动化与协作",
     "chat": "自动化与协作",
+    # T-Q15（Q-W0-2 2026-11-04）chat-test-connection 叶面板补挂（Q-W1-1
+    # devtest 门面顺笔清偿：help 面板映射与顶层命令集失配钉——新命令须
+    # 同步本表，先例=watchdog/remote-board 行注）
+    "chat-test-connection": "自动化与协作",
     "dag": "自动化与协作",
     "goal": "自动化与协作",
     "inbox": "自动化与协作",
@@ -164,10 +180,33 @@ HELP_PANEL_OF: dict[str, str] = {
     "preflight": "运维与开发",
     "profile": "运维与开发",
     "remote": "运维与开发",
+    "tri-view": "综合与设计",  # Q-X38 三视图联动一叶（aurora_r M-10 接线清偿挂账）
     "rest": "运维与开发",
     "simci": "运维与开发",
     "simci-pin-baseline": "运维与开发",
     "solvers": "运维与开发",
+    # ── aurora_q §二-1 批量接线合流补行（主代 2026-11-10；FINAL_AUDIT §二C
+    #    11 域+Q-X77/79/80/86/88 五域收官补行，共 16 顶层组）──
+    # 解析器集群：版图/制造面归综合与设计，数据/描述面归数据与知识，
+    # 网表/波形/测试向量面归分析与研究（各家族沿既有同域行归属）。
+    "citi": "数据与知识",  # Q-X35（CITIfile 仪器数据三叶；liberty/ibis 同款仪器数据面）
+    "stdf": "数据与知识",  # Q-X88r（STDF V4 半导体测试数据两叶；citi 同款测试记录面）
+    "bsdl": "数据与知识",  # Q-X77（BSDL 边界扫描描述两叶；ibis 同款描述文件面）
+    "ibis-ami": "数据与知识",  # Q-X86r（IBIS-AMI 参数两叶；ibis 同款模型面；注册名连字符）
+    "spef": "分析与研究",  # Q-X60（SPEF 寄生网表两叶；vcd.py 明示口径）
+    "vcd": "分析与研究",  # Q-X63（VCD 波形两叶；域 docstring 明示口径）
+    "sdf": "分析与研究",  # Q-X61（SDF 标准延迟两叶；sdc/verilog 同域数字面）
+    "stil": "分析与研究",  # Q-X72（IEEE 1450 测试向量两叶；域 docstring 明示口径）
+    "spectre": "分析与研究",  # Q-X79r（Spectre 网表两叶；spice 同域）
+    "veriloga": "分析与研究",  # Q-X80r（Verilog-A 行为级两叶；verilog 同域）
+    "touchstone": "分析与研究",  # Q-X64（Touchstone 统一解析一叶；S 参数数据面）
+    "gdsii": "综合与设计",  # Q-X58（GDSII 二进制两叶；版图面）
+    "lefdef": "综合与设计",  # Q-X57（LEF/DEF 5.8 两叶；版图面）
+    "ipc356": "综合与设计",  # Q-X65（IPC-D-356A 裸板测试一叶；制造面 gdsii/odbpp 同族）
+    "odbpp": "综合与设计",  # Q-X68（ODB++ 制造数据一叶；制造面）
+    "skill_parse": "综合与设计",  # Q-X62（SKILL/OCEAN 语言两叶；skill 同域；注册名下划线）
+    # ─── aurora_r AM-S4 补行（2026-11-10，aedt_migrate 批量迁移通道）───
+    "aedt-migrate": "运维与开发",  # AM-S4（老版本 .aedt 批量迁移三叶 run/status/report——AEDT 版本迁移=工具链/环境维护动作，remote/solvers 同域归属；非器件设计非数据解析面）
 }
 
 

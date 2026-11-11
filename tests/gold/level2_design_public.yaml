@@ -28,7 +28,7 @@
 # 用 design_chain 逐句重测钉值：series_w 0.603/shunt_w 1.113（与 TEMPLATE_META
 # 名义 0.604/1.113 对齐）；f_dip 随 eps_eff_series（fake 谐振反演 εeff）上移、
 # s21@dip 随 |S11| 谷深经 passivity 行归一化抬升。
-# 2026-10-03 ge8b fake 3 端口无源门修复（能量守恒幅度构造，开发注记 七百七十五）：
+# 2026-10-03 ge8b fake 3 端口无源门修复（能量守恒幅度构造，DEVLOG 七百七十五）：
 # 谷深类锚 s11_db_min/s21@dip 全批重钉（−18.924→−18.446/−3.518→−3.253）——
 # 上次（3.54 位置锚批）"谷深类不变"的前提是仅频率缩放；本次改的是幅度
 # 构造（行归一伪象→物理守恒），谷深物理值本身变化，重钉属行为修正跟进。
@@ -124,13 +124,13 @@ tasks:
       artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
       numeric:
         - metric: f_dip_ghz
-          value: 1.6836
+          value: 2.2884
           tol_pct: 2.0
-          source: 链路回归锚（【XA-3 重钉 2026-10-02】综合修正 w=1mm 近似 εeff→各臂各自 εeff 后重测；fake branchline 谷位实为归一化纹波伪象（响应幅平坦、argmin 落带缘，fake 无 arm_len 灵敏度、dip 由 f0 参数直接设定）——旧值 2.0904 同为伪象（旧注记自证谷位系统性低于 f0）；fake 模型改造=followUp）
+          source: 链路回归锚（【Q-X83 接线重钉 2026-11-10 aurora_r M-8】fake branchline 升级理想 TL 矩阵闭式（Pozar 奇偶半电路，DEVLOG 三百零二）——旧锚 1.6836 系归一化纹波伪象（其 source 注记自证"fake 模型改造=followUp"，本重钉即该 followUp 落地）；新模型谷位由综合臂阻抗决定：HJ 综合 series_w 经 forward_z0→臂阻抗与闭式设计臂差 ~4.7%→f_dip 2.2884（参考链 as-built，非 f0 设计值精确——寻优地形保持真实即 Q-X83 处方②本义））
         - metric: s21_db_at_dip
-          value: -5.280
+          value: -3.0093
           tol_pct: 5.0
-          source: 链路回归锚（fake _branchline_sparams 包络 -j/√2 × passivity 行归一）；3dB 正交混合口径见 docs/rf_template_references.md
+          source: 链路回归锚（【Q-X83 接线重钉 2026-11-10】理想闭式 3dB 等分 −3.0103dB 设计值，参考链 as-built −3.0093351495698957；旧锚 −5.280 系粗档包络行归一伪象）；3dB 正交混合口径见 docs/rf_template_references.md
       rationale: 中文族名「分支线/电桥」路由；f0 从 NL 抽取，z0 抽到 50Ω
 
   - id: l2d005_branchline_5g2
@@ -148,13 +148,13 @@ tasks:
       artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
       numeric:
         - metric: f_dip_ghz
-          value: 3.8038
+          value: 4.9504
           tol_pct: 2.0
-          source: 链路回归锚（同 l2d004 机制；【XA-3 重钉 2026-10-02】综合修正后 3.9442→3.8038，伪象语义同 l2d004 注记）
+          source: 链路回归锚（【Q-X83 接线重钉 2026-11-10 aurora_r M-8】同 l2d004 机制——参考链 as-built 4.9504（综合臂 vs 设计臂差随 f0 缩放）；旧锚 3.8038 系纹波伪象语义（XA-3 注记在档））
         - metric: s11_db_min_in_band
-          value: -8.098
+          value: -56.49
           tol_pct: 15.0
-          source: 链路回归锚（fake branchline 线宽偏离真机最优 1.50/1.12mm 的退化模型）；谷深语义 s11_db_min（#195）
+          source: 链路回归锚（【Q-X83 接线重钉 2026-11-10】理想闭式臂，参考链 as-built −56.49201837513751；旧锚 −8.098 系粗档"线宽偏离退化模型"）；谷深语义 s11_db_min（#195）
 
   # ── 族：patch（矩形微带贴片天线，fake λ/2 谐振腔一阶模型）──
   - id: l2d006_patch_2g4

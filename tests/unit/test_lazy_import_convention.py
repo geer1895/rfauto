@@ -50,8 +50,12 @@ SERVICE_DEMO_FILES = (
     "rest_api/openapi.py",
 )
 TAG = "# lazy:"
-#: 2026-10-19 实测 271（见模块 docstring 的余量说明）。
-CLI_UNTAGGED_BUDGET = 300
+#: 2026-10-19 实测 271（见模块 docstring 的余量说明）；2026-11-04 上调
+#: 300→301：+1=T-Q15 chat-test-connection 叶的 solvers.py:376
+#: llm_error_service lazy import（Q-W0-2 已交付面，本席禁改清单只读不可
+#: 补标注——放宽预算是约定文指定的放宽阀；清偿=该行补 `# lazy:` 标注后
+#: 回调 300，零行为变化）。
+CLI_UNTAGGED_BUDGET = 301
 
 
 def _is_type_checking_test(test: ast.expr) -> bool:

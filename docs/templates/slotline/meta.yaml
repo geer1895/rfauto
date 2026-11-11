@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，）；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
+extraction: WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，DEVLOG（一百九十八））；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null
@@ -60,7 +60,7 @@ hfss_arbitration:
     s21_vs_gamma_pct: 1.69
     verdict_record: "两路自洽门 FAIL（+1.69%>1%）如实记录：S21 相位路含端接失配残差，主口径取 Gamma 路（预声明门错/红不事后改门 #122）"
   verdict: AGREE
-  evidence: 内部证据档{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段
+  evidence: runs/slotline_arbitration/{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段
 # XC-T 锚族补挂注记: slotline.z0_ohm.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
 
 teaching:

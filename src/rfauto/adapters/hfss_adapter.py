@@ -21,6 +21,8 @@ from rfauto.adapters.hfss_session import (
     has_non_ascii,
     prepare_ascii_workdir,
     remote_session_switches,
+    resolve_export_sweep_name,
+    resolve_sweep_actual_name,
     validate_setup_config,
 )
 from rfauto.core.coupled_mode_z import DualConductorModeImpedances
@@ -48,6 +50,42 @@ _PROFILE_ERROR_MSG_RE = re.compile(r"\*{3}(.+?)(?:\\'|'|\)|$)")
 
 # profile 状态中被判为"未完成"的关键字（大小写不敏感）
 _PROFILE_FAILURE_KEYWORDS = ("error", "abort", "terminat")
+
+
+def _enforce_geometry_lint_report(report: dict[str, Any]) -> None:
+    """T-Q26b 建模期几何门强制点（build 出口、solve 前拦截）。
+
+    只消费 :func:`rfauto.service.geometry_lint_service.lint_geometry`
+    产出的信封键（本层禁 import service，见 .importlinter layers）：
+    - 信封形态非法 / ok=False（输入几何描述未过 schema）→ 显式
+      ModelBuildError（配置错误 fail-loud，不静默放过）；
+    - ERROR 级 issue（lint_pass=False）→ ModelBuildError 逐条列出
+      （check/objects/message），solve 之前拦截（零 license 白拦）；
+    - WARN 级 → logger.warning 放行（薄金属纵横比/截面连通性类，
+      不阻断求解）。
+    """
+    if not isinstance(report, dict) or "ok" not in report:
+        raise ModelBuildError(
+            "geometry_lint_report 形态非法（须为 service.geometry_lint_"
+            f"service.lint_geometry 的信封 dict）: {type(report).__name__}")
+    if not report.get("ok"):
+        raise ModelBuildError(
+            "geometry_lint 报告本身失败（声明式几何未通过 LintGeometry "
+            "schema 校验）: "
+            + "; ".join(str(e) for e in (report.get("errors") or [])))
+    issues = report.get("issues") or []
+    errors = [i for i in issues if isinstance(i, dict) and i.get("level") == "ERROR"]
+    warns = [i for i in issues if isinstance(i, dict) and i.get("level") == "WARN"]
+    if warns:
+        logger.warning("geometry_lint WARN %d 条（不拦截）: %s", len(warns),
+                       " | ".join(str(i.get("message", "")) for i in warns))
+    if errors or not report.get("lint_pass", True):
+        raise ModelBuildError(
+            f"geometry_lint 建模期几何门 ERROR {len(errors)} 条（solve 前"
+            "拦截，六检查见 service/geometry_lint_service.py 模块注）: "
+            + " | ".join(
+                f"[{i.get('check')}]{i.get('objects')}: {i.get('message', '')}"
+                for i in errors))
 
 
 def _project_file_state(path: Path | None) -> tuple[str, int, int] | None:
@@ -343,7 +381,7 @@ class HfssAdapter(SimulatorAdapter):
             # remote_rpc_session/PYAEDT_USE_PRE_GRPC_ARGS）——connect() 的 CM
             # 在 Desktop attach 完成时已恢复缺省，本方法是**第二个构造窗口**，
             # 两窗口独立进出互不干扰。CM 内先临时置 remote_rpc_session=None
-            # （Devlog 五百四十二坑 1：该开关双语义——Hfss 设计初始化按 rpyc
+            # （DEVLOG 五百四十二坑 1：该开关双语义——Hfss 设计初始化按 rpyc
             # 消费 settings.remote_rpc_session.filemanager，Desktop attach 完成
             # 后必须置 None 再构造 Hfss；CM 退出统一恢复原值）。
             from ansys.aedt.core.generic.settings import settings as aedt_settings
@@ -395,14 +433,40 @@ class HfssAdapter(SimulatorAdapter):
         self,
         builder: Callable[[SimulatorAdapter], None],
         setup: Any,
+        *,
+        geometry_lint_report: dict[str, Any] | None = None,
     ) -> None:
-        """执行构建器函数 + 配置求解器设置。"""
+        """执行构建器函数 + 配置求解器设置。
+
+        Parameters
+        ----------
+        builder : Callable
+            构建器函数（创建几何、端口、边界）。
+        setup : Any
+            配方 setup 段 dict（None/非 dict 跳过 configure_setup）。
+        geometry_lint_report : dict | None
+            T-Q26b 建模期几何门（geometry_lint）钩子，**缺省 None=关**
+            （零行为变化；"缺省关+显式开启，默认开启裁决留后续"按席位
+            任务书登记）。开启方式：调用方（顶层 CLI/测试/后续 recipe
+            runner——service 层及以上）先经
+            ``rfauto.service.geometry_lint_service.lint_geometry(声明式
+            LintGeometry)`` 算好报告信封，build 出口（builder 执行后、
+            configure_setup/solve 前）在此强制门判定：ERROR 级问题抛
+            ModelBuildError 拦截，WARN 级记日志放行。适配器层禁 import
+            service（.importlinter layers 契约），故本钩子只消费信封
+            键（ok/lint_pass/issues），不做几何计算——lint 本体零
+            pyaedt、零 license，见 service/geometry_lint_service.py。
+        """
         hfss = self.session.hfss
         if hfss is None:
             raise ModelBuildError("HFSS 未连接")
 
         # 执行构建器（创建几何、端口、边界）
         builder(self)
+
+        # T-Q26b 建模期几何门（缺省关）：build 出口强制，solve 前拦截
+        if geometry_lint_report is not None:
+            _enforce_geometry_lint_report(geometry_lint_report)
 
         # 配置求解器设置（setup 为配方 setup 段 dict）
         if isinstance(setup, dict):
@@ -445,7 +509,7 @@ class HfssAdapter(SimulatorAdapter):
         new_setup.update()
 
         sweep_name = setup_cfg.get("sweep_name", "Sweep1")
-        hfss.create_linear_count_sweep(
+        created_sweep = hfss.create_linear_count_sweep(
             setup=setup_name,
             unit="GHz",
             start_frequency=fstart,
@@ -454,8 +518,14 @@ class HfssAdapter(SimulatorAdapter):
             name=sweep_name,
             save_fields=False,
         )
+        # T-Q26a 坑②（晶圆键合用户实测 P0-3.2）：AEDT 对重名 sweep 静默
+        # 改名（Sweep → Sweep_NVR7O5），旧径不捕获——后续导出拿请求名即
+        # 底层 gRPC "solution not found"。解析实际名（best-effort）并
+        # 告警改名（warning 带两侧名字，helper 内记录）。
+        actual_sweep = resolve_sweep_actual_name(
+            hfss, setup_name, str(sweep_name), created=created_sweep)
         logger.info("创建 Setup '%s' + Sweep '%s': %.3f-%.3f GHz, %d 点",
-                   setup_name, sweep_name, fstart, fstop, points)
+                   setup_name, actual_sweep, fstart, fstop, points)
         return setup_name
 
     @staticmethod
@@ -502,7 +572,7 @@ class HfssAdapter(SimulatorAdapter):
            返回 Profiles 映射，SimulationProfile.status 即求解状态）；
         2. 磁盘 .profile 兜底（``<project>.aedtresults/<design>.results/``
            下 mtime 最新的 *.profile）——``***`` 引擎诊断行只有这里全量
-           可见（Devlog #191：求解失败先读 profile）。
+           可见（DEVLOG #191：求解失败先读 profile）。
         """
         # 来源 1：活态 API（状态）
         status: str | None = None
@@ -629,6 +699,10 @@ class HfssAdapter(SimulatorAdapter):
     ) -> SolveReport:
         """调用 analyze_setup 并轮询等待完成。
 
+        VB-8 弹窗守卫接线（aurora_r M-3 合流笔 2026-11-10，R-17 挂账 a
+        清偿）：``RFAUTO_HFSS_DIALOG_GUARD=1`` 时 solve 前跑三态只读预检
+        （hfss_session.hfss_dialog_guard_preflight 单源）——blocked/
+        indeterminate→not_started 失败信封零发送；缺省关逐字节零变化。
         EC-5 HPC 旋钮（2026-10-05）：``cores``/``tasks`` 显式传入
         ``hfss.analyze_setup``（pyaedt 1.4.0 签名原生参数——**这是直连
         Desktop 路线唯一生效的核数入口**；``settings.num_cores`` 只喂
@@ -644,6 +718,17 @@ class HfssAdapter(SimulatorAdapter):
         不得把已算完的解当超时丢弃（曾把 93 分钟的正确求解白白扔掉）。
         超时可用环境变量 RFAUTO_HFSS_SOLVE_TIMEOUT_S 覆盖（秒）。
         """
+        # VB-8 三态弹窗只读预检（opt-in；缺省关时函数内部直接放行零接触）
+        from rfauto.adapters.hfss_session import hfss_dialog_guard_preflight
+
+        _guard = hfss_dialog_guard_preflight(self.session)
+        if not _guard.get("send_allowed", True):
+            from rfauto.core.errors import HfssSolveError
+
+            raise HfssSolveError(
+                f"hfss solve not_started: dialog guard "
+                f"{_guard.get('verdict')}（VB-8 预检拦截；detail="
+                f"{_guard.get('detail')}）")
         hfss = self.session.hfss
         if hfss is None:
             raise ModelBuildError("HFSS 未连接")
@@ -867,8 +952,21 @@ class HfssAdapter(SimulatorAdapter):
         self,
         path: str | Path,
         contract: Any = None,
+        *,
+        setup: str | None = None,
+        sweep: str | None = None,
     ) -> Path:
-        """导出 Touchstone 文件并进行契约校验。"""
+        """导出 Touchstone 文件并进行契约校验。
+
+        T-Q26a 坑②导出面（晶圆键合用户实测 P0-3.2，2026-11-06）：新增
+        ``setup``/``sweep`` 显式选择（keyword-only，缺省行为向后兼容）。
+        ``sweep=None`` 时经 :func:`hfss_session.resolve_export_sweep_name`
+        解析——单 sweep 自动采用、零 sweep 用 setup 主解（既有行为）、
+        **多 sweep 显式 ValueError 列候选名**（旧径静默取第一个=坑②病灶
+        形态）；显式给定 ``sweep`` 先对 ``get_sweeps`` 实名核对，不在列
+        即 ValueError 列候选 + 重名静默改名指引（把底层 gRPC
+        ``solution not found`` 前置成可行动的参数错误）。
+        """
         from pathlib import Path as StdPath
 
         path = StdPath(path)
@@ -876,15 +974,26 @@ class HfssAdapter(SimulatorAdapter):
         if hfss is None:
             raise ModelBuildError("HFSS 未连接")
 
-        # 获取第一个 setup 和 sweep
+        # setup 选择：显式指定（实名核对）或缺省取第一个（既有行为）
         setups = hfss.get_setups()
         if not setups:
             raise ModelBuildError("未找到任何 setup")
 
         # get_setups() 返回字符串列表（非对象）
-        setup_name = setups[0] if isinstance(setups[0], str) else setups[0].name
-        sweeps = hfss.get_sweeps(setup_name)
-        sweep_name = (sweeps[0] if isinstance(sweeps[0], str) else sweeps[0].name) if sweeps else None
+        setup_names = [
+            s if isinstance(s, str) else s.name for s in setups
+        ]
+        if setup is None:
+            setup_name = setup_names[0]
+        elif setup in setup_names:
+            setup_name = setup
+        else:
+            raise ValueError(
+                f"setup '{setup}' 不存在；候选: {', '.join(setup_names)}"
+                "——请按 get_setups() 实名指定（T-Q26a 导出面实名核对）。")
+
+        # sweep 选择（自动解析/显式核对/多 sweep 拒绝，见 docstring）
+        sweep_name = resolve_export_sweep_name(hfss, setup_name, sweep)
 
         # 导出前置 sweep 完成断言（方案 §10.9，#191 家族 r2-r4）：求解未
         # 真正完成（仍在跑/引擎报错/无解）时显式报错，绝不读入中间或未
@@ -954,12 +1063,14 @@ class HfssAdapter(SimulatorAdapter):
 
         # 契约校验：导出后实际校验端口数 + 参考阻抗。契约端口数（插件声明）与
         # 实际端口数不一致时按实际端口数校验并 warning（contract_for_port_count）
+        # strict=True（VB-3）：导出回读即验读取边界（频轴/有限性），产物带病
+        # 当场响亮失败——不在优化链下游才炸。
         if contract is not None:
             from rfauto.adapters.interchange import read_touchstone
             from rfauto.core.contracts import AdsExchangeContract
             tc = contract.touchstone if isinstance(contract, AdsExchangeContract) else contract
             tc = contract_for_port_count(tc, n_ports)
-            read_touchstone(output_file, tc)
+            read_touchstone(output_file, tc, strict=True)
 
         return StdPath(output_file)
 

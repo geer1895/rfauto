@@ -82,9 +82,13 @@ def sigma_face(x: float) -> float:
     return 0.02 + 0.20 * math.exp(-(((x - X_BUMP) / 0.10) ** 2))
 
 
-@surrogate_registry.register("tn14_hetero_plateau")
 class Tn14HeteroPlateau(SurrogateModel):
-    """声明式异方差合成代理（fit 不学数据——受控 μ/σ 面，T-N7 先例）。"""
+    """声明式异方差合成代理（fit 不学数据——受控 μ/σ 面，T-N7 先例）。
+
+    注册治理（aurora_p 遗留 2）：本类不再模块级 @register（进程级持久
+    写入=xdist 同 worker 污染源，D5/G3 双席撞实录）——由下方 autouse
+    fixture 惰性注册+teardown 还原。
+    """
 
     KIND = "tn14_hetero_plateau"
 
@@ -96,6 +100,26 @@ class Tn14HeteroPlateau(SurrogateModel):
 
     def uncertainty(self, params):
         return {"s11_db_min_in_band": sigma_face(float(params["x_mm"]))}
+
+
+@pytest.fixture(autouse=True)
+def _tn14_hetero_plateau_registered():
+    """Tn14HeteroPlateau fixture 作用域注册+teardown 快照还原。
+
+    模块级 @surrogate_registry.register 是进程级持久写入：import 即落表，
+    xdist 同 worker 此后运行的一切测试都看得见该键（test_onnx_numpy_export
+    覆盖面"注册表⊆表"反向断言被污染实录，D5/G3 双席撞）。治理=每测试
+    setup 缺则注册、teardown 仅还原本席写入（#362 reg 快照还原语义的
+    键级最小形态；surrogate 注册表 allow_overwrite=True，重名注入静默
+    覆盖不炸，还原仍须 faithful——不吞他席既有键）。
+    """
+    kind = "tn14_hetero_plateau"
+    preexisting = kind in surrogate_registry.available()
+    if not preexisting:
+        surrogate_registry.register(kind, Tn14HeteroPlateau)
+    yield Tn14HeteroPlateau
+    if not preexisting and kind in surrogate_registry.available():
+        surrogate_registry.unregister(kind)
 
 
 def _bowl(params: dict[str, float]) -> dict[str, float]:

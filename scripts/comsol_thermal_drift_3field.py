@@ -63,9 +63,9 @@ DRIFT_SPEC_DEFAULTS: dict[str, float] = {
     "a_mm": 20.0,       # 谐振长（x，半波向）
     "b_mm": 12.0,       # 宽（y，与 a 异值防模式简并：f01≈6.5GHz 远离）
     "h_mm": 1.154,      # 厚（z；p=0 模 f 与 h 无关，一阶不敏感）
-    "eps_r": 3.66,      # rogers4350b 口径（同 mline 锚 / stage-1 Devlog）
+    "eps_r": 3.66,      # rogers4350b 口径（同 mline 锚 / stage-1 DEVLOG）
     "tcdk_ppm_per_k": 50.0,   # 演示量级（调用方注入原则，stage-1 同口径）
-    "cte_ppm_per_k": 14.0,    # 面内 CTE 演示量级（stage-1 Devlog 同值）
+    "cte_ppm_per_k": 14.0,    # 面内 CTE 演示量级（stage-1 DEVLOG 同值）
     "youngs_gpa": 3.0,  # 各向同性演示量级（均匀应变下漂移判据不敏感，报告注明）
     "nu": 0.3,
     "t_ref_c": 25.0,

@@ -1,4 +1,4 @@
-"""队列4 COMSOL 尾巴（Devlog（廿七）未尽②-⑤）单测：mock/闭式级。
+"""队列4 COMSOL 尾巴（DEVLOG（廿七）未尽②-⑤）单测：mock/闭式级。
 
 零 COMSOL/license/JVM 依赖；真机断言不进单测（证据 runs/comsol_tail/）。
 A1: r3_services 显式 import comsol_adapter（注册副作用不依赖调用方）；
@@ -155,7 +155,7 @@ class TestA1ExplicitImport:
 
         src = (Path(r3_services.__file__).parent / "solvers.py").read_text(
             encoding="utf-8")
-        # Devlog（廿七）未尽②：注册副作用 import 不得只靠调用方先 import 包
+        # DEVLOG（廿七）未尽②：注册副作用 import 不得只靠调用方先 import 包
         assert "comsol_adapter" in src
 
     def test_list_registered_solvers_reports_comsol(self):

@@ -167,6 +167,11 @@ TEMPLATE_FAMILIES: dict[str, str] = {
     "wilkinson": "coupler",
     "wstep": "line",
     "xcheb_bpf4": "filter",
+    # layered_stack（aurora_q Q-X6 批 2 注册 75→76 计数链消费面：家法=
+    # TEMPLATE_FAMILIES 每注册族一行，chip 计数与卡数同源
+    # test_gallery_export::test_family_chip_counts_sum_to_cards）；
+    # 金属化腔悬置载带=guided 传输线族（cps/suspended_stripline/sicl 同键）
+    "layered_stack": "line",
 }
 
 

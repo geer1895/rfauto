@@ -19,7 +19,7 @@
     （marchand_two_section_sparams 同几何回代）逐量差值。
 (c) slotline β 锚（离线，零求解）：slotline_lumped 名义几何（w_slot=1.0mm
     @h=1.524）β 对 core/slotline 闭式与既有 HFSS 仲裁
-    （runs/slotline_port_b/result.json，Devlog（二百）HFSS-wide
+    （runs/slotline_port_b/result.json，DEVLOG（二百）HFSS-wide
     66.767 rad/m）差值复现。
 
 拓扑（(b) 物理布局 ↔ 电路级 marchand_two_section_sparams 端口约束，逐端
@@ -737,7 +737,7 @@ def analyze_anchor_c() -> dict:
                   and math.isfinite(rec_hfss))
     return {
         "anchor": "c",
-        "title": "slotline β 锚（离线）：名义几何三方 β 差值复现（Devlog 二百）",
+        "title": "slotline β 锚（离线）：名义几何三方 β 差值复现（DEVLOG 二百）",
         "geometry": {"w_slot_mm": w_mm, "h_mm": h_mm, "er": er, "f0_ghz": f0,
                      "template": "slotline_lumped 名义（meta.yaml nominal）"},
         "beta_rad_m": {"closed_form": beta_cf, "hfss_wide_gamma": hfss_beta,
@@ -755,7 +755,7 @@ def analyze_anchor_c() -> dict:
                            "齐全 → AGREE；否则 PARTIAL（数据漂移如实）",
                  "source": str(src)},
         "declared_differences": [
-            "零新求解：消费 runs/slotline_port_b/result.json（Devlog（二百）"
+            "零新求解：消费 runs/slotline_port_b/result.json（DEVLOG（二百）"
             "HFSS-wide β=Gamma 口径）+ core/slotline 闭式重算",
         ],
     }

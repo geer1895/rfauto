@@ -5,7 +5,7 @@
 > 可执行的操作纪律。核心结论已在 Ansys Developer 社区分享并获 Ansys
 > 团队成员确认（EDB/批处理路线的口径即来自该答疑）。
 > 证据基线：pyaedt 1.4.0 × AEDT 2025 R1（v251），gRPC 非图形会话，
-> Windows x64，商用许可。文内 `#NNN` 为本仓  坑号，逐条可溯源
+> Windows x64，商用许可。文内 `#NNN` 为本仓 DEVLOG 坑号，逐条可溯源
 > （对照表见文末附录）。
 > 标注约定：未经本仓真机实测、只引自官方文档或社区答疑的口径，写
 > "待验证"。
@@ -468,15 +468,15 @@ MSYS 路径转换吃掉（静默不杀）——用 `//PID` 或 PowerShell
 
 | 文中主张 | 来源 |
 |---|---|
-| 会话污染全链（integration_line 误形、`[]`→`None`、`default_solution` 级联、gRPC 通道损坏） | `docs/upstream_issue_draft_pyaedt_wave_port.md`；`runs/pyaedt_issue_probe/`（pyaedt 1.4.0 + AEDT 2025 R1 真机实测）； #413/#308 |
+| 会话污染全链（integration_line 误形、`[]`→`None`、`default_solution` 级联、gRPC 通道损坏） | `docs/upstream_issue_draft_pyaedt_wave_port.md`；`runs/pyaedt_issue_probe/`（pyaedt 1.4.0 + AEDT 2025 R1 真机实测）；DEVLOG #413/#308 |
 | EDB 无会话/内存态/需本机 AEDT 许可；`-BatchSolve` 直指 `*.aedb`；JSON 仿真配置方向 | Ansys Developer 社区答疑（Ansys 团队成员）与本仓核实批账：`docs/ansys_dev_forum_post_draft.md` 回复草稿 1–3 |
 | `Edb()` 工厂、`edb.configuration.load/export` 方法名与关键字 | 本仓 pyedb 0.83.0 安装包源码逐字核对（`pyedb/configuration/configuration.py`、`pyedb/dotnet/edb.py`、`pyedb/grpc/edb.py`） |
-| `-Logfile` 纪律、GetMessages 常空、发射存活复核、隐蔽进程被杀毒击杀 | `docs/audit/server_invocation_playbook.md`；项目规则 规则 0b-2 |
+| `-Logfile` 纪律、GetMessages 常空、发射存活复核、隐蔽进程被杀毒击杀 | `docs/audit/server_invocation_playbook.md`；AGENTS 规则 0b-2 |
 | `ansysedt` 进程治理（枚举/只杀孤儿/复核/两档严格度、150s 释放上限、3.6h 阻塞实测） | `src/rfauto/infra/desktop_guard.py`（#245/#265/#105） |
 | watchdog + `odesign.Abort()` + 竞态保护、`RFAUTO_HFSS_SOLVE_TIMEOUT_S`、profile/sweep 复核 | `src/rfauto/adapters/hfss_adapter.py`；`src/rfauto/pipeline/watchdog.py`；#145/#191 |
 | `HfssSession` 单例行为（幂等 connect、license 退避、`current_version` 健康检查、唯一 Hfss 实例） | `src/rfauto/adapters/hfss_session.py`；#191 |
-| 相对 `-outdir` 挂起 | 项目规则（df5 批 ②，#243） |
-| openEMS 每求解一进程先例 |  #208、#261；`docs/audit/server_invocation_playbook.md` §2.5 |
+| 相对 `-outdir` 挂起 | AGENTS（df5 批 ②，#243） |
+| openEMS 每求解一进程先例 | DEVLOG #208、#261；`docs/audit/server_invocation_playbook.md` §2.5 |
 
 > 维护约定：本文只沉淀"操作纪律 + 已验证事实"。新增坑例时按节归入，
 > 并在附录表加一行来源；未实测的新口径先标"待验证"，真机闭环后回填。

@@ -1,6 +1,6 @@
 """B6 stage-2：KiCad PCB 提取 → CPWG 锚判据 + 确定性代理寻优环。
 
-continuation-plan_20260907 §10.2 B6 stage-2「接优化环」的 service 面
+continuation_plan_20260907 §10.2 B6 stage-2「接优化环」的 service 面
 （JSON 进出薄编排，同 parasitic_service 口径）：extract_pcb 产物 →
 CPWG 设计事实解析 → CPWG 共形映射闭式代理（core/calculators._cpwg_ri，
 确定性内核）→ 综合寻优（core/synthesis.synthesize_cpw_model，brentq+

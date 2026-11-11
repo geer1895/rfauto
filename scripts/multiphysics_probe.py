@@ -1,4 +1,4 @@
-"""WP4.4-0 多物理工具/license 能力探测（continuation-plan §10.21 / §4 WP4.4 首步）。
+"""WP4.4-0 多物理工具/license 能力探测（continuation_plan §10.21 / §4 WP4.4 首步）。
 
 只探能力、不求解、不建/存任何用户资产，产出「多物理能力矩阵」JSON，供方案
 §1 表回写，决定 WP4.4a/c/d 路线。每项硬超时 + best-effort（#105）：任何异常
@@ -9,7 +9,7 @@
   面二进制 + Ansys Licensing Client ansysli_util -checkexists <feature> 真实
   license 查询；配 hfss_solve 正控 + 不存在 feature 负控证明探针能判别。
   任务书写的 E:/HFSS/ANSYS Inc/v261 本机实测不存在，实际安装为
-  E:/ANSYSINC/ANSYS Inc/v251/AnsysEM（2025.1）——如实记录，不臆造。
+  C:/Program Files/ANSYS Inc/v251/AnsysEM（2025.1）——如实记录，不臆造。
 - COMSOL 6.3：license.dat PACKAGE 特征核对（HEATTRANSFER/HT、
   STRUCTURALMECHANICS/SME）+ MPh 子进程建 HeatTransfer(ht) /
   SolidMechanics(solid) 接口试探（version="6.3" 显式钉版本，#215）。
@@ -62,8 +62,8 @@ AEDT_TASK_STATED_ROOT = Path("E:/HFSS/ANSYS Inc/v261")
 AEDT_ROOT_ENV_VARS = ("ANSYSEM_ROOT251", "ANSYSEM_ROOT261", "RFAUTO_AEDT_PATH")
 AEDT_ROOT_CANDIDATES = (
     Path("E:/HFSS/ANSYS Inc/v261/AnsysEM"),
-    Path("E:/ANSYSINC/ANSYS Inc/v261/AnsysEM"),
-    Path("E:/ANSYSINC/ANSYS Inc/v251/AnsysEM"),
+    Path("C:/Program Files/ANSYS Inc/ANSYS Inc/v261/AnsysEM"),
+    Path("C:/Program Files/ANSYS Inc/v251/AnsysEM"),
 )
 AEDT_LICENSING_UTIL = Path("licensingclient") / "winx64" / "ansysli_util.exe"
 # 多物理产品 → license 特征（lmstat 实测本机 server 提供）+ 安装面二进制哨兵
@@ -91,11 +91,11 @@ COMSOL_INTERFACES: dict[str, tuple[tuple[str, ...], str]] = {
 
 # ── ADS ───────────────────────────────────────────────────────────────────────
 # ADS 27 治理（2026-09-18 rm-ads-wp43）：安装根 env RFAUTO_HPEESOF_DIR 优先、
-# E:/ADS/ADS27 回退；license 由 Windows 服务 "EEsof FlexNet License Server"
+# C:/Program Files/Keysight/ADS2027 回退；license 由 Windows 服务 "EEsof FlexNet License Server"
 # （C:/Program Files/Keysight/EEsof_License_Tools/bin/lmgrd.exe，27009@localhost，
 # 注册表 FLEXlm License Manager 登记 lic 文件）供给。E 盘旧 2027/2026 安装
 # 均已不存在，不再列为候选。
-ADS_HOME = Path(os.environ.get("RFAUTO_HPEESOF_DIR", "E:/ADS/ADS27"))
+ADS_HOME = Path(os.environ.get("RFAUTO_HPEESOF_DIR", "C:/Program Files/Keysight/ADS2027"))
 ADS_LICENSE_FILE_CANDIDATES = (
     Path("C:/Program Files/Keysight/EEsof_License_Tools/bin/agileesofd.lic"),
     ADS_HOME / "license" / "agileesofd.lic",

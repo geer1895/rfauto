@@ -39,14 +39,15 @@ def _stamped(envelope: dict[str, Any]) -> dict[str, Any]:
 
 
 def _load_touchstone(path: str, need_s21: bool) -> dict[str, Any]:
-    """Touchstone → {freq_ghz, s11[, s21]}（skrf 只按 .sNp 扩展名推 rank，#248：
-    调用方按端口数自证，rank 不足时显式报错不猜）。"""
-    import skrf as skrf
+    """Touchstone → {freq_ghz, s11[, s21]}（读面走 interchange.read_touchstone
+    单源入口（R-27 迁移，strict 契约钩子可达）；skrf 只按 .sNp 扩展名推
+    rank，#248：调用方按端口数自证，rank 不足时显式报错不猜）。"""
+    from rfauto.adapters.interchange import read_touchstone
 
     p = Path(path)
     if not p.is_file():
         raise ValueError(f"Touchstone 文件不存在: {path}")
-    ntwk = skrf.Network(str(p))
+    ntwk = read_touchstone(p)
     n_ports = ntwk.s.shape[1]
     if n_ports < 1:
         raise ValueError("Touchstone 无端口数据")

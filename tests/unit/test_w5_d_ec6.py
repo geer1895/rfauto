@@ -62,7 +62,9 @@ def test_toolsets_resource_uri_registered() -> None:
     uris = {str(r.uri) for r in asyncio.run(get_mcp_server().list_resources())}
     assert TOOLSETS_RESOURCE_URI in uris
     # 本仓 scheme 一致性裁决：全 URI 均为 rfauto:// scheme（不用官方 toolsets://）
-    assert all(u.startswith("rfauto://") for u in uris)
+    assert all(u.startswith("rfauto://") or u.startswith("skill://") for u in uris), (
+            "资源 URI 前缀白名单：rfauto://（域资源）与 skill://（SKILL 包资源，"
+            "VB-6 R-13 aurora_r 2026-11-10）两协议族")
 
 
 def test_guidelines_tool_registered() -> None:
@@ -167,7 +169,7 @@ def test_guidelines_openems_recovery() -> None:
             or "openems" in hit["text"].lower()
         )
         assert relevant, hit
-        # 可溯源：ref 非空 + anchor 非空（#NNN 是 Devlog 出处标记/AGENTS 行锚）
+        # 可溯源：ref 非空 + anchor 非空（#NNN 是 DEVLOG 出处标记/AGENTS 行锚）
         assert hit["ref"].strip()
         assert hit["anchor"].strip()
 

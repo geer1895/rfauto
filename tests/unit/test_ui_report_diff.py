@@ -199,7 +199,10 @@ class TestRunsDiffEndpoint:
         n_routes = sum(1 for r in app.routes if isinstance(r, Route))
         # aurora_n：+1 远程探测面板路由 /api/remote/status（72=71+1，
         # remote_service.remote_status 只读薄壳，remote 资源面板同族）
-        assert n_routes == 72, n_routes
+        # T-Q14（Q-W1-1 2026-11-04）：+1 /api/template-recipe/export（模板→
+        #   配方导出，画廊/锚点页"导出配方"入口，CLI templates export-recipe
+        #   同源 service/template_recipe_service）→ 73
+        assert n_routes == 73, n_routes
 
     def test_server_route_order_source_pin(self):
         src = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui"

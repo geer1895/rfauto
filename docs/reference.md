@@ -12,8 +12,8 @@
 | 快速上手样例 | README「快速开始」「CLI 命令一览」节 |
 | 逐命令教程 | docs/tutorials/getting-started.md；docs/how-to/ 各篇 |
 
-当前规模（2026-11-02 实测，与 `scripts/check_numbers.py` 同源）：CLI 297 个
-叶子命令（non-bench 291 + bench 6）；单元测试 30738（check_numbers 口径
+当前规模（2026-11-10 实测，与 `scripts/check_numbers.py` 同源）：CLI 358 个
+叶子命令（non-bench 351 + bench 6）；单元测试 36454（check_numbers 口径
 =全量门日志 passed+failed）。规模数字以该脚本实跑为准，此处快照仅作
 量级参考（本页三数字已入该脚本 DOC_PATTERNS 门控，漂移即门红）。
 
@@ -29,11 +29,11 @@
 | 执行单键 | `rfauto calc run <键> -p 参数=值 …`（`-p` 可重复；示例见 `rfauto calc run --help`） |
 | UI 交互面 | 看板「微波工具箱」页（`#/tools`）：按组下拉+搜索、结果自动画图/热图、扫参模式（2–101 点）、`#/tools/<键名>` 深链直达——与 CLI/MCP 同一内核 |
 
-规模快照（2026-10-19 实测复核，与 `scripts/check_numbers.py` 同源）：
+规模快照（2026-11-06 实测复核，与 `scripts/check_numbers.py` 同源——
+本行数字为 check_numbers 门钉面，注册表扩键须同笔跟改）：
 `CALCULATOR_REGISTRY` 340（含实验键 341，16 业务组+实验组；aurora_g
 战役期间自 248 净增 49 键，`git diff cdad7549..HEAD --stat` 口径）。
-键数与分组**以 `rfauto calc list` 实时输出为准**——本页不钉死数字，
-注册表扩键后此处无需跟改。
+键数与分组**以 `rfauto calc list` 实时输出为准**。
 
 ## Python API（模块 docstring = 单一事实源）
 
@@ -49,7 +49,7 @@
 | `rfauto.service.calculator_service` | 计算器清单/执行（UI/CLI/MCP 三壳共享） |
 | `rfauto.service.health_service` | run 健康度体检（G11 门权威实现） |
 | `rfauto.adapters.em_solver_base` | EMSolverAdapter/EMSolverRegistry（适配器契约与发现口） |
-| `rfauto.adapters.openems_templates` | 75 个模板的 CSXCAD 渲染（TEMPLATE_META/TEMPLATE_NOMINAL/render_script） |
+| `rfauto.adapters.openems_templates` | 76 个模板的 CSXCAD 渲染（TEMPLATE_META/TEMPLATE_NOMINAL/render_script） |
 
 **doctest 制度**：上表标注"带可运行示例"的模块，其 docstring 示例由
 测试守护——示例跑不过测试即红，文档与代码不会脱钩：
@@ -68,8 +68,8 @@ pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 - 工具清单权威出口：MCP 服务器自注册表导出的 `mcp/manifest.json`
   （发布产物布局见 README「发布」节）；
 - 客户端接入（Claude Desktop/Cursor 配置示例、stdio 传输、与 CLI 共享
-  状态）：README「MCP Agent 接口」节；当前 **166 个工具 + 10 个
-  resources**（`@mcp.tool`/`@mcp.resource` 实测计数，2026-11-01，
+  状态）：README「MCP Agent 接口」节；当前 **208 个工具 + 17 个
+  resources**（`@mcp.tool`/`@mcp.resource` 实测计数，2026-11-10，
   与 `scripts/check_numbers.py` 同源）；
   发布产物布局见 README「发布就绪与手动发布步骤」节。
 
@@ -78,7 +78,7 @@ pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 | 要找什么 | 去哪 |
 |---|---|
 | 每个模板的名义参数/冒烟口径/参数语义 | `docs/templates/<模板名>/meta.yaml` |
-| 模板清单（75 个） | `rfauto.adapters.openems_templates.TEMPLATE_META` |
+| 模板清单（76 个） | `rfauto.adapters.openems_templates.TEMPLATE_META` |
 | 端口/网格铁律、验收基准 dB 值、官方例出处 | docs/rf_template_references.md |
 | COMSOL API 口径与本地 PDF 索引 | docs/comsol_references.md |
 | openEMS 源码构建 | docs/openems_build_guide.md |
@@ -97,7 +97,8 @@ objectives）在 `rfauto validate` 即报错并附「你是不是想写」提示
 
 | 键 | 必需 | 语义 |
 |---|---|---|
-| `model` | 必需 | 目标模型（models 注册表键；`rfauto models list`） |
+| `model` | 必需 | 目标模型（models 注册表键；`rfauto models list`；与 `template` 二选一——模板直跑形态删此键） |
+| `template` | 可选 | 模板直跑族名（openEMS 模板族，TEMPLATE_META 76 族键；与 `model` 二选一且互斥；`rfauto templates export-recipe <族>` 一键生成；run 走 fake/openems 通道） |
 | `params` | 必需 | 设计参数（键=该模型 params_model 字段名，见「参数名」小节） |
 | `setup` | 可选 | 仿真设置（缺席用默认值；键面见「setup / export 键」小节） |
 | `objectives` | 可选 | 优化目标列表（缺席合法=plain run；在场不可为空） |
@@ -118,7 +119,7 @@ objectives）在 `rfauto validate` 即报错并附「你是不是想写」提示
 |---|---|
 | 某模型合法参数名/缺省值/取值域 | `rfauto models list --schema <model>`（单源=模型插件 `params_model`） |
 | 模型清单 | `rfauto models list` |
-| 75 个 openEMS 模板的参数面 | `rfauto template-spec list` / `rfauto template-spec draft`（单源=`adapters/openems_templates.TEMPLATE_META`） |
+| 76 个 openEMS 模板的参数面 | `rfauto template-spec list` / `rfauto template-spec draft`（单源=`adapters/openems_templates.TEMPLATE_META`） |
 
 ### objectives 的 ops（`MetricOp` 枚举）
 

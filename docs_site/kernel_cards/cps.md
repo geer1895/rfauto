@@ -116,7 +116,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 - `docs/rf_template_references.md`——引文："出处（docs/rf_template_references.md §11.1）："
 - `scripts/fd_laplace_tline_referee.py`——引文："复现：scripts/fd_laplace_tline_referee.py --refit-cps-gamma）"
 
-测试面（tests/unit 引用扫描，机读；合计 **164** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **190** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -125,6 +125,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_cps_template.py` | 20 |
 | `tests/unit/test_ep2_trace_matrix.py` | 17 |
+| `tests/unit/test_suspended_anchor_verdict.py` | 26 |
 | `tests/unit/test_ta_wave_c_templates.py` | 23 |
 | `tests/unit/test_w4_w4e_anchors.py` | 10 |
 | `tests/unit/test_w6_f_anchors_cpw.py` | 7 |

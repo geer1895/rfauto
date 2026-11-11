@@ -12,7 +12,7 @@
 > 验版），本文 API 名逐字以源码为准。
 > 证据基线：pyedb 0.83.0 × pyaedt 1.4.0 × skrf 2.1.0 × AEDT 2025 R1
 > （v251），W1 真机冒烟 `runs/edblane85/w1_smoke/`（`REPORT.md` 为判读
-> 正本）。`#NNN` 为本仓 Devlog 坑号。未经本机实测的口径标"待验证"。
+> 正本）。`#NNN` 为本仓 DEVLOG 坑号。未经本机实测的口径标"待验证"。
 
 ---
 
@@ -409,7 +409,7 @@ f_res 单调下移多谷加剧（runs/edblane85/w8_gap_sweep/）——多谷形�
   非"同一极限的滞后"）；③ 两新族批量 6 点旁证（runs/edblane85/
   w10_families_batch/）：0.005 真档不可达下**回收天花板 ≈0.5dB**，S31
   三点 -7.49~-7.69 仍超窗，缺口 2.1~2.3dB=剩余伪象+厚度偏置构成；
-- **W11 裁决**（Devlog 九百十三，W10 审查席 P2-1）：**回退 0.02**——
+- **W11 裁决**（DEVLOG 九百十三，W10 审查席 P2-1）：**回退 0.02**——
   写入口不可达定谳 + EDB 侧伪象 0.62dB 量级不支撑 4× 加严 + 保留
   0.005"请求档"=每建必告警噪声 + 存证值误导归因（#122 不虚报）。
   **复进条件**写死：pyedb/AEDT 暴露 MaxDelta 写入口后按 W8 依据显式重
@@ -529,7 +529,7 @@ d01 S21 移动 +0.108dB 实证）；单点超窗量级与该噪声底相当时�
   函数）；MCP 三工具 `edb_emit_spec`/`edb_build_solve`/`edb_status`
   （`mcp_tools/edb.py`）+ resources 两件 `rfauto://edb/status`、
   `rfauto://edb/datasets`（不计入工具数）。
-- **服务器/远程**：多机协同通道（`rfauto remote`，sim_server）当前锚
+- **服务器/远程**：多机协同通道（`rfauto remote`，lab_server）当前锚
   HFSS gRPC 链路；EDB 批处理进程的远程化（含服务器侧 E 盘临时目录/任务
   毕清理规则）尚未排期（真实未来项），远程服务器 AEDT 版本必须=本机
   （AGENTS 规则 0）。
@@ -573,7 +573,7 @@ d01 S21 移动 +0.108dB 实证）；单点超窗量级与该噪声底相当时�
 | W1 判读门表/读数/门语义仲裁/端口序存证 | `runs/edblane85/w1_smoke/REPORT.md` §2–§3 + 两族 `*_judgment.json` |
 | 健康门七因子/三 eps/门登记表（§6.5 判读终表单源） | `src/rfauto/service/edb_health_gate.py`（docstring「数值门边界纪律」=AGENTS #376 家法）+ `tests/unit/test_edb_health_gate.py`（64 测，含恰等边界钉/多谷钉） |
 | 判读语义演化证据链（§6.4：W1 冒烟/冒烟批 2/W5 仲裁/W8 仲裁/W10 定谳与批量） | `runs/edblane85/w1_smoke/REPORT.md`、`runs/edblane85/w6_smoke2/REPORT.md`、`runs/edblane85/w5_hfss_arb/ARBITRATION.md`、`runs/edblane85/w8_cl_arb/ARBITRATION.md`、`runs/edblane85/w10_cl_recheck/REPORT.md`、`runs/edblane85/w10_families_batch/` |
-| coupled_line 生产判读档 0.02 回退单源（W11 裁决，Devlog 九百十三） | `src/rfauto/adapters/edb_templates/coupled_line.py::DEFAULT_ADAPT_MAX_DELTA`（模块 docstring「生产判读档史」节带 W8→W9→W10 全史与复进条件） |
+| coupled_line 生产判读档 0.02 回退单源（W11 裁决，DEVLOG 九百十三） | `src/rfauto/adapters/edb_templates/coupled_line.py::DEFAULT_ADAPT_MAX_DELTA`（模块 docstring「生产判读档史」节带 W8→W9→W10 全史与复进条件） |
 | campaign stage hfss_batch 路由缝 | `src/rfauto/service/campaign_executor.py::stage_batch_decl`/`_route_batch_stage` |
 | pyedb API 名（Edb/configuration.load/run/export、CfgEdgePort 50Ω 硬编码、层序、sweep 词表） | `docs/pyedb_distilled.md`（0.83 实装源码逐条核验） |
 | 无人值守纪律（-Logfile、看门、孤儿、进程隔离哲学） | `docs/unattended_hfss_automation.md` §1/§3/§5 |

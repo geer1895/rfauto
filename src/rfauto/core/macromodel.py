@@ -1380,7 +1380,10 @@ def _poles_residues(vf: VectorFitting, n_ports: int) -> dict[str, Any]:
         "poles_summary": {
             "n_poles": n_poles,
             "n_real_poles": n_real,
-            "n_complex_pairs": int((n_poles - n_real) // 2),
+            # skrf 存储口径：共轭对只存一个（正虚部成员），存储复极点数=复共轭对数
+    # （skrf.vectorFitting 文档 docstring + get_model_order=N_real+2·N_complex，
+    # #286 同源）——n_complex_pairs = n_poles_stored - n_real，不再折半。
+    "n_complex_pairs": int(n_poles - n_real),
             "max_abs_pole_rad_s": float(np.max(np.abs(poles))) if n_poles else 0.0,
         },
         "residues": [[[float(z.real), float(z.imag)] for z in residues[idx]] for idx in range(residues.shape[0])],

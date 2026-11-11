@@ -1,6 +1,6 @@
 """adapters 包：内置 EM 求解器注册面入口。
 
-注册表模式（AGENTS 硬限 3）：新增"可替换组件" = 基类 + 注册表。
+注册表模式（AGENTS.md 硬限 3）：新增"可替换组件" = 基类 + 注册表。
 注册表本体 = em_solver_base.EMSolverRegistry（键 = EMSolverType；观测面
 get_global_registry()）。本包 __init__ 只导入第一类通道；引擎级 SDK
 （pyaedt/MPh/meep/ngsolve/openEMS 绑定）在各模块内部惰性 import，导入
@@ -32,7 +32,12 @@ get_global_registry()）。本包 __init__ 只导入第一类通道；引擎级 
     - EDB 平面族发射器（edb_templates 子包，工具·模板层）：branchline/
       power_divider/coupled_line/ratrace/lange（2026-10-08 扩展三族；lange
       综合单源提供、EDB 发射声明不支持）——声明式 spec 发射面，不经
-      注册表（契约正本 edb_templates/schema.py docstring）。
+      注册表（契约正本 edb_templates/schema.py docstring）；
+    - KiCad 工具层：kicad_sch_gen（原理图 s-expr 生成器+readback/ERC
+      报告解析，T-Q22）——纯文本工具函数集，不经注册表无注册副作用；
+    - layered_stack 工具层：layered_stack_spec（schema+分层围合布局单源）/
+      hfss_builder_layered（HFSS 声明式 plan/builder，T-Q26d）——不经
+      注册表，geometry_lint 报告消费面见 hfss_adapter.build_and_setup。
 
 键集完整性回归：tests/unit/test_adapters_registry_completeness.py 钉
 "导入键集 == 本清单""显式注册函数键集""重复注册幂等"与"全模块 import

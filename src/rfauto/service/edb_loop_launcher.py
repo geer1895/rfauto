@@ -1,6 +1,6 @@
 """EDB 快车道优化环发射器（LoopLauncher 协议的 EDB 实现，2026-10-08）。
 
-把 EDB 快车道（edb_lane_service 一站式发射→建库→批解→Touchstone 导出）
+把 EDB 快车道（edb_lane_service 全流程发射→建库→批解→Touchstone 导出）
 接进 recipe 优化环的评估缝：``service/recipe_loop_remote.LoopLauncher``
 协议（evaluate(params) -> EvalResult）的 EDB 实现——与 LocalLoopLauncher
 （本地评估入口直调）/ RemoteLoopLauncher（远端占位）并列的第三通道。

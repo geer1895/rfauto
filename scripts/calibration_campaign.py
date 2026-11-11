@@ -32,7 +32,7 @@ def _parse_free_kb(out: str) -> int:
 
 
 def free_physical_memory_kb() -> int:
-    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（Devlog #182）
+    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（DEVLOG #182）
     for cmd in (
         ["wmic", "OS", "get", "FreePhysicalMemory", "/Value"],
         ["powershell", "-NoProfile", "-Command",

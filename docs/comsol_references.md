@@ -9,17 +9,17 @@
 
 | 项 | 状态 |
 |---|---|
-| COMSOL 6.3.0.290 | ✅ **可用**（<drive>:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe/） |
+| COMSOL 6.3.0.290 | ✅ **可用**（E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe/） |
 | COMSOL 6.4 | ❌ 禁用（license 单行 SERIAL 13-apr-2026 过期且无模块包） |
 | **版本钉扎** | **必须显式 `mph.start(version="6.3")`**——MPh 自动探测选"最新"=6.4=过期（#215） |
 | license 形态 | permanent uncounted，RF/RFBATCH/RFCSL/RFCOMPL 齐全；**每次求解占一个席位，串行使用** |
 | Python 桥 | MPh 1.4.0（venv 已装，[dataset] 同款 extras 模式） |
-| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（，坑 #217 API 口径实证已回写本文 §2/§3/§5） |
+| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（DEVLOG（廿七），坑 #217 API 口径实证已回写本文 §2/§3/§5） |
 
 ## 1. 权威文档来源（按查询优先序）
 
 1. **本地官方 PDF（6.3 精确对应版）**：
-   - `<drive>:\COMSOL\COMSOL_63\COMSOL63\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
+   - `E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
    - 同目录 `COMSOL_ProgrammingReferenceManual.pdf`（model.* 全方法参考：geom/material/mesh/physics/study/sol/result/…）
    - RF 模块专属：`doc\pdf\RF_Module\`（端口/S 参数/频域求解器口径）
 2. **MPh 文档**（Python 桥 API）：https://mph.readthedocs.io/en/latest/
@@ -40,7 +40,7 @@ model.study("std1").create("freq", "Frequency");                 // 频域步类
 model.study("std1").feature("freq").set("plist", "2.4");  // 属性 set
 model.study("std1").feature("freq").setIndex("geometricNonlinearity", "off", 0);
 ```
-- **#217 实证更正（2026-09-11 首案例，）**：RF 集总端口
+- **#217 实证更正（2026-09-11 首案例，DEVLOG（廿七））**：RF 集总端口
   建模必须用 `ElectromagneticWaves`（emw）——`ElectromagneticWavesFrequencyDomain`
   （ewfd，Wave Optics 风格）可创建但**无 LumpedPort 特征**；study 频域步
   类型串是 `Frequency` 非 `FrequencyDomain`。早期探针脚本
@@ -97,7 +97,7 @@ node.java                                # 逃逸口→裸 COMSOL Java 对象
 ## 5. RF 模块要点（S 参数仿真，详读 doc\pdf\RF_Module\）
 
 - 物理场接口：**`ElectromagneticWaves`（tag emw）**——首案例真机求解
-  通过（2026-09-11，）；`ElectromagneticWavesFrequencyDomain`
+  通过（2026-09-11，DEVLOG（廿七））；`ElectromagneticWavesFrequencyDomain`
   仅在早期探针中用于 license checkout 验证，无 LumpedPort，不用于建模
   （#217①）。
 - S 参数工作流：port 边界条件（LumpedPort，Uniform/Cable 型）+ study
@@ -225,3 +225,90 @@ Figure 3 形态 PASS），相变+旋转是**物理效应增强项**而非验收�
 复杂度远超单项收口包量级；且求解器复杂度（旋转重贴网格 ×401 时刻）与
 license 席位时长预算需单独评估。官方结果叙述（平均温度渐近 380 K）属
 相变封顶物理，对当前无相变模型不构成参考量（§10.24 已定论）。
+
+## 8. 热弹性借用批 11 坑实录（2026-11-02 专利3 外借批）
+
+> 来源：第三方只读借用（专利自动化工作台，晶圆键合热-力耦合参数研究，
+> COMSOL 6.3.0.290 结构热弹性、2D 轴对称、160 组扫参+代理模型训练）用本仓
+> venv 跑通后的实测反馈，原件
+> `runs/aurora_q/feedback/rfauto使用反馈-20261102.md`（Win10 / MPh 1.4.0 /
+> JPype 1.7.1；按排错代价从大到小排序，全部为该批真机实证）。转录纪律：
+> 逐条照录 + 【建议/守卫】注记；坑1/坑2 的守卫已落地
+> `comsol_adapter.py`（T-Q16 双守卫，缺省零行为变化——检测面拿不到一律
+> unknown 放行，绝不误报）。
+
+1. **【最大坑，2 小时级】ThermalExpansion userdef 模式下 `Tref` 不显式设置
+   → 特征静默失效，解为精确零，全程无任何警告。** 表现：`std.run()` 正常
+   返回、dataset 正常、位移场（w）恒等于 0.0。且属性可用性与设置顺序相关：
+   先单独 `set("Tref",…)` 报「未知参数 Tref」，按
+   `alpha_mat("userdef") → alpha → T → Tref` 顺序设置则成功。语义已用自由
+   膨胀解析值精确验证：`ε = α·(T − Tref)`（T=终温、Tref=无应力温度）。
+   【建议/守卫】adapter 已落「热弹性静默零解守卫」（`solution_all_zero` +
+   `thermal_expansion_feature_tags`，solve 内解全精确零且模型含
+   ThermalExpansion 特征 → message/field_data 显式警告，success 不变）；
+   建模侧 Tref 官方属性名=minput_strainreferencetemperature
+   （`add_thermal_expansion` 已按此配方）。
+2. **空 mesh 序列（只有 Size 节点、无 FreeTri/Map 操作）不产生任何单元
+   （getNumElem()=0），`std.run()` 仍静默「成功」**，评估全部返回空。
+   【建议/守卫】adapter 已落「空网格守卫」（`mesh_element_count`，solve
+   在 study.run 前检查，==0 拦截 success=False 并指向网格配置；拿不到单元
+   数=unknown 放行不误报）。
+3. **映射网格操作的类型标识是 `"Map"` 而非 `"Mapped"`**（后者报「在这个
+   情景中不能创建本操作」，与编程指南文本不一致；伪类型名对照实验确认
+   `"Map"` 可建）。Modeling Guide 文本与 6.3.0.290 实现存在出入。
+   【建议/守卫】映射网格一律 `create(tag, "Map")`；类型串纪律同 #217
+   （`"ElectromagneticWaves"` 非 `"...FrequencyDomain"`）——文档文本与引擎
+   实现冲突时按引擎实测回写本表。
+4. **薄层叠层（1μm×138mm 键合带）用 FreeTri 网格会爆炸/挂死**（跨尺度
+   过渡单元数失控）；唯一稳解 = `Map` 映射网格 + 每长边显式 Distribution
+   计数（对边计数一致）。该批配方：全场 ~1.4k 单元、单次求解 2~4 秒。
+   【建议/守卫】薄层热-力模型网格配方=Map+Distribution 逐边显式计数、
+   禁 FreeTri 跨尺度过渡；将来做结构/热通道可直接移植为 adapter 薄层
+   档缺省网格。
+5. **新建 LinearElasticModel feature 默认 `E_mat/nu_mat="from_mat"`**：
+   无材料库的纯物理场模型必须显式 `set("E_mat","userdef")`，否则编译报
+   「所需材料属性 E 未定义」，报错不指向真正根因（尤其报错编号指向的
+   feature 未必是你以为的那个——label 序号与创建序号会错位，该批
+   「线弹性材料 3」实际是第 4 个 feature）。
+   【建议/守卫】无材料库模型一律显式 userdef 三件套（E/nu/alpha）；
+   排错按 feature tag 定位、不信 label 序号（观察面自身失真，#331 族）。
+6. **`mph.Model.evaluate` 不支持坐标与模型输入类表达式**（`x/y/X/Y/T` 均
+   报「未定义变量」），仅场量可用；轴对称坐标用 `r`/`z`。多表达式同点集
+   求值需走 `java.result().numerical().create(…,"Eval")` +
+   `set("expr",[list])`（返回 点数×表达式数 矩阵）。
+   【建议/守卫】坐标/模型输入类一律走 Eval 链不走 evaluate；adapter 既有
+   评估面（EvalGlobal/Eval）同口径，新评估链沿用。
+7. **Eval.getReal() 返回矩阵的行/列方向在两次会话中表现不一致**（一次
+   [点][表达式]、一次疑似转置）。【建议/守卫】不假设行列方向——按物理
+   范围（如 r∈[0,R]、z∈[0,H]）做列自动识别兜底；mph 侧若出统一转置策略
+   须文档化（观察工具自身失真，#331 族）。
+8. **2D 域最大值没有现成 numerical 算子**（MaxSurface 为 3D 专用）；
+   Maximum 组件耦合的表达式引用（`maxring(...)`/`comp1.maxring(...)`/
+   `mod1.maxring(...)`）三种前缀均报「未知函数或算子」。该批最终用 Eval
+   全场矩阵 + numpy 过滤替代。【建议/守卫】2D 极值=Eval 全场取数+numpy
+   聚合（数值只在确定性内核，铁律 7 同构）；耦合算子引用名勿臆测。
+9. **JPype set 重载歧义**：`set(str,int)` 在 bool/int 间歧义 → 传
+   `jpype.JInt`；数值属性一律传字符串最稳（`set("elemcount","154")`）。
+   【建议/守卫】同 #217④ 既有纪律（整数/布尔属性一律传字符串），adapter
+   全链已照此，新增 API 面沿用。
+10. **本地 applications 目录的 .mph 是「案例库预览文件」，不能 load/solve**
+    （该批加载 MEMS_Module/Sensors/thermal_expansion.mph 被拒）。
+    【建议/守卫】实录里「官方例 XXX.mph」必须标注真实来源路径（本仓实录
+    均来自可解副本/解包 dmodel，见 §5a/§7 出处注记）；按 applications
+    路径找可解副本会落空。
+11. **physics `create(tag,type,geom_tag)` 第三参是几何 tag 字符串而非维度
+    整数**（报错信息含糊）；study feature `create(tag,type)` 只两参。
+    【建议/守卫】签名差异以 §2/§5a 实录为准；adapter 顶部常量区已集中
+    注记，新增物理场接口先核对本表再写。
+
+### venv 作为只读运行时外借（官方口径，2026-11-02 实证）
+
+- 绝对路径调用、不激活不复制：
+  `E:\rfauto_workspace\.venv\Scripts\python.exe -I 脚本.py`（Python 3.12.14）；
+- `-I` 隔离建议：忽略调用方 PYTHONPATH/用户 site-packages，嵌套虚拟环境
+  不串味；调用方产物一律落**调用方自己的工作区**（零写入本仓）；
+- 外借纪律：只读借用——不向仓内写文件、不动 venv（不装/卸包）、不动
+  `runs/` 与 `configs/`；README 面同款口径见「venv 作为只读运行时外借」节；
+- 该批借用栈实测全齐：torch 2.14 CPU / scipy 1.18 / sklearn 1.9 / numpy
+  2.4 / matplotlib / pandas / MPh 1.4 + JPype 1.7——零安装直接开工，
+  借用形态评价 ⭐⭐⭐⭐⭐。

@@ -5,7 +5,7 @@ Run with: E:\\ADS\\ads2023\\tools\\python\\python.exe probe_2_dataset.py <path.d
 import os
 import sys
 
-os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
+os.environ.setdefault("HPEESOF_DIR", r"C:\Program Files\Keysight\ADS 2023")
 
 print("de module OK")
 

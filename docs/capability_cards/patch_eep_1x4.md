@@ -6,7 +6,7 @@
 
 - 拓扑：1×4 EEP 贴片阵（§DP-4 P3）：4 元沿 x 等距 spacing（行中心 y=20mm），缺口全开 −y；每元独立 LumpedPort 底探针（端口 1..4 =x 升序），无 corporate 馈树，元间 DC 隔离=EEP 定义性质；基板 + z-min PEC 地
 - f0：5.8 GHz ｜ 端口：4 ｜ 时长 ≤30.0 ns ｜ 网格档：0.0 mm
-- 提取口径：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 内部证据档
+- 提取口径：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 runs/df6_dp4p3/criteria.md
 - 参数：elem_len_mm, elem_w_mm, elem_feed_mm, spacing_x_mm, feed_w_mm
 - 基板：{"er":3.66,"h_mm":0.508}
 
@@ -56,8 +56,8 @@
 
 - 参数语义：elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 c/(2f0√εeff)−2ΔL，fake 谐振为精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))），elem_feed_mm=插入馈深度（缺口深=探针馈点；Rin(y0)=Rin(0)cos²(πy0/L)，0.3L≈100Ω 口径），feed_w_mm=缺口内馈段/探针邻域线宽（HJ 50Ω 1.112mm），spacing_x_mm=单元中心距 d（0.484λ0=25.0172mm；栅瓣判据 d<λ0，1×4 跨度 3d+W 扰动域与 C2 同款预核 ≤120mm 板）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/探针）精确入网（#198）
-- 冒烟现状：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 内部证据档（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 内部证据档；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 冒烟现状：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 runs/df6_dp4p3/criteria.md（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 runs/df6_dp4p3/handoff.md；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

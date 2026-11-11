@@ -47,7 +47,6 @@ from .capacitor_family import (
 )
 from .coupler_family import (
     _branchline_2sect_sparams,
-    _branchline_sparams,
     _cline_coupler_sparams,
     _coupled_line_sparams,
     _lange_sparams,
@@ -337,14 +336,33 @@ class FakeAdapter(SimulatorAdapter):
                     s11_min_lin=s11_min_lin,
                 )
         elif self.model_type == "branchline":
-            # f0 同样由 arm_len 变量驱动（λ/4 关系），参数变化有真实响应
-            # 真机校准：S11 深度依赖于 series_w/shunt_w
+            # Q-X83 内核接线（aurora_r 合流笔 2026-11-10，DEVLOG 三百零二
+            # 处方①）：理想 TL 矩阵闭式（core/calc_families/rf_matrix，
+            # Pozar §7 奇偶半电路 ABCD 级联）替换粗档手调包络。
+            # series_w/shunt_w 经 synthesis.forward_z0 宽→阻抗（core 唯一
+            # 介质口径，铁律 1c 同源；缺省宽 1.87/1.11mm≈35.4/50Ω=3dB 设计
+            # 臂——宽度偏离→臂阻抗失配→响应平滑退化，寻优地形保持真实）；
+            # f0 沿用 _compute_f0_from_variables（λ/4 口径不变）。
+            # 极端线宽：参数域内臂阻抗落在 25-60Ω 界（inverse_width 反解
+            # 括号验证），branchline_ideal_sparams 守卫域内 fail-closed。
+            from rfauto.core.rf_matrix import (
+                branchline_ideal_sparams,
+            )
+            from rfauto.core.synthesis import Stackup, forward_z0
+
             f0_ghz = self._compute_f0_from_variables(eps_eff=cal.get("eps_eff"))
             series_w = self._parse_variable("series_w_mm", default=1.87)
             shunt_w = self._parse_variable("shunt_w_mm", default=1.11)
-            s_data = _branchline_sparams(
-                freq.f / 1e9, z0=self.z0, f0_ghz=f0_ghz,
-                series_w_mm=series_w, shunt_w_mm=shunt_w,
+            _stackup = Stackup(
+                name="branchline_fake", epsilon_r=3.66, thickness_mm=0.508)
+            z_series = float(
+                forward_z0(float(series_w), float(f0_ghz), _stackup)[0])
+            z_shunt = float(
+                forward_z0(float(shunt_w), float(f0_ghz), _stackup)[0])
+            s_data = branchline_ideal_sparams(
+                freq.f / 1e9, z0_ohm=self.z0, f0_ghz=f0_ghz,
+                er=3.66, h_mm=0.508,
+                series_z_ohm=z_series, shunt_z_ohm=z_shunt,
             )
         elif self.model_type == "patch":
             # 贴片天线：patch_len → λ/2 谐振频率；feed_offset/patch_w →

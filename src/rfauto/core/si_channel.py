@@ -57,7 +57,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import skrf
 
 __all__ = [
     "ChannelEyeResult",
@@ -690,13 +689,26 @@ def save_touchstone_s2p(
 
 
 def load_touchstone_s2p(path: Any) -> tuple[np.ndarray, np.ndarray, float]:
-    """读 2 端口 Touchstone（skrf），返回 (freqs_hz, s21, z0)。"""
+    """读 2 端口 Touchstone（单源解析），返回 (freqs_hz, s21, z0)。
+
+    R-27 单源迁移（2026-11-10）：skrf.Network 直读 → core/touchstone_parser
+    单源解析（#248 rank 三规则判定取代扩展名推断；rank 判不出显式
+    fail-loud 不猜；本仓 writer 语料 ``# HZ S RI R z0`` 经 parser 逐位
+    等价，tests/unit/test_touchstone_consumer_migration.py 等价钉）。
+    """
+    from rfauto.core.touchstone_parser import parse_touchstone
+
     p = Path(path)
     if not p.is_file():
         raise FileNotFoundError(f"找不到 Touchstone 文件：{p}")
-    ntwk = skrf.Network(str(p))
-    if ntwk.nports < 2:
-        raise ValueError(f"需要 ≥2 端口文件，实际 {ntwk.nports} 端口：{p}")
-    f = np.asarray(ntwk.f, dtype=float)
-    s21 = np.asarray(ntwk.s[:, 1, 0], dtype=complex)
-    return f, s21, float(np.real(np.asarray(ntwk.z0).ravel()[0]))
+    parsed = parse_touchstone(p)
+    n_ports = parsed["n_ports"]
+    s_matrix = parsed["s_matrix"]
+    if n_ports is None or s_matrix is None:
+        raise ValueError(
+            f"Touchstone 端口数无法判定（rank 冲突，宁 UNKNOWN 不误判）：{p}")
+    if n_ports < 2:
+        raise ValueError(f"需要 ≥2 端口文件，实际 {n_ports} 端口：{p}")
+    f = np.asarray(parsed["freqs_hz"], dtype=float)
+    s21 = np.asarray(s_matrix[:, 1, 0], dtype=complex)
+    return f, s21, float(parsed["port_z"][0])

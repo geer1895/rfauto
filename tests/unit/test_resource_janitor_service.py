@@ -298,7 +298,7 @@ def _aedt_lock_text(pid: int, ips: tuple[str, ...] =
     return (
         "$begin 'ConnectionParameters'\r\n"
         f"\tDesktopProcessID={pid}\r\n"
-        "\tDesktopProcessPath='E:\\\\ANSYSINC\\\\ANSYS Inc\\\\v251\\\\"
+        "\tDesktopProcessPath='C:\\\\Program Files\\\\ANSYS Inc\\\\v251\\\\"
         "AnsysEM\\\\ansysedt.exe'\r\n"
         "\tLaunchedByWB=false\r\n"
         "\tGRPCPort=56767\r\n"

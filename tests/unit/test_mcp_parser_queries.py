@@ -1,0 +1,713 @@
+"""EDA 格式解析二线查询/校验 MCP 工具组单测（aurora_q Q-X76 席位，2026-11-08）。
+
+覆盖面（任务书预声明：逐工具 ≥2 测=成功+路径不存在；查询未命中错误
+路径至少 3 工具；截断旋钮 vcd_report top_n）：
+- 信封成功路径：经 fastmcp call_tool 真调用（#270 家法：死壳只在调用
+  期才炸），全部夹具 tmp_path 内联合成（SPEF/LEF/DEF/SDF/Gerber/
+  Excellon/IPC-D-356/VCD 文本 + GDSII 字节流 builder 照抄
+  test_mcp_cad_tools.py + STIL 照抄 test_stil_parser.py SAMPLE_STIL——
+  #144 家法零 runs/ 湖写入）；
+- 查询未命中错误路径（4 工具覆盖）：sdf_cell_detail 不存在 celltype/
+  不存在 instance、spef_net_detail 不存在 net、stil_pattern_detail
+  不存在 pattern——ok=False errors 信封随附可用清单零抛出；
+- 截断旋钮：vcd_report top_n（1 vs 缺省全量对照）；
+- 宏覆盖旋钮：lef_def_check macro="INV_X1"（top-level 对齐生效翻
+  verdict）；覆盖旋钮：ipc356_fab_pair_check tol_mm（0.5 未覆盖 vs 2.0
+  全覆盖对照）；
+- 错误路径：文件不存在（8 工具全覆盖）、ipc356_fab_pair_check
+  gerber/drill 双缺（usage 级）、lef_def_check DEF 文件缺失——全部
+  ok=False errors 信封零抛出；
+- 注册面健全性（不计数的轻量钉：名字在册、Args 与签名对齐）。
+
+工具注册序/计数锚不修（189→197 计数链归主代合流统一——本文件零计数
+断言，只测行为；171/189 锤+金快照为 Q-W9-3/Q-X69/Q-X73 时点已知锚红，
+Q-X69 起如实挂账）。
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import struct
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+# ── 夹具文本（各域既有单测同源口径，内联合成——零外部夹具文件） ────────────
+
+#: SPEF（照抄 tests/unit/test_mcp_cad_tools.py SAMPLE_SPEF——2 net，
+#: spef_net_detail 单 net 查询语料）。
+SAMPLE_SPEF = """\
+*SPEF "IEEE 1481-1998"
+*DESIGN "top_block"
+*DATE "2026-11-07"
+*VENDOR "test_vendor"
+*PROGRAM "test_extract"
+*VERSION "1.0"
+*DESIGN_FLOW "NETLIST_TYPE_VERILOG" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER_CHAR :
+*BUS_DELIMITER_CHAR [ ]
+*T_UNIT 1 NS
+*C_UNIT 1 PF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*NAME_MAP
+*10001 clk
+*10002 data_a
+*10003 data_b
+*20001 u1
+*20002 u1:CK
+
+*PORTS
+clk I
+data_a I
+data_b O
+
+*D_NET *10001 1.5
+*CONN
+*P clk I
+*I *20002 I *C 10.0 20.0 *L M1 M2
+*I *20001:Q O
+*CAP
+1 *10001:1 5.0e-01
+2 *10001:2 0.3
+3 *10001:2 *10002:1 0.2
+4 *10001:3 *20001:Q 0.1
+5 *10001:3 *10002:2 0.4 *C
+*RES
+1 *10001:1 *10001:2 10.0
+2 *10001:2 *10001:3 20.0
+3 *10001:3 *10001:1 30.0
+*IND
+1 *10001:1 *10001:2 1.0e-9
+*END
+
+*D_NET *10002 0.2
+*CONN
+*I *20001:D I
+*CAP
+1 *10002:1 0.2
+*RES
+1 *10002:1 *10002:2 5.0
+*END
+"""
+
+#: LEF（最小科技+单元 LEF：UNITS/LAYER/单 MACRO 双 PIN——lef_def_check
+#: 闭包/对齐有据）。
+LEF_TEXT = """\
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+MANUFACTURINGGRID 0.005 ;
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  WIDTH 0.07 ;
+END metal1
+MACRO INV_X1
+  CLASS CORE ;
+  SIZE 0.38 BY 1.4 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.315 0.38 0.585 ;
+    END
+  END A
+  PIN ZN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.815 0.38 1.085 ;
+    END
+  END ZN
+END INV_X1
+END LIBRARY
+"""
+
+#: DEF（design blk：双元件+单 net——lef_def_check clean verdict 语料）。
+DEF_TEXT = """\
+VERSION 5.8 ;
+DESIGN blk ;
+UNITS DISTANCE MICRONS 1000 ;
+COMPONENTS 2 ;
+  - u1 INV_X1 + PLACED ( 0 0 ) N ;
+  - u2 INV_X1 + PLACED ( 1000 0 ) N ;
+END COMPONENTS
+NETS 1 ;
+  - n1 ( u1 ZN ) ( u2 A ) ;
+END NETS
+END DESIGN
+"""
+
+#: SDF（单 CELL：CELLTYPE DFF_X1/INSTANCE u_ff1 IOPATH×1——sdf_cell_detail
+#: 命中/未命中查询语料）。
+SDF_TEXT = """\
+(DELAYFILE
+  (SDFVERSION "3.0")
+  (DESIGN "qx76_top")
+  (TIMESCALE 1ns)
+  (CELL
+    (CELLTYPE "DFF_X1")
+    (INSTANCE u_ff1)
+    (DELAY
+      (ABSOLUTE
+        (IOPATH (posedge CK) Q (0.100:0.120:0.150) (0.110:0.130:0.160))
+      )
+    )
+    (TIMINGCHECK
+      (SETUP D (posedge CK) (0.050:0.060:0.070))
+      (WIDTH (negedge CK) (0.300:0.350:0.400))
+    )
+  )
+)
+"""
+
+#: Gerber RS-274X（最小板框：inch 模式 FSLAX34，bbox=0..64.516×0..32.258mm）。
+GERBER_TEXT = """\
+%FSLAX34Y34*%
+%MOIN*%
+%ADD10C,0.5*%
+D10*
+X0Y0D02*
+X25400Y0D01*
+X25400Y12700D01*
+X0Y12700D01*
+X0Y0D01*
+M02*
+"""
+
+#: Excellon（METRIC LZ 缺省 6 位小数——X10000000=10.0mm；孔位
+#: (10.0,11.2)/(20.0,20.0) 距最近焊盘 1.2mm/0.0mm——tol_mm 旋钮判定语料：
+#: 缺省 0.5 部分覆盖、2.0 全覆盖）。
+EXCELLON_IN_BOUNDS = """\
+M48
+METRIC,LZ
+T01C0.8
+%
+T01
+X10000000Y11200000
+X20000000Y20000000
+T0
+M30
+"""
+
+#: IPC-D-356（照抄 tests/unit/test_mcp_cad_tools.py IPC356_TEXT——两焊盘
+#: (1.0,2.0)/(3.0,2.0) 在 gerber bbox 内）。
+IPC356_TEXT = """\
+P 2.10
+RECORD 3 Class 317 Component
+C10000
+M10 RFAUTO TEST USER
+M20 DATE 11-07-2026
+CM CAMPAIGN Q-X65 FIXTURE BOARD
+C317
+317XU1X00100Y00200R90
+317 R2 X00300Y00200 R0
+378XU1-1X01000Y01000X0092S0003 GND
+378XU1-2X02000Y01000X0092R0003 GND
+378XR2-1X01000Y02000X0060C0002 VCC
+378 R2-2 X02000Y02000 X0060 C0002 VCC
+378XTP1X03000Y02000X0080S0004 NET_SOLO M
+367XV1X01500Y01500X0035S0001
+357XPROBE1X01000Y01000
+9999
+"""
+
+#: VCD（照抄 test_mcp_cad_tools.py VCD_TEXT——2 scope 嵌套 3 var）。
+VCD_TEXT = """\
+$date
+   Fri Nov 07 23:59:00 2026
+$end
+$version
+   iverilog 12.0 (stable)
+$end
+$timescale 1ps $end
+$scope module top $end
+$var wire 1 ! clk $end
+$var reg 4 " data $end
+$scope module alu $end
+$var real 64 # temperature $end
+$upscope $end
+$enddefinitions $end
+$comment
+   generated by qx76 fixture
+$end
+#0
+$dumpvars
+0!
+x"
+r25.5 #
+$end
+#10
+1!
+b1010 "
+#20
+0!
+bx "
+"""
+
+#: STIL（照抄 tests/unit/test_stil_parser.py SAMPLE_STIL——burst1 下
+#: p_seed 声明空壳+p_loop 内联体（5 向量/n_loop=3/n_shift=1/anns 2）：
+#: stil_pattern_detail 命中/未命中查询语料）。
+STIL_TEXT = """\
+STIL 1.0;
+
+/* global wfc set: 0/1 */
+Signals {
+    clk = In;
+    data = Out;
+    io = InOut;
+    rst_n = In;
+
+    WFC_0 = '0';
+    WFC_1 = '1';
+}
+
+SignalGroups {
+    grp_in = 'clk rst_n';
+    grp_out = 'data io';
+}
+
+Timing {
+    WaveformTable main_wft {
+        Period '50ns';
+        Waveforms {
+            grp_in {
+                01 { 'D'; }
+            }
+            grp_out {
+                01 { 'C'; }
+            }
+        }
+    }
+}
+
+PatternBurst burst1 {
+    PatternExec;
+    Pattern p_seed;
+    Pattern p_loop {
+        W main_wft;
+        Ann "shift in seed";
+        V {
+            grp_in = 01;
+            grp_out = LH;
+        }
+        Loop 3 {
+            V {
+                grp_in = 10;
+            }
+            Shift {
+                V {
+                    grp_in = 11;
+                    grp_out = 00;
+                }
+            }
+        }
+        V {
+            grp_in = 000;
+            ghost = 0101;
+        }
+        Ann "done";
+    }
+}
+"""
+
+
+# ── GDSII 字节流 builder（照抄 test_mcp_cad_tools.py 最小子集） ─────────────
+
+DT_INT2 = 0x02
+DT_INT4 = 0x03
+DT_REAL8 = 0x05
+
+
+def _rec(rectype: int, payload: bytes = b"", datatype: int = 0x00) -> bytes:
+    length = 4 + len(payload)
+    return length.to_bytes(2, "big") + bytes([rectype, datatype]) + payload
+
+
+def _i2(*vals: int) -> bytes:
+    return struct.pack(f">{len(vals)}h", *vals)
+
+
+def _i4(*vals: int) -> bytes:
+    return struct.pack(f">{len(vals)}l", *vals)
+
+
+def _ascii_padded(text: str) -> bytes:
+    raw = text.encode("ascii")
+    return raw + b"\x00" * (len(raw) % 2)
+
+
+def _enc_real8(value: float) -> bytes:
+    """GDSII real8 编码（test_gdsii_parser.py 同款测试侧参考编码器）。"""
+    if value == 0.0:
+        return b"\x00" * 8
+    sign = 0x80 if value < 0 else 0
+    x = abs(value)
+    e = 0
+    while x >= 1.0:
+        x /= 16.0
+        e += 1
+    while x < 1.0 / 16.0:
+        x *= 16.0
+        e -= 1
+    mant = round(x * 2.0 ** 56)
+    if mant >= 2 ** 56:
+        mant //= 16
+        e += 1
+    return bytes([sign | (e + 64)]) + mant.to_bytes(7, "big")
+
+
+def _gds_bytes() -> bytes:
+    """1 库 1 结构（1 BOUNDARY layer=1 datatype=0）+UNITS 双实数最小流。"""
+    ts = _i2(*([0] * 12))
+    xy = _i4(0, 0, 1000, 0, 1000, 500, 0, 500, 0, 0)
+    boundary = (_rec(0x08) + _rec(0x0D, _i2(1), DT_INT2)
+                + _rec(0x0E, _i2(0), DT_INT2)
+                + _rec(0x10, xy, DT_INT4) + _rec(0x11))
+    return (_rec(0x00, _i2(600), DT_INT2) + _rec(0x01, ts)
+            + _rec(0x02, _ascii_padded("QX76_LIB"))
+            + _rec(0x03, _enc_real8(0.001) + _enc_real8(1.0), DT_REAL8)
+            + _rec(0x05, ts) + _rec(0x06, _ascii_padded("TOP"))
+            + boundary + _rec(0x07) + _rec(0x04))
+
+
+# ── 基建（test_mcp_parser_tools/test_mcp_cad_tools 同款） ──────────────────
+
+
+@pytest.fixture(autouse=True)
+def _isolated_cwd(isolated):
+    """cwd 隔离（#144 家法，前两批同款）：查询工具按显式路径直读文件本
+    不触 runs/，隔离体单源化防未来任何 cwd 相对路径面。"""
+
+
+@pytest.fixture()
+def mcp_server():
+    from rfauto.mcp_server import mcp
+    return mcp
+
+
+def _extract_result(tool_result) -> dict[str, Any]:
+    """从 fastmcp ToolResult 提取 dict（test_mcp_server 同款分流）。"""
+    if hasattr(tool_result, "structured_content") and tool_result.structured_content is not None:
+        return tool_result.structured_content
+    if hasattr(tool_result, "content") and tool_result.content:
+        return json.loads(tool_result.content[0].text)
+    return json.loads(str(tool_result))
+
+
+def _call(mcp_server, tool_name: str, arguments: dict) -> dict[str, Any]:
+    """经 fastmcp call_tool 真调用（#270：死壳只在调用期才炸）。"""
+    return _extract_result(
+        asyncio.run(mcp_server.call_tool(tool_name, arguments)))
+
+
+def _write(tmp_path: Path, name: str, text: str) -> str:
+    p = tmp_path / name
+    p.write_text(text, encoding="utf-8")
+    return str(p)
+
+
+# ── GDSII 层汇总/层级报告 ──────────────────────────────────────────────────
+
+
+class TestGdsiiLayers:
+    def test_ok_envelope_layer_view(self, mcp_server, tmp_path):
+        path = tmp_path / "sample.gds"
+        path.write_bytes(_gds_bytes())
+        data = _call(mcp_server, "gdsii_layers", {"path": str(path)})
+        assert data["ok"] is True, data.get("errors")
+        assert "errors" not in data  # AU-1 信封合规：成功面不带 errors 键
+        assert data["n_layer_keys"] == 1
+        assert data["layers"] == [{
+            "layer": 1, "datatype": 0, "n_elements": 1,
+            "by_kind": {"boundary": 1}, "bbox_dbu": [0, 0, 1000, 500],
+        }]
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "gdsii_layers",
+                     {"path": str(tmp_path / "nope.gds")})
+        assert data["ok"] is False
+        assert isinstance(data["errors"], list)
+        assert data["errors"] and "不存在" in data["errors"][0]
+
+
+class TestGdsiiHierarchy:
+    def test_ok_envelope_hierarchy_view(self, mcp_server, tmp_path):
+        path = tmp_path / "sample.gds"
+        path.write_bytes(_gds_bytes())
+        data = _call(mcp_server, "gdsii_hierarchy", {"path": str(path)})
+        assert data["ok"] is True, data.get("errors")
+        assert data["reference_counts"] == {"TOP": 0}  # 零引用
+        assert data["undefined_references"] == []
+        assert data["orphan_structures"] == []  # TOP 有 1 元素非孤儿
+        assert data["unreferenced_structures"] == ["TOP"]  # 宁多报桶
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "gdsii_hierarchy",
+                     {"path": str(tmp_path / "nope.gds")})
+        assert data["ok"] is False
+        assert data["errors"] and "不存在" in data["errors"][0]
+
+
+# ── VCD 活跃度报告（top_n 截断旋钮） ────────────────────────────────────────
+
+
+class TestVcdReport:
+    def test_ok_envelope_default_full(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.vcd", VCD_TEXT)
+        data = _call(mcp_server, "vcd_report", {"path": path})
+        assert data["ok"] is True, data.get("errors")
+        assert data["header"]["timescale_raw"] == "1ps"
+        assert data["time_windows"] is not None
+        assert len(data["activity_top"]) == 3  # 3 var 缺省 top_n=10 全量
+        top = data["activity_top"][0]
+        assert top["n_events"] >= data["activity_top"][-1]["n_events"]
+        assert top["id"] == "!"  # 并列按 id 升序稳定——clk 恒首发
+
+    def test_top_n_truncation_knob(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.vcd", VCD_TEXT)
+        data = _call(mcp_server, "vcd_report", {"path": path, "top_n": 1})
+        assert data["ok"] is True
+        assert len(data["activity_top"]) == 1  # 截断旋钮生效
+        assert data["activity_top"][0]["name"] == "clk"  # 最活跃信号
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "vcd_report",
+                     {"path": str(tmp_path / "nope.vcd")})
+        assert data["ok"] is False
+        assert data["errors"] and "不可读" in data["errors"][0]
+
+
+# ── SDF 单元查询（未命中双形态） ────────────────────────────────────────────
+
+
+class TestSdfCellDetail:
+    def test_ok_envelope_hit_with_delay_paths(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.sdf", SDF_TEXT)
+        data = _call(mcp_server, "sdf_cell_detail", {
+            "path": path, "celltype": "DFF_X1", "instance": "u_ff1"})
+        assert data["ok"] is True, data.get("errors")
+        assert data["n_matches"] == 1
+        assert data["matches"][0]["match"] == "exact"
+        assert len(data["delay_paths"]) == 1
+        row = data["delay_paths"][0]
+        assert row["kind"] == "IOPATH"
+        assert row["from_pin"] == "CK" and row["to_pin"] == "Q"
+        assert row["rise_s"]["typ"] == pytest.approx(0.12e-9)
+
+    def test_unknown_celltype_error_lists_available(self, mcp_server,
+                                                    tmp_path):
+        path = _write(tmp_path, "sample.sdf", SDF_TEXT)
+        data = _call(mcp_server, "sdf_cell_detail", {
+            "path": path, "celltype": "NOPE_X2"})
+        assert data["ok"] is False
+        assert "NOPE_X2" in data["errors"][0]
+        assert data["available_celltypes"] == ["DFF_X1"]  # 可用清单不猜
+
+    def test_unknown_instance_error_lists_available(self, mcp_server,
+                                                    tmp_path):
+        path = _write(tmp_path, "sample.sdf", SDF_TEXT)
+        data = _call(mcp_server, "sdf_cell_detail", {
+            "path": path, "celltype": "DFF_X1", "instance": "u_nope"})
+        assert data["ok"] is False
+        assert "u_nope" in data["errors"][0]
+        assert data["available_instances"] == ["u_ff1"]
+        assert data["n_available_instances"] == 1
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "sdf_cell_detail", {
+            "path": str(tmp_path / "nope.sdf"), "celltype": "DFF_X1"})
+        assert data["ok"] is False
+        assert data["errors"] and "不存在" in data["errors"][0]
+
+
+# ── SPEF 单 net 查询（未命中带可用名录） ────────────────────────────────────
+
+
+class TestSpefNetDetail:
+    def test_ok_envelope_net_view(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.spef", SAMPLE_SPEF)
+        data = _call(mcp_server, "spef_net_detail",
+                     {"path": path, "name": "clk"})
+        assert data["ok"] is True, data.get("errors")
+        assert data["net"]["name"] == "clk"  # 展开名直查
+        assert data["net"]["total_cap_header"] == pytest.approx(1.5)
+        assert data["topology"] is not None
+        assert data["topology"]["name"] == "clk"  # 拓扑摘要单条
+
+    def test_unknown_net_error_lists_available(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.spef", SAMPLE_SPEF)
+        data = _call(mcp_server, "spef_net_detail",
+                     {"path": path, "name": "nope_net"})
+        assert data["ok"] is False
+        assert "nope_net" in data["errors"][0]
+        assert "clk" in data["errors"][0]  # 可用名录如实回显
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "spef_net_detail", {
+            "path": str(tmp_path / "nope.spef"), "name": "clk"})
+        assert data["ok"] is False
+        assert data["errors"] and "不可读" in data["errors"][0]
+
+
+# ── IPC-D-356 配对校验（tol_mm 覆盖旋钮） ───────────────────────────────────
+
+
+class TestIpc356FabPairCheck:
+    def test_ok_envelope_in_bounds_covered(self, mcp_server, tmp_path):
+        ipc = _write(tmp_path, "sample.ipc", IPC356_TEXT)
+        gerber = _write(tmp_path, "board.gbr", GERBER_TEXT)
+        drill = _write(tmp_path, "board.drl", EXCELLON_IN_BOUNDS)
+        data = _call(mcp_server, "ipc356_fab_pair_check", {
+            "ipc_path": ipc, "gerber_path": gerber, "drill_path": drill,
+            "tol_mm": 2.0})
+        assert data["ok"] is True, data.get("errors")
+        assert data["kind"] == "ipc356_pair_check"
+        assert data["bbox_mm"] == pytest.approx([0.0, 0.0, 64.516, 32.258])
+        assert data["n_pads"] == 5  # 4 元件 pin+1 测试点全入判定
+        assert data["n_out_of_bounds"] == 0  # 全焊盘在板框内
+        assert data["n_holes"] == 2
+        assert data["n_covered"] == 2  # tol_mm=2.0 全覆盖
+        assert data["n_uncovered"] == 0
+
+    def test_default_tol_partial_coverage(self, mcp_server, tmp_path):
+        ipc = _write(tmp_path, "sample.ipc", IPC356_TEXT)
+        gerber = _write(tmp_path, "board.gbr", GERBER_TEXT)
+        drill = _write(tmp_path, "board.drl", EXCELLON_IN_BOUNDS)
+        data = _call(mcp_server, "ipc356_fab_pair_check", {
+            "ipc_path": ipc, "gerber_path": gerber, "drill_path": drill})
+        assert data["ok"] is True
+        assert data["tol_mm"] == pytest.approx(0.5)  # service 缺省透传
+        assert data["n_covered"] == 1  # (20,20) 孔恰在焊盘上
+        assert data["n_uncovered"] == 1  # 孔距最近焊盘 1.2mm > 0.5
+        row = data["uncovered"][0]
+        assert row["nearest_pad_mm"] == pytest.approx(1.2)
+
+    def test_both_targets_missing_error_envelope(self, mcp_server,
+                                                 tmp_path):
+        ipc = _write(tmp_path, "sample.ipc", IPC356_TEXT)
+        data = _call(mcp_server, "ipc356_fab_pair_check",
+                     {"ipc_path": ipc})
+        assert data["ok"] is False
+        assert data["errors"]
+        assert "gerber/drill" in data["errors"][0]  # usage 级守卫
+
+    def test_missing_gerber_file_error_envelope(self, mcp_server, tmp_path):
+        ipc = _write(tmp_path, "sample.ipc", IPC356_TEXT)
+        drill = _write(tmp_path, "board.drl", EXCELLON_IN_BOUNDS)
+        data = _call(mcp_server, "ipc356_fab_pair_check", {
+            "ipc_path": ipc, "gerber_path": str(tmp_path / "nope.gbr"),
+            "drill_path": drill})
+        assert data["ok"] is False
+        assert data["errors"] and "Gerber" in data["errors"][0]
+
+
+# ── LEF×DEF 交叉校验（macro 覆盖旋钮） ──────────────────────────────────────
+
+
+class TestLefDefCheck:
+    def test_ok_envelope_clean_verdict(self, mcp_server, tmp_path):
+        lef = _write(tmp_path, "tech.lef", LEF_TEXT)
+        deff = _write(tmp_path, "blk.def", DEF_TEXT)
+        data = _call(mcp_server, "lef_def_check",
+                     {"lef_path": lef, "def_path": deff})
+        assert data["ok"] is True, data.get("errors")
+        assert data["lef_paths"] == [lef]  # MCP 单 LEF 基元形态
+        assert data["design_name"] == "blk"
+        assert data["units"] == {"lef_database_microns": [2000],
+                                 "def_distance_microns": 1000}
+        assert data["verdict"] == "clean"  # 闭包/连通/对齐全零
+        assert data["summary"]["missing_models"] == 0
+        assert data["summary"]["dangling_nets"] == 0
+
+    def test_macro_override_flips_verdict(self, mcp_server, tmp_path):
+        lef = _write(tmp_path, "tech.lef", LEF_TEXT)
+        deff = _write(tmp_path, "blk.def", DEF_TEXT)
+        data = _call(mcp_server, "lef_def_check", {
+            "lef_path": lef, "def_path": deff, "macro": "INV_X1"})
+        assert data["ok"] is True
+        # 对齐目标切到 INV_X1：DEF 无 PINS → LEF 侧 A/ZN 全缺 → issues
+        assert data["alignment"]["top_level"]["macro"] == "INV_X1"
+        assert data["alignment"]["top_level"]["applicable"] is True
+        assert data["verdict"] == "issues"
+        assert data["summary"]["top_level_missing_in_def"] == 2
+
+    def test_missing_def_file_error_envelope(self, mcp_server, tmp_path):
+        lef = _write(tmp_path, "tech.lef", LEF_TEXT)
+        data = _call(mcp_server, "lef_def_check", {
+            "lef_path": lef, "def_path": str(tmp_path / "nope.def")})
+        assert data["ok"] is False
+        assert data["errors"] and "DEF" in data["errors"][0]
+
+
+# ── STIL 单 pattern 查询（未命中带可用名录） ────────────────────────────────
+
+
+class TestStilPatternDetail:
+    def test_ok_envelope_vectors_and_accounts(self, mcp_server, tmp_path):
+        path = _write(tmp_path, "sample.stil", STIL_TEXT)
+        data = _call(mcp_server, "stil_pattern_detail", {
+            "path": path, "pattern": "p_loop"})
+        assert data["ok"] is True, data.get("errors")
+        assert data["burst"] == "burst1"  # 跨 burst 归属如实
+        assert data["wft"] == "main_wft"
+        assert data["n_vectors"] == 5  # 向量平坦清单文件序
+        assert data["vectors"][0] == {"group": "grp_in", "values": "01"}
+        assert data["n_loop"] == 3
+        assert data["n_shift"] == 1
+        assert len(data["anns"]) == 2
+
+    def test_unknown_pattern_error_lists_available(self, mcp_server,
+                                                   tmp_path):
+        path = _write(tmp_path, "sample.stil", STIL_TEXT)
+        data = _call(mcp_server, "stil_pattern_detail", {
+            "path": path, "pattern": "nope_pat"})
+        assert data["ok"] is False
+        assert "nope_pat" in data["errors"][0]
+        assert "burst1.p_seed" in data["errors"][0]  # burst 限定可用名录
+        assert "burst1.p_loop" in data["errors"][0]
+
+    def test_missing_file_error_envelope(self, mcp_server, tmp_path):
+        data = _call(mcp_server, "stil_pattern_detail", {
+            "path": str(tmp_path / "nope.stil"), "pattern": "p_loop"})
+        assert data["ok"] is False
+        assert data["errors"] and "不可读" in data["errors"][0]
+
+
+# ── 注册面健全性（不计数的轻量钉：名字在册、Args 与签名对齐） ────────────────
+
+
+QUERY_TOOLS = [
+    "gdsii_layers", "gdsii_hierarchy", "vcd_report", "sdf_cell_detail",
+    "spef_net_detail", "ipc356_fab_pair_check", "lef_def_check",
+    "stil_pattern_detail",
+]
+
+
+class TestParserQueriesRegistration:
+    def test_eight_tools_registered(self, mcp_server):
+        tools = asyncio.run(mcp_server.list_tools())
+        names = {t.name for t in tools}
+        assert set(QUERY_TOOLS) <= names
+
+    @pytest.mark.parametrize("tool_name", QUERY_TOOLS)
+    def test_docstring_args_match_signature(self, mcp_server, tool_name):
+        """Args 段覆盖全部真实参数且无幽灵参数（一致性门同款口径）。"""
+        from tests.unit.test_mcp_tool_consistency import (
+            _documented_args,
+            _schema_params,
+        )
+        tools = asyncio.run(mcp_server.list_tools())
+        tool = {t.name: t for t in tools}[tool_name]
+        documented = set(_documented_args(tool.fn))
+        assert documented == _schema_params(tool), (tool_name, documented)

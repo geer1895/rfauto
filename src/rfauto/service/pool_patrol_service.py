@@ -614,9 +614,9 @@ def _load_impl_face(repo_root: Path) -> dict[str, str]:
 #:   工具判据粒度粗于审计员判据的已知局限例（工具假阳清单承载人工复核）。
 #: 金标随池演进的正当迁移（aurora_e 战役 2026-10-18，非篡改校准）：
 #: - EC-16（HEBO input warping）→ closed：optimization/surrogate/
-#:   warped_kriging.py+saas_gp.py+gp_det.py 落地（W5-S22，Devlog 九百七十七）；
+#:   warped_kriging.py+saas_gp.py+gp_det.py 落地（W5-S22，DEVLOG 九百七十七）；
 #: - EC-2（multiline TRL 不确定度传播）→ closed：core/calc_families/
-#:   mtrl_uncertainty.py GUM+JCGM101 双通道落地（W2-S9，Devlog 九百七十四）。
+#:   mtrl_uncertainty.py GUM+JCGM101 双通道落地（W2-S9，DEVLOG 九百七十四）。
 #:   两件均「双判据齐」且人工核实=真实实现笔，金标 open→closed 迁移随
 #:   实现同笔（金标口径 10-07 快照与活树的账后漂移按 XD-8 先例如实注记）。
 DEFAULT_GOLD_CLOSED = (

@@ -20,7 +20,7 @@
 ## 1. 安装（约 5 分钟）
 
 ```bash
-git clone https://github.com/geer1895/rfauto && cd rfauto
+git clone <repo-url> rfauto && cd rfauto
 python -m venv .venv
 .venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
 pip install -e ".[ui]"               # 核心 + 浏览器工作台
@@ -55,9 +55,9 @@ rfauto doctor
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
 │ Python   │ ok   │ 3.12.14                                                │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
-│ AEDT     │ ok   │ <AEDT 安装目录>（版本 2025.1，best_effort）            │
+│ AEDT     │ ok   │ C:\Program Files\ANSYS Inc\v251（版本 2025.1，best_effort）            │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
-│ ADS      │ ok   │ <ADS 安装目录>（版本 2027，verified）                  │
+│ ADS      │ ok   │ C:\Program Files\Keysight\ADS2027（版本 2027，verified）                  │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
 │ 缓存模式 │ ok   │ readwrite                                              │
 └──────────┴──────┴────────────────────────────────────────────────────────┘
@@ -145,14 +145,14 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 **你会看到**（run_id 每次不同；指标确定性复现）：
 
 ```text
-✓ 仿真完成  run_id: 20261026_132409_ff7c0bde
-  run 目录: <workspace>\runs\20261026_132409_ff7c0bde
-  cost: 2.5674588717393334
+✓ 仿真完成  run_id: 20261024_133154_a8b244f6
+  run 目录: E:\rfauto_workspace\runs\20261024_133154_a8b244f6
+  cost: 7.424965102246688
   指标:
-    s11_db_max_in_band: -12.4325
-    s11_db_min_in_band: -16.2978
-    s21_db_mean_in_band: -3.5887
-    iso_s23_db_min_in_band: 27.3788
+    s11_db_max_in_band: -8.0835
+    s11_db_min_in_band: -10.2581
+    s21_db_mean_in_band: -4.1084
+    iso_s23_db_min_in_band: 25.4717
 ```
 
 指标名带频段后缀（`*_in_band`）：回损、插损、隔离度，都在配方声明的
@@ -191,7 +191,7 @@ run → 产物 → 指标 → cost」整条链路走通，不占 license。第 7
 用自带的健康门读这个 run：
 
 ```bash
-rfauto runs health 20261026_132409_ff7c0bde
+rfauto runs health 20261024_133154_a8b244f6
 ```
 
 **你会看到**（节选）：
@@ -215,8 +215,8 @@ docs/how-to/read-verdict-gates.md。
 新鲜度校验——manifest 收官指纹对盘上文件：
 
 ```bash
-rfauto runs verify 20261026_132409_ff7c0bde
-# → run 产物新鲜度校验  20261026_132409_ff7c0bde  status: fresh
+rfauto runs verify 20261024_133154_a8b244f6
+# → run 产物新鲜度校验  20261024_133154_a8b244f6  status: fresh
 ```
 
 **岔路**（README 排查表）：盘上 Touchstone 和 run 记录对不上——旧文
@@ -267,7 +267,7 @@ docs/unattended_hfss_automation.md——本仓一年真机踩坑沉淀的操作�
 - 一次失败赋值会毒化整个会话（元数据查询返 `None`，gRPC 通道连带损
   坏，`release_desktop` 静默失败）——判毒化即整轮重建，不带毒续跑。
 
-发射前先过体检与闸门：
+开跑前先过体检与闸门：
 
 ```bash
 rfauto doctor --janitor --min-free-gb 8
@@ -277,8 +277,8 @@ rfauto doctor --janitor --min-free-gb 8
 
 ```text
 进程清点（通道: psutil）：ansysedt 族共 0 个，疑似孤儿 0 个，合计内存 0.00 GB
-AEDT 工程锁（扫描根: <workspace>\runs）：共 8 处
-  - …\design.aedt.lock（文件，工程伴生=False）
+AEDT 工程锁（扫描根: E:\rfauto_workspace\runs）：共 8 处
+  - E:\rfauto_workspace\runs\_rt_test.aedt.lock（文件，工程伴生=False）
 清理姿势：复核上表后加 --janitor-clean 执行（只动疑似孤儿与上列锁）。
 内存闸：可用内存 19.14 GB ≥ 阈值 8.00 GB，闸放行
 ```
@@ -294,9 +294,9 @@ README 排查表对应行：HFSS 连不上/报 license 错——孤儿 `ansysedt
   `-outdir` 会让构造期 `Project.Rename` 挂起数分钟再失败；路径里出
   现非 ASCII 字符（如中文）会让 AEDT 写文件失败（STEP/导出）。避不
   开时先落 ASCII 临时目录再拷回。
-- **发射前过内存闸**。`rfauto doctor --min-free-gb 8 --enforce` 在
+- **开跑前过内存闸**。`rfauto doctor --min-free-gb 8 --enforce` 在
   可用内存低于阈值时非 0 退出——「求解中途被杀、机器卡死」这类故障
-  拦在发射前。
+  拦在开跑前。
 - **容器里没有商业工具**。Docker 镜像只含开源核心（fake 通道 + 确定
   性计算面），真机求解要靠宿主机上的工具：
 
@@ -333,6 +333,9 @@ docker build -t rfauto:local . && docker run --rm rfauto:local
 - 平台与扩展：extending-rfauto（扩展开发）、mcp_in_practice（MCP
   实战）、compose_and_league（组合与评测）、dag_orchestration（DAG
   编排）、ui_workbench_tour（UI 工作台导览）
+- 可执行 notebook 示例：examples/notebooks/（确定性内核零 license
+  三例：微带线综合、极化指标包、RA.769 干扰门限链；可运行性常驻钉于
+  tests/unit/test_notebook_examples.py）
 
 专题手册（docs/how-to/）：
 

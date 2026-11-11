@@ -38,7 +38,7 @@ from rfauto.core.errors import ContractViolationError
 
 _HFSS_S1P_SAMPLE = """\
 ! Touchstone file exported from HFSS 2025.1.0
-!        File:           E:/rfauto-workspace/runs/wp34_patch_gt/diag/diag_build.aedt
+!        File:           E:/rfauto_workspace/runs/wp34_patch_gt/diag/diag_build.aedt
 !        Design:         RFADesign
 !        Setup:          Setup1
 !        Solution:       Sweep1

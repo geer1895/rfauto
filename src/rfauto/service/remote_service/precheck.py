@@ -107,7 +107,7 @@ def license_preflight(
     口径（诚实边界，随信封 ``seat_level_query`` 落账）：
 
     - **一级门=license 端口 TCP 探活**：注册表 ``probe_ports`` 里语义名含
-      ``license`` 的端口（sim_server=ansys_license 1055 / ads_license 27009）
+      ``license`` 的端口（lab_server=ansys_license 1055 / ads_license 27009）
       全 OPEN → ``verdict="PASS"``；任一不通或未登记 license 端口 →
       ``verdict="FAIL"``（fail-closed——调用方按 SKIP 记账不硬打）。
     - **席位级查询 UNVERIFIED**：lmutil/lmstat 的服务器侧路径与调用形态
@@ -208,7 +208,7 @@ def hfss_remote_session_config(machine: str | None = None) -> dict[str, Any]:
     状态——调用方（v1 调度面）负责把 ``remote`` 值合并进
     ``HfssSession.connect(settings)`` 的 settings（session 消费的是
     ``settings["remote_machine"]`` 键）；生产链当前无注入点（v1 接线，
-    Devlog 五百三十三已如实声明）。
+    DEVLOG 五百三十三已如实声明）。
 
     Returns
     -------

@@ -184,7 +184,49 @@ from .render_tl import (
     _wilk_lines,
     _wstep_lines,
 )
+# layered_stack 族（aurora_q Q-X6 批 2 注册块）：注册面在 registry.py 文内
+# （TEMPLATE_META/TEMPLATE_NOMINAL 字面追加），渲染面=批 1 整脚本渲染器
+# 纯消费（不回注 TEMPLATE_META——导入序无注册副作用，追加于族导入块末尾）
+from .render_layered_stack import render_layered_stack
+from rfauto.adapters.layered_stack_spec import layered_stack_layout
 
+
+
+# ── layered_stack 族注册块（aurora_q Q-X6 批 2；#304 注册五消费者链）────────
+# 注册面=registry.py 文内字面追加（TEMPLATE_META/TEMPLATE_NOMINAL/
+# _TEMPLATE_PORT_AXES/_TEMPLATE_RADIATOR）；本块只做「平面参数面 → 族 spec」
+# 桥与整脚本早分发/geometry_spec 预览分派（mim_cap/octagonal_spiral 同款
+# 形态）。金属走线层/不对称腔（LumpedPort 口径）等族成员留后续批，名单随
+# 注册扩。
+
+#: layered_stack 族名单（render_script/geometry_spec 分派单源）
+LAYERED_STACK_TEMPLATES: tuple[str, ...] = ("layered_stack",)
+
+
+def _layered_stack_spec_from_params(params: dict[str, Any]) -> Any:
+    """平面参数面（TEMPLATE_NOMINAL 标量键惯例）→ LayeredStackSpec。
+
+    - layers 叠层=族常量（spec 缺省=反馈 §3.4 示例，不入参数表——元组
+      列表不适配 audit 布线扰动机制，test_template_geometry_audit 家法）；
+    - 腔 z0=-cavity_h/2 派生（spec 校验器唯一合法形态：腔关于带面对称，
+      StripLinePort 对称探针口径；不对称腔属后续批 LumpedPort 扩展）。
+    """
+    from rfauto.adapters.layered_stack_spec import (
+        CavitySpec,
+        ConductorSpec,
+        LayeredStackSpec,
+    )
+
+    return LayeredStackSpec(
+        cavity=CavitySpec(
+            w_mm=float(params["cavity_w_mm"]),
+            h_mm=float(params["cavity_h_mm"]),
+            z0_mm=-float(params["cavity_h_mm"]) / 2.0,
+        ),
+        conductor=ConductorSpec(width_mm=float(params["strip_w_mm"])),
+        line_len_mm=float(params["line_len_mm"]),
+        wafer_width_mm=float(params["wafer_width_mm"]),
+    )
 
 
 def geometry_spec(
@@ -236,6 +278,39 @@ def geometry_spec(
         # TA-6 空气脊波导（render_diplexer_ridged 文末注册块）：盒/端口由
         # ridged_wg_geometry_spec 单源换算（双 RectWGPort TE10 打在加宽馈段）
         return ridged_wg_geometry_spec(params, substrate)
+    if template in LAYERED_STACK_TEMPLATES:
+        # layered_stack 叠层+空腔族（Q-X6 批 2 注册块）：盒/端口由布局单源
+        # layered_stack_layout 直出（mm；真空盒+叠层固体分段+strip+腔壁
+        # 金属化示意+双 StripLinePort 落腔端截面）
+        lay = layered_stack_layout(_layered_stack_spec_from_params(params))
+        boxes = []
+        vx0, vy0, vz0, vx1, vy1, vz1 = lay["vacuum_box_mm"]
+        boxes.append({"name": "vacuum_box", "material": "vacuum",
+                      "start_mm": [vx0, vy0, vz0], "stop_mm": [vx1, vy1, vz1]})
+        for seg in lay["stack_solids"]:
+            bx0, by0, bz0, bx1, by1, bz1 = seg["box"]
+            boxes.append({
+                "name": str(seg["name"]),
+                "material": str(seg["material"]),
+                "start_mm": [bx0, by0, bz0], "stop_mm": [bx1, by1, bz1]})
+        sx0, sy0, sz0, sx1, sy1, sz1 = lay["strip"]
+        boxes.append({"name": "strip（导体层顶面零厚 PEC）", "material": "metal",
+                      "start_mm": [sx0, sy0, sz0], "stop_mm": [sx1, sy1, sz1]})
+        for wall in lay["metal_sheets"]:
+            bx0, by0, bz0, bx1, by1, bz1 = wall["box"]
+            boxes.append({
+                "name": f'{wall["name"]}（腔壁金属化零厚 PEC）',
+                "material": "metal",
+                "start_mm": [bx0, by0, bz0], "stop_mm": [bx1, by1, bz1]})
+        ports = []
+        for p in lay["ports"]:
+            sign = -1.0 if p["name"] == "Port1" else 1.0
+            ports.append({
+                "name": f'{p["name"]}（StripLinePort 腔端截面）',
+                "pos_mm": [float(p["pos_mm"]), 0.0, 0.0],
+                "dir": [sign, 0.0, 0.0]})
+        return {"template": template, "substrate": substrate,
+                "boxes": boxes, "ports": ports, "elements": []}
     h = float(substrate["h_mm"])
     boxes: list[dict[str, Any]] = [
         {"name": "substrate", "material": "substrate",
@@ -1755,6 +1830,18 @@ def render_script(
                                 mesh_resolution_mm=mesh_resolution_mm,
                                 excite_port=params["_excite_port"],
                                 far_field=far_field)
+    if template in LAYERED_STACK_TEMPLATES:
+        # layered_stack 叠层+空腔族（Q-X6 批 2 注册块）：整脚本渲染器早分发
+        # （mim_cap/octagonal_spiral 同款形态；spec 桥把 TEMPLATE_NOMINAL
+        # 平面参数面换算成族 spec——layers 叠层=族常量、腔 z0 对称派生；
+        # far_field 对辐射模板白名单守卫已在上文拒绝（族=False））
+        return render_layered_stack(
+            _layered_stack_spec_from_params(params),
+            freq_range_ghz=freq_range_ghz,
+            mesh_resolution_mm=mesh_resolution_mm,
+            excite_port=params["_excite_port"],
+            nrts=_nrts,
+        )
     render_fns = {
         "wilkinson": _wilk_lines, "patch": _patch_lines,
         "branchline": _branchline_lines, "dipole": _dipole_lines,
@@ -1988,7 +2075,7 @@ def render_script(
     if template in C3_TEMPLATES:
         # §C3 耦合缝网格守卫（#266）：NEAR ≤ 最小耦合缝/3，违反即抛错——缺省
         # mesh=0（λ_sub/50）下 NEAR 0.285mm > 外缝 0.139~0.242mm 曾致缝内零
-        # 内部线、外 Q 建模粗、峰位 −5%（内部证据档）；不许静默粗网格
+        # 内部线、外 Q 建模粗、峰位 −5%（DEVLOG（二百零五））；不许静默粗网格
         c3_gap_mesh_guard(template, params, near_m)
     radiator = _TEMPLATE_RADIATOR.get(template, False)
     air_top = (3e8 / f_max / 4) if radiator else 5e-3

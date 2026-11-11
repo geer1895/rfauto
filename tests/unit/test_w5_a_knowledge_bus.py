@@ -38,6 +38,8 @@ SYSTEM_MESSAGE_WHITELIST: set[tuple[str, str]] = {
     ("runtime_ab", "compare_runtime_token_efficiency"),
     ("runtime_ab", "scripted_prompt_track.request"),
     ("systemone_service", "_render"),                  # W1-G System One 通道
+    ("proposer", "propose_from_text"),  # T-Q7 提案器 system prompt（铁律 7 约束+75 族白名单写死；Q-W3-1 aurora_q）
+    ("feedback", "draft_revision"),  # T-Q8 修订草稿器 system prompt（铁律 7 约束+可修白名单写死；Q-W4-2 aurora_q；Q-R1 审查补登记——fcb421f9 引入位点漏登记，17199c4f 仅登记 proposer 同族面）
 }
 
 

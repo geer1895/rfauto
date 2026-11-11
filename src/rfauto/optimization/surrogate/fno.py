@@ -1,4 +1,4 @@
-r"""FNO（谱卷积版）神经算子代理（阶段 6.3 E3 插件，continuation-plan :245/:482）。
+r"""FNO（谱卷积版）神经算子代理（阶段 6.3 E3 插件，continuation_plan :245/:482）。
 
 学习「几何参数 + 频率 → S11(dB) 全频段曲线」的算子：参数经 lifting MLP 升到
 通道维后，叠 N 个 1D Fourier 层——rfft（频率维）→ 可学习复权重 × 截断模数

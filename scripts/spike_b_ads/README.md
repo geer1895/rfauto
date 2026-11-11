@@ -1,6 +1,6 @@
 # Spike B — ADS 通道探测（P1 末，2026-08-29）
 
-用 ADS 自带 Python（`E:\ADS\ads2023\tools\python\python.exe`，3.10.8）运行。
+用 ADS 自带 Python（`C:\Program Files\Keysight\ADS 2023\tools\python\python.exe`，3.10.8）运行。
 结论与决策见 `docs/adr/ADR-0008-ADS联动主通道采用PythonAPI网表通道为备.md`。
 
 ## 脚本清单（按执行顺序）

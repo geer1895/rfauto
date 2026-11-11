@@ -130,9 +130,9 @@ class RemoteMachineConfig:
     Attributes
     ----------
     name : str
-        注册表键名（如 ``sim_server``）。
+        注册表键名（如 ``lab_server``）。
     host : str
-        主机名或 IP（如 ``198.51.100.20``）。
+        主机名或 IP（如 ``192.0.2.10``）。
     ssh_port : int
         SSH 端口（缺省 22）。
     ssh_user : str | None

@@ -23,7 +23,7 @@
 | M2 判读 | 数据集 → GP/MFK 代理 → 三门/双口径判读 | `factory_m2_mfk_rejudge.py` | `runs/datafactory_m2/` |
 | M4 寻优 | 代理寻优（查库存）vs HFSS 基线墙钟账 | `factory_m4_bench.py` | `runs/datafactory_m4/` |
 
-两条铁纪律贯穿全链（违反即返工）：
+两条铁纪律贯穿全链（违反即返工，AGENTS 立规）：
 
 1. **判据预声明（先写后算）**：每个批次的判据/口径先写进
    `runs/<批次>/criteria.md`（写死再跑），判读脚本只消费它——事后改门
@@ -64,7 +64,7 @@
 }
 锚点 9: a2d_w0500_l20000(corner), a2d_w0500_l60000(corner), ...（共 9 个）
 LHS 111 点前 5: (0.5070,33.482), (0.5187,28.664), (0.5275,20.805), ...
-  ...（共 120 点，全量见 D:\rf_workspace\runs\datafactory_a2d\plan.json）
+  ...（共 120 点，全量见 E:\rfauto_workspace\runs\datafactory_a2d\plan.json）
 ```
 
 读法：**9 个锚点**（角点/名义/边界，保物理覆盖）+ **111 个 LHS 点**
@@ -109,19 +109,19 @@ M2 判读的 MFK 腿：低保真库存（150 行数据集）+ 高保真 HFSS 锚
 
 ```bash
 .venv/Scripts/python.exe scripts/factory_m2_mfk_rejudge.py --judge \
-    --out runs/demo/mfk_verdict.json
+    --out runs/aurora_d/tut/mfk_verdict.json
 ```
 
 实测输出（约 49s，节选）：
 
 ```
-[mfk] 低保真数据集：D:\rf_workspace\runs\datasets\datafactory_m1m3_merged_20260920（消费栅格 21 点）
+[mfk] 低保真数据集：E:\rfauto_workspace\runs\datasets\datafactory_m1m3_merged_20260920（消费栅格 21 点）
 [mfk] 低保真行数 150（εeff 缺行如实跳过）
 [mfk] 高保真锚点 9 行
 [mfk] 合成回收钉（Forrester 式仿射双保真族，#118）
 [mfk] 合成钉 pass=True gamma_max=0.00058 eps_max=0.0000%
   MFK fit：lo=150 hi=7 heads=43
-[mfk] verdict → D:\rf_workspace\runs\demo\tut\mfk_verdict.json
+[mfk] verdict → E:\rfauto_workspace\runs\aurora_d\tut\mfk_verdict.json
 
 ===== MFK 多保真判读摘要（overall=FAIL） =====
              smt_mfk: |ΔΓ|max=0.06291 εeff_max=1.0114% S21_max=0.0058dB

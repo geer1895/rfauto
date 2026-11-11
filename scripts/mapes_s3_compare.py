@@ -1,6 +1,6 @@
 r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选档达标门 + WP3.2 A/B。
 
-链路（§10.24 A8 stage-3 / Devlog（一百一十九）stage-2 followUps ③⑥）：
+链路（§10.24 A8 stage-3 / DEVLOG（一百一十九）stage-2 followUps ③⑥）：
 1. **新增滤波器图案**（`patterns`）：阶梯金属桥链 route_full / route_broken /
    route_half——像素桥链 = 串联桥（L）+ 贴片接地（并联对地）的梯形像素滤波
    结构，直通 / 中断 / 半程三档给排序面；直接全波每图案 2 激励（渲染器与

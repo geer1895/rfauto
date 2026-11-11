@@ -47,7 +47,7 @@ def _write_envelope(seat_dir: Path, verdict: str, exec_rc: int) -> None:
                    "（产物优先于退出码口径），seat 判读按 solve_success=False 降档"
                    if exec_rc != 0 else "全门过"),
         "errors": [],
-        "machine": "sim_server",
+        "machine": "lab_server",
         "batch": "oe_47001f7c",
         "out_dir_local": str(seat_dir),
         "exec_rc": exec_rc,

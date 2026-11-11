@@ -1,6 +1,6 @@
 """W1-G System One（Jev 类）决策通道测试（全离线；#139 monkeypatch 钉外呼）。
 
-判据对照（内部证据档 W1-G）：
+判据对照（runs/w1_phase1/criteria.md W1-G）：
 - 铁律 7：答案 schema 白名单负控（float 进物理语义字段被拒）；
 - #139：openai_compatible/typesafe_jev 全部传输面 monkeypatch 钉住，
   配置缺失→unavailable 不发网；缺省态纯确定性零网络；
@@ -269,7 +269,7 @@ class TestOpenAICompatible:
         p = so.OpenAICompatibleProvider(transport=transport)
         q = so.SystemOneQuestion(
             kind="choice",
-            question="D:/rf_workspace\\runs\\xxx 下选哪个规则？",
+            question="E:\\rfauto_workspace\\runs\\xxx 下选哪个规则？",
             options=["规则甲", "规则乙"], context={"task": "t"})
         ans = p.ask(q)
         assert ans.selected == 1
@@ -369,7 +369,7 @@ class TestTypesafeJev:
 
         p = so.TypesafeJevProvider(transport=transport)
         q = so.SystemOneQuestion(
-            kind="choice", question="选哪条路？D:/rf_workspace\\runs\\abc",
+            kind="choice", question="选哪条路？E:\\rfauto_workspace\\runs\\abc",
             options=["x", "y", "z"])
         ans = p.ask(q)
         assert ans.selected == 2
@@ -427,7 +427,7 @@ class TestTypesafeJev:
 
 class TestSanitizeOutbound:
     def test_windows_drive_path_stripped(self):
-        payload = {"log": r"渲染产物在 D:/rf_workspace\runs\xxx\meta.json",
+        payload = {"log": r"渲染产物在 E:\rfauto_workspace\runs\xxx\meta.json",
                    "n": 3}
         clean, redactions = so.sanitize_outbound(payload)
         assert "E:\\" not in clean["log"]
@@ -437,18 +437,18 @@ class TestSanitizeOutbound:
         assert rules.get("win_drive_path", 0) >= 1
 
     def test_users_profile_and_forward_slash_drive(self):
-        clean, red = so.sanitize_outbound(r"C:\Users\pc\secret 和 D:/rf_workspace/x")
+        clean, red = so.sanitize_outbound(r"C:\Users\pc\secret 和 E:/rfauto_workspace/x")
         assert "C:\\Users" not in clean and "E:/" not in clean
         assert {r["rule"] for r in red} == {"win_drive_path"}
         assert sum(r["count"] for r in red) == 2
 
     def test_private_ip_and_host_port_and_posix(self):
         clean, red = so.sanitize_outbound(
-            ["服务器 10.20.30.40 已连", "sim_host:7305 冒烟",
+            ["服务器 10.255.0.7 已连", "lab_server:7305 冒烟",
              "日志在 /home/u/runs/a 与 api.typesafe.ai:443/v1"])
-        assert "10.20.30.40" not in clean[0]
+        assert "10.255.0.7" not in clean[0]
         assert "<redacted:private_ip>" in clean[0]
-        assert "sim_host:7305" not in clean[1]
+        assert "lab_server:7305" not in clean[1]
         assert "<redacted:host_port>" in clean[1]
         assert "/home/" not in clean[2] and "api.typesafe.ai:443" not in clean[2]
         rules = {r["rule"] for r in red}
@@ -471,10 +471,10 @@ class TestSanitizeOutbound:
         assert {r["rule"] for r in red} == {"credential"}
 
     def test_redactions_do_not_leak_matched_text(self):
-        secret = r"D:/rf_workspace\runs\xxx"
+        secret = r"E:\rfauto_workspace\runs\xxx"
         _clean, red = so.sanitize_outbound({"s": f"see {secret} now"})
         blob = json.dumps(red, ensure_ascii=False)
-        assert "rf_workspace" not in blob
+        assert "rfauto_workspace" not in blob
 
     def test_clean_payload_untouched(self):
         payload = {"kind": "choice", "question": "选哪个？",

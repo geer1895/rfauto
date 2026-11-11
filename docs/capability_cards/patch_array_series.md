@@ -56,7 +56,7 @@
 - 参数语义：elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 传输线模型 c/(2f0√εeff)−2ΔL，fake 谐振为其精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))，决定 εeff/ΔL 与 H 面波束），feed_w_mm=50Ω 馈线/互联宽（HJ 1.112mm），link_len_mm=互联长 λg/2=c/(2f0√εeff(feed_w))=15.2876mm（HJ），feed_margin_mm=板边到链首元的馈段长（MSLPort 自画，MeasPlaneShift=margin/3）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；贴片/互联/馈段盒缘精确入网（#198）
 - 冒烟现状：未真机冒烟（2026-09-15 注册，离线审计/闭式裁判已过）。openEMS 轨 followUp：scripts/smoke_array_anchor.py <template>，判据=S11 谷位 f0±12% 窗（谷深 ≤−6dB）+ far_field nf2ff 主瓣天顶/HPBW·Dmax 对照 core/array_synthesis 闭式 ≤20-30% + η=Prad/P_acc 合理；预算 NrTS=100000 分钟~小时级，逐模板串行单飞
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

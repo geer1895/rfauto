@@ -7,6 +7,11 @@ XD-1（W3-B）跨 run lineage：write_meta 增可选 derived_from 边（落
 meta.json 新键）；run_lineage 表 DDL 单源在本模块（service/lake_service
 同库消费；record_lineage_edges 提供湖侧 best-effort 直写桥，重建以
 meta.json 为事实源）。
+
+AX-3（aurora_r R-03）run 级引擎身份（EVAS evas_identity.json 思想）：
+build_engine_identity 纯函数构造器 + probe_engine_identity best-effort
+采集（hfss 走 version_probe 现有探测/ads/openems 同源）+ write_meta 可选
+engine_identity 参数（None=零改动；显式参数单源，缺字段如实 unknown）。
 """
 
 from __future__ import annotations
@@ -170,6 +175,117 @@ def load_solver_versions() -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# AX-3（aurora_r R-03）run 级引擎身份（EVAS evas_identity.json 思想吸收）
+# ---------------------------------------------------------------------------
+
+#: engine_identity 结构保留键（构造器单源归一的面内键；其余自报键
+#: passthrough——commit/support_tier 等 EVAS identity 字段如实随行）。
+_ENGINE_IDENTITY_RESERVED_KEYS = ("engine", "version", "version_probe", "detail")
+
+
+def _engine_identity_str(value: Any) -> str | None:
+    """值 → 非空 str（None/空串/str 化异常一律 None，调用方决定回退语义）。"""
+    if value is None:
+        return None
+    try:
+        s = str(value).strip()
+    except Exception:  # pragma: no cover - 防御性（#105 观测面不 raise）
+        return None
+    return s or None
+
+
+def build_engine_identity(info: Any) -> dict[str, Any]:
+    """引擎身份规范化（纯函数，永不 raise）——AX-3 构造器单源。
+
+    输入 = 适配器自报的引擎信息 dict（或任意形态的垃圾——垃圾按
+    "一无所知" 如实降级，不伪造不阻塞）。输出 canonical 形态：
+
+    - ``engine``/``version``：恒在；缺字段/空值如实 ``"unknown"``（不伪造）；
+    - ``version_probe``：可选（str=探测来源描述，如 ``"auto-probe"``；
+      dict=探测明细）——非空才落键；
+    - ``detail``：可选 dict——非空才落键；
+    - 其余自报键（commit/support_tier 等）：值 str 化非空才随行落键。
+
+    write_meta（*engine_identity* 参数）消费本函数单源归一。
+    """
+    if not isinstance(info, dict):
+        return {"engine": "unknown", "version": "unknown"}
+    out: dict[str, Any] = {
+        "engine": _engine_identity_str(info.get("engine")) or "unknown",
+        "version": _engine_identity_str(info.get("version")) or "unknown",
+    }
+    probe = info.get("version_probe")
+    if isinstance(probe, dict):
+        if probe:
+            out["version_probe"] = {str(k): v for k, v in probe.items()}
+    else:
+        probe_str = _engine_identity_str(probe)
+        if probe_str:
+            out["version_probe"] = probe_str
+    detail = info.get("detail")
+    if isinstance(detail, dict) and detail:
+        out["detail"] = {str(k): v for k, v in detail.items()}
+    for key, value in info.items():
+        if key in _ENGINE_IDENTITY_RESERVED_KEYS:
+            continue
+        s = _engine_identity_str(value)
+        if s:
+            out[str(key)] = s
+    return out
+
+
+def probe_engine_identity(engine: str) -> dict[str, Any]:
+    """Best-effort 采集单引擎自报信息并经 build_engine_identity 归一（AX-3）。
+
+    探测来源（逐引擎；#105 观测面——任何失败降级 unknown，永不 raise）：
+
+    - ``hfss``：infra/version_probe.resolve_aedt_install（d 项要求：消费
+      现有探测结果；version_probe=source 通道描述，不含安装路径）；
+    - ``ads``：infra/version_probe.detect_ads_version（hpeesof_dir 目录名
+      解析，如 "2027"）；
+    - ``openems``：Python 绑定 importlib.metadata 版本（与 openems_solver
+      ``_engine_stamp`` 同口径）；
+    - ``fake``：无真引擎——version=``"n/a"``（meta 链既有"不适用"惯例，
+      与 aedt_version="n/a" 同语义；version_probe=``"built-in"``）；
+    - 其余引擎通道：{"engine": <名>, "version": "unknown"} 如实降级。
+    """
+    name = _engine_identity_str(engine) or "unknown"
+    name_lower = name.lower()
+    info: dict[str, Any] = {"engine": name_lower, "version": None}
+    if name_lower == "hfss":
+        try:
+            from rfauto.infra.version_probe import resolve_aedt_install
+
+            install = resolve_aedt_install()
+            if install:
+                info["version"] = install.get("aedt_version")
+                info["version_probe"] = _engine_identity_str(
+                    install.get("source")) or "unknown"
+        except Exception:  # pragma: no cover - 观测面兜底（#105）
+            pass
+    elif name_lower == "ads":
+        try:
+            from rfauto.infra.version_probe import detect_ads_version
+
+            info["version"] = detect_ads_version()
+            info["version_probe"] = "hpeesof_dir"
+        except Exception:  # pragma: no cover - 观测面兜底（#105）
+            pass
+    elif name_lower == "openems":
+        try:
+            from importlib.metadata import version as _pkg_version
+
+            info["version"] = _pkg_version("openEMS")
+            info["version_probe"] = "importlib.metadata"
+        except Exception:
+            pass
+    elif name_lower == "fake":
+        info["version"] = "n/a"
+        info["version_probe"] = "built-in"
+    return build_engine_identity(info)
+
+
+# ---------------------------------------------------------------------------
 # meta.json
 # ---------------------------------------------------------------------------
 
@@ -283,6 +399,7 @@ def write_meta(
     seed: int | None = None,
     derived_from: list[str] | list[dict[str, Any]] | None = None,
     edge_kind: str = "derived",
+    engine_identity: dict[str, Any] | None = None,
 ) -> Path:
     """Write ``meta.json`` with standard provenance fields.
 
@@ -294,6 +411,13 @@ def write_meta(
     归一化 best-effort（#105）：非法项丢弃留 warning，永不阻塞 meta 写主
     路径；边种用 *edge_kind*（dataset|calib|report|warmstart，词汇表见
     LINEAGE_EDGE_KINDS）。边信息来源=调用方上下文（不做目录名猜测）。
+
+    AX-3（aurora_r R-03）：*engine_identity* 非空时落 meta.json 新键
+    ``engine_identity``（run 级引擎身份：engine/version/version_probe?/
+    detail? + 自报随行键，经 build_engine_identity 单源归一——缺字段如实
+    unknown 不伪造）。None=零改动现状（既有调用逐字节不变）；显式参数
+    单源（同 derived_from 模式——meta_dict 不得覆盖本键）。探测采集侧
+    用 probe_engine_identity（#105：采集失败降级 unknown，run 不失败）。
     """
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -328,6 +452,10 @@ def write_meta(
             record["derived_from"] = _lineage_meta_form(entries)
         for warning in edge_warnings:
             logger.warning("XD-1 lineage 边归一化丢弃（非阻断）: %s", warning)
+
+    # AX-3 引擎身份（meta_dict 不得覆盖本键——显式参数单源；None=零改动）
+    if engine_identity is not None:
+        record["engine_identity"] = build_engine_identity(engine_identity)
 
     dest = run_dir / "meta.json"
     dest.write_text(json.dumps(record, indent=2, default=str), encoding="utf-8")

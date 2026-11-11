@@ -21,7 +21,7 @@ stackup/traces/vias/ports/sim_setup 之外的最小完备扩展均在此声明�
                      # 自顶向下落库——pyedb 0.83 __create_stackup 按列表序
                      # 逐层 AddLayerBottom（首项落物理顶层，
                      # configuration.py:863-868 + stackup.py:97-130 源码
-                     # 实证，docs/pyedb_distilled.md §3.1/§6-2）
+                     # 实证，pyedb 精炼笔记（内部档）§3.1/§6-2）
           {"name": "GND", "type": "signal",    "material": "copper",
            "thickness_mm": 0.035},
           {"name": "SUB", "type": "dielectric", "material": "<层叠名>",

@@ -81,7 +81,7 @@ from rfauto.core.pdn_vertical import (
 # 自 service/_helpers 别名 import（W2-G 批 1 同款，#116 旧副本删净）；
 # pdn 本地副本三处文案分歧（bool/positive/nonneg）与 None 语义（本地
 # 「必须是数字，实际 None」vs 单源「缺失」）统一为单源文案——ok=False
-# 语义逐位不变，文案变更已声明（W6-E 报告/Devlog 口径）。
+# 语义逐位不变，文案变更已声明（W6-E 报告/DEVLOG 口径）。
 from rfauto.service._helpers import parse_num as _num
 from rfauto.service._helpers import require_payload_dict as _require_payload_dict
 from rfauto.service.envelope import error_envelope, ok_envelope

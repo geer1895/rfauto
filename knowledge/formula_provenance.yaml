@@ -4230,6 +4230,48 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: gmid:<module>:01
+  kernel_file: src/rfauto/core/gmid.py
+  module: rfauto.core.gmid
+  symbol: <module>
+  kind: source
+  marker: 出处与许可口径（
+  claim_line: 出处与许可口径（runs/aurora_q/qx40_vbridge/AUTHOR_SURVEY.md AX-7 行）：
+  claim_block: '出处与许可口径（runs/aurora_q/qx40_vbridge/AUTHOR_SURVEY.md AX-7 行）：
+
+    API 契约形态（lookup / size / size_from_ft + 首调建表缓存）仿 gmoverid-skill
+
+    （146★，README 挂 MIT 徽章但 LICENSE 文件 404 = 无许可仓）的**思想级**范式，
+
+    本文件全部代码为本仓重写，零文件搬运；PTM/PDK 模型文件不进仓（AUTHOR_SURVEY
+
+    §3-5 红线）。gm/ID 方法论内核：gm/ID 为单自变量枢轴量——同 (L, gm/ID) 点的
+
+    ID/W、gm/gds、fT、VGS 四量与 W 无关（单位宽度建表一次，任意 W 缩放），本内核
+
+    以"单位宽度建表 + ID/W 归一"落实该不变量（test 钉 W 无关性）。'
+  refs: []
+  source_doi: null
+  eq_no: §3-5
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: gmid:SyntheticMosSource.source_meta:01
+  kernel_file: src/rfauto/core/gmid.py
+  module: rfauto.core.gmid
+  symbol: SyntheticMosSource.source_meta
+  kind: source
+  marker: 来源键（
+  claim_line: 来源键（YAML source 块）：kind=synthetic + 全参数落盘。
+  claim_block: 来源键（YAML source 块）：kind=synthetic + 全参数落盘。
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: gp_tensor_kernel:<module>:01
   kernel_file: src/rfauto/core/gp_tensor_kernel.py
   module: rfauto.core.gp_tensor_kernel
@@ -5369,6 +5411,23 @@ entries:
   access_status: unverified
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: rf_matrix:<module>:01
+  kernel_file: src/rfauto/core/rf_matrix.py
+  module: rfauto.core.rf_matrix
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- 分支线耦合器奇偶模分析与半电路 S 合成：Pozar Microwave Engineering\n  §7 功分器与定向耦合器——分支线耦合器节（式 7.59\
+    \ 同款叠加式，章节级\n  转引）；均匀线 ABCD 教科书恒等式（Pozar §4.4）。\n- 各臂 λ/4 各自 εeff 口径：core/synthesis.synthesize_branchline（XA-3\n\
+    \  迭代序修正，2026-10-02）同源承袭。"
+  refs: []
+  source_doi: null
+  eq_no: §7
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: rf_trace_geometry:<module>:01
   kernel_file: src/rfauto/core/rf_trace_geometry.py
   module: rfauto.core.rf_trace_geometry
@@ -5617,6 +5676,58 @@ entries:
   eq_no: null
   expr: Z_in = j·Z1·(Z1·tanθ1 + Z2·tanθ2) / (Z1 − Z2·tanθ1·tanθ2)。
   access_status: unverified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: skill_template_engine:<module>:01
+  kernel_file: src/rfauto/core/skill_template_engine.py
+  module: rfauto.core.skill_template_engine
+  symbol: <module>
+  kind: source
+  marker: 出处声明（
+  claim_line: 出处声明（#1c/#122 如实口径）：模板函数名面见
+  claim_block: '出处声明（#1c/#122 如实口径）：模板函数名面见
+
+    :mod:`rfauto.core.skill_templates` 各模板 docstring——本模块白名单只收
+
+    模板实际生成面 + SKILL 语言核心字（let/foreach/if/list/sprintf 等），
+
+    不宣称对任意 Cadent release 的 API 全覆盖；用户按本地 SKILL Language
+
+    Reference 校准后可用 ``|raw`` 拼接自有片段。'
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: skill_templates/__init__:<module>:01
+  kernel_file: src/rfauto/core/skill_templates/__init__.py
+  module: rfauto.core.skill_templates.__init__
+  symbol: <module>
+  kind: source
+  marker: 出处声明（
+  claim_line: '出处声明（#1c 对照官方例 + #122 如实口径）：模板生成的函数名面是 Cadence'
+  claim_block: '出处声明（#1c 对照官方例 + #122 如实口径）：模板生成的函数名面是 Cadence
+
+    SKILL/OCEAN/ADE XL 文档中的常用惯例形态（dbOpenCellViewByType/dbCreateRect/
+
+    dbCreatePath/dbCreateLabel/dbCreateInst/schCreateWire/techGetTechFile/
+
+    ocnxlRun/ocnxlOutputSummaryCSV/ocnPrint 等）——本仓无 Virtuoso 安装，
+
+    各模板 docstring 逐函数声明参数形态依据与发布版校准点；生成文件头注释
+
+    同样带"以本地 SKILL Language Reference 为准"提示。模板值零物理数字
+
+    （铁律 7：默认参数只收结构旋钮如精度/宽度/视图名，几何与电路值全部
+
+    来自调用方变量）。'
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
 - formula_id: slotline:<module>:01

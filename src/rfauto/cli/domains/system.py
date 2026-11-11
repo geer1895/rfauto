@@ -290,10 +290,16 @@ def models_list(
     console.print(table)
     # F-P2-2（aurora_n 旅程席 C）：models 与 template-spec 双模板面互指——
     # 新用户看本命令只见到 4 个可求解模型，易误以为全仓器件面就此而已。
-    # 75=TEMPLATE_META 现量（2026-10-30 实测）；活目录以 template-spec
-    # list 为准（不 import 其服务面——冷加载约 2.5s，不值得为计数付出）。
+    # 76=TEMPLATE_META 现量（2026-11-07 实测，Q-X6 批 2 layered_stack）；
+    # 53/23=Q-X18 逐族实测拆分（FakeAdapter.solve model_type 分派面：
+    # 53=TemplateSpec.fake_model 52 族+varactor_bpf solve 内联支路——
+    # template_specs.py §VI-3 头注口径；其余 23 族无 fake 前向模型，
+    # 分派缺失 ValueError，仅 template: 直跑 openEMS）；活目录以
+    # template-spec list 为准（不 import 其服务面——冷加载约 2.5s，
+    # 不值得为计数付出）。
     console.print(
-        "[dim]另有 75 族 openEMS 器件模板可 fake 通道零 license 冒烟，"
+        "[dim]另有 76 族 openEMS 器件模板：53 族可 fake 通道零 license 冒烟，"
+        "其余 23 族经 template: 直跑（openEMS）；"
         "全目录见 `rfauto template-spec list`（UI Gallery 同源）；"
         "本命令只列已接入求解通道的可求解模型。[/dim]"
     )

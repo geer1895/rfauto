@@ -1,11 +1,11 @@
 """Spike B-2 probe 1 (ADS 2027): import keysight.ads.de/dataset + version info.
 
-Run with: <ADS>\\tools\\python\\python.exe（ADS = RFAUTO_HPEESOF_DIR，缺省 E:\\ADS\\ADS27） p27_1_import.py
+Run with: <ADS>\\tools\\python\\python.exe（ADS = RFAUTO_HPEESOF_DIR，缺省 C:\\Program Files\\Keysight\\ADS2027） p27_1_import.py
 """
 import os
 import sys
 
-os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
+os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027")
 
 print("python:", sys.version)
 import keysight.ads.de as de

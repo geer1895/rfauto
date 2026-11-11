@@ -396,13 +396,13 @@ class TestMcpAdsToolsForwarding:
         monkeypatch.setattr(svc, "circuit_sim_run", _fake_run)
         out = _tool("ads_circuit_run").fn(
             diagram="c.drawio", snp="w.s3p", out_dir=str(tmp_path / "run"),
-            params={"z0": 48.0}, family="wilkinson_snp", ads_dir="E:/ADS",
+            params={"z0": 48.0}, family="wilkinson_snp", ads_dir="C:/Program Files/Keysight/ADS",
             compare=False, gate=1e-4)
         assert out["ok"] is True
         assert box == {"diagram": "c.drawio", "snp_path": "w.s3p",
                        "out_dir": str(tmp_path / "run"),
                        "params_override": {"z0": 48.0},
-                       "family": "wilkinson_snp", "ads_dir": "E:/ADS",
+                       "family": "wilkinson_snp", "ads_dir": "C:/Program Files/Keysight/ADS",
                        "compare": False, "gate": 1e-4}
 
     def test_service_exception_becomes_error_envelope(self, monkeypatch):
@@ -562,11 +562,7 @@ class TestB1AnnotateRichEscape:
             "ads-circuit", "annotate", "--diagram", str(diagram),
             "--result", str(result), "--out", str(out)])
         assert r.exit_code == 0, r.output[:400]
-        # 去空白折叠后匹配（test_ui.py 既有口径）：rich Console 按 80 列折行会把
-        # 长 tmp 路径在词中切断（Linux CI 实测 'annot[d\nemo].drawio'——xdist
-        # popen-gwN 段+pytest-of-runner 恰落折点），escape 语义本身不变：被 rich
-        # 当样式标签吞段时整段消失，折叠后同样匹配不到。
-        assert "[demo]" in "".join(r.output.split()), (
+        assert "[demo]" in r.output, (
             "annotate out_path 被 rich 吞段（escape 缺失即此红）")
         assert out.is_file()
 

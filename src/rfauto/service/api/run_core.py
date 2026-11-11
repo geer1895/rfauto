@@ -49,8 +49,15 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
 
+    # T-Q14（aurora_q Q-W1-1）：模板直跑双形态——`template:` 键（openEMS
+    # 模板族）在场时 model 免填（用户反馈①：模板族名≠models 注册表名，
+    # 按 README 写 model: pifa 必入"未知模型"死胡同）。
+    template_family = data.get("template")
+
     # 基本字段校验
-    if "model" not in data:
+    if "model" not in data and not (
+        isinstance(template_family, str) and template_family
+    ):
         errors.append("缺少 'model' 字段")
     if "params" not in data:
         errors.append("缺少 'params' 字段")
@@ -72,6 +79,36 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
                 f"未知模型: {data['model']}"
                 f"{did_you_mean(str(data['model']), list_models())}"
                 "（已注册模型清单: rfauto models list）")
+            # T-Q14：族名撞 TEMPLATE_META（模板注册表）时给出口指引——
+            # 用户写 model: pifa 的真实意图是模板直跑，错误信息必须指出
+            # 正确形态（独立 error 条目，上条前缀逐字节不动）。
+            from rfauto.adapters.oe_templates.registry import (  # lazy: 注册表面
+                TEMPLATE_META as _TMETA,
+            )
+            if str(data["model"]) in _TMETA:
+                errors.append(
+                    f"提示: '{data['model']}' 是 openEMS 模板族名"
+                    "（模板注册表 76 族之一，非 models 注册表键）——模板直跑"
+                    f"配方请写 template: {data['model']}（一键生成: "
+                    f"rfauto templates export-recipe {data['model']}）")
+
+    # T-Q14：template 形态族名校验（对 TEMPLATE_META 76 族 + did-you-mean）
+    if "template" in data:
+        if not isinstance(template_family, str) or not template_family:
+            errors.append(
+                f"template 字段非法: {template_family!r}（须为 openEMS 模板族名）")
+        else:
+            from rfauto.adapters.oe_templates.registry import (  # lazy: 注册表面
+                TEMPLATE_META as _TMETA,
+            )
+            from rfauto.service.recipe_validation import did_you_mean  # lazy: 校验面
+            if template_family not in _TMETA:
+                errors.append(
+                    f"未知模板族: {template_family}"
+                    f"{did_you_mean(template_family, list(_TMETA))}"
+                    "（已注册模板族清单: rfauto templates golden-diff；"
+                    "族→模型映射: rfauto templates export-recipe <族> 可导出"
+                    "正确形态配方）")
 
     # F-P1-1（aurora_n 旅程席 A）：键级白名单——对齐 UI recipe_save 严格度。
     # ①未知顶层键 ②参数名不在模板参数面 ③指标名不在指标词典 ④objectives
@@ -129,6 +166,42 @@ def dry_run(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str,
     import yaml
     with open(recipe_path, encoding="utf-8") as f:
         recipe_data = yaml.safe_load(f)
+
+    # T-Q14：模板直跑形态 dry-run（简化计划面——无 models 插件/缓存键成分，
+    # 真跑链走 template_recipe_service.run_template_recipe；计划键与 model
+    # 形态共有段同构，缺省段如实标注）
+    if "template" in recipe_data:
+        from rfauto.adapters.oe_templates.registry import TEMPLATE_META  # lazy: 注册表面
+        from rfauto.service.recipe_validation import did_you_mean  # lazy: 校验面
+        family = str(recipe_data["template"])
+        if family not in TEMPLATE_META:
+            return error_envelope([
+                f"未知模板族: {family}"
+                f"{did_you_mean(family, list(TEMPLATE_META))}"], mode="dry-run")
+        from rfauto.optimization.optimizer import extract_param_ranges  # lazy: run-path
+        params_resolved = {
+            k: (v.get("value") if isinstance(v, dict) else v)
+            for k, v in (recipe_data.get("params") or {}).items()
+        }
+        return ok_envelope(
+            mode="dry-run",
+            message="模板直跑配方执行计划（template 形态：无缓存键面，"
+                    "fake/openems 通道）",
+            recipe=str(recipe_path),
+            template=family,
+            model=f"template:{family}",
+            adapter=adapter_name,
+            adapter_ready=True,
+            aedt_version="n/a",
+            params=params_resolved,
+            params_semantics="params=配方名义值；run 真跑按名义值直通执行（生效=名义）",
+            optimization_ranges=extract_param_ranges(recipe_data),
+            objectives=recipe_data.get("objectives", []),
+            setup=recipe_data.get("setup", {}),
+            plugin_version="template-direct",
+            note="模板直跑形态暂未接入结果缓存键面（models 插件版本成分缺位）",
+            validation=validation,
+        )
 
     model_name = recipe_data.get("model", "")
     params_data = recipe_data.get("params", {})
@@ -291,6 +364,18 @@ def run_once(
     with open(recipe_path, encoding="utf-8") as f:
         recipe_data = yaml.safe_load(f)
 
+    # T-Q14（aurora_q Q-W1-1）：template: 形态配方路由模板直跑链——
+    # models 注册表（4 优化模型）不含 openEMS 模板族名，此处分流避免
+    # "未知模型" 死胡同（用户反馈①；run 目录/meta/report 面在模板链内
+    # 与本函数同构：infra.run_store 单源）。
+    if "template" in recipe_data:
+        from rfauto.service.template_recipe_service import (  # lazy: 解环面
+            run_template_recipe,
+        )
+        return run_template_recipe(
+            recipe_path, adapter_name=adapter_name, study=study, seed=seed,
+            progress_cb=_report)  # SN-10 安全包裹器透传（#105：回调异常不炸主路径）
+
     run_id = generate_run_id()
 
     # 创建 run 目录（绝对路径：AEDT 拒绝相对项目路径，会解析到它自己的工作目录）
@@ -351,6 +436,11 @@ def run_once(
     from rfauto.infra.version_probe import resolve_aedt_install  # lazy: run-path（执行面按需取用）
     cache = ResultCache()
     aedt_version = "fake"
+    # AX-3（aurora_r R-03）：引擎身份随 run 落盘（构造单源=probe_engine_
+    # identity；hfss 分支消费 version_probe 现有探测结果——version_probe=
+    # source 通道描述，无路径）。
+    from rfauto.infra.run_store import probe_engine_identity  # lazy: run-path
+    engine_identity: dict[str, Any] = probe_engine_identity("fake")
     if adapter_name == "hfss":
         aedt_path = os.environ.get("RFAUTO_AEDT_PATH", "")
         if aedt_path and not Path(aedt_path).exists():
@@ -364,6 +454,11 @@ def run_once(
                 "（可设 RFAUTO_AEDT_PATH=<版本目录>，如 E:\\HFSS\\v231）"
             ])
         aedt_version = install["aedt_version"]
+        engine_identity = {
+            "engine": "hfss",
+            "version": aedt_version,
+            "version_probe": str(install.get("source") or "unknown"),
+        }
 
     # P2①（§10.20 ⑨ 生产接线）：内容寻址键 compute_content_key——13 成分分列
     # （recipe_version=配方 schema / schema_version=插件参数 schema，#106 不混）；
@@ -472,7 +567,8 @@ def run_once(
                 # （dataset_service 导入面同款口径）——湖 runs 索引 study 列不再 null
                 "study_name": run_id,
             }
-            meta_path = write_meta(run_dir, meta)
+            meta_path = write_meta(run_dir, meta,
+                                   engine_identity=engine_identity)
             from rfauto.infra.run_store import record_run  # lazy: run-path（执行面按需取用）
             record_run(record=meta)
             # WP3.6 收尾钩子（best-effort，#105）：失败 run 的日志面最有诊断价值，
@@ -620,7 +716,7 @@ def run_once(
         "from_cache": from_cache,
         "cache": cache_info,
         "metrics": metrics,
-    })
+    }, engine_identity=engine_identity)
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     record_run(record=meta)
 

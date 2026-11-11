@@ -176,7 +176,7 @@ toolsets:
       - farfield_view
 
   - name: remote_multihost
-    description: 远程多机协同——探活/状态/队列（sim_server 通道）
+    description: 远程多机协同——探活/状态/队列（lab_server 通道）
     skill: |
       服务器侧版本必须等于本机（AGENTS 规则 0，gRPC 客户端-服务端版本配对）；
       先 remote_probe_machine 探活、remote_machine_status 看队列再发射；任务毕

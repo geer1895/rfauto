@@ -235,3 +235,43 @@ def export_cmd(
         keep=_split_list(keep) or None,
         drop=_split_list(drop) or None,
     ))
+
+
+# ─── 制造面 Gerber/Excellon 解析两叶（aurora_q 席位 Q-X59，2026-11-07） ──────
+# 只读解析面：词法与几何语义全在 core/gerber_parser+core/excellon_parser
+# 确定性内核（铁律 7），JSON 信封走 service/fab_gerber_service（AU-2
+# 构造器，禁裸 dict）。追加在本文件尾部（fab 组内 +2 叶；上方既有九叶
+# 与 _emit 动态退出码 site 行号保持不动——test_audit_cli_exit_codes
+# DYNAMIC_SITE_ALLOWLIST 按 (file, line) 钉 fab_app.py:49）。
+# 同名叶自查 2026-11-07：fab 组既有九叶（go/pipeline/snapshot/draw/
+# audit/pack/rules/catalog/export）无 parse/summary 同名——typer 组内
+# 重名会在注册期抛错，--help 冒烟必然暴露。
+
+
+@fab_app.command("parse")
+def parse_cmd(
+    gerber: str = typer.Option(..., "--gerber", help="Gerber RS-274X 光绘文件路径（只读解析）"),
+    drill: str = typer.Option("", "--drill", help="Excellon 钻孔文件路径（给定时加跑孔位配对交叉校验）"),
+    json_output: bool = typer.Option(False, "--json", help=_JSON_COMPAT_HELP),
+) -> None:
+    """Gerber 光绘结构化解析（指令级+几何落地面；配 drill 时加跑交叉校验）."""
+    from rfauto.service.fab_gerber_service import (  # lazy: 制造面解析薄壳（Q-X59，叶内延迟导入）
+        gerber_excellon_pair_check,
+        parse_gerber_file,
+    )
+
+    if drill:
+        _emit(gerber_excellon_pair_check(gerber, drill))
+    else:
+        _emit(parse_gerber_file(gerber))
+
+
+@fab_app.command("summary")
+def summary_cmd(
+    gerber: str = typer.Option(..., "--gerber", help="Gerber RS-274X 光绘文件路径（只读摘要）"),
+    json_output: bool = typer.Option(False, "--json", help=_JSON_COMPAT_HELP),
+) -> None:
+    """Gerber 层摘要（按 D 码分组计数+aperture 类型统计+包络盒）."""
+    from rfauto.service.fab_gerber_service import summarize_gerber  # lazy: 制造面解析薄壳（Q-X59，叶内延迟导入）
+
+    _emit(summarize_gerber(gerber))

@@ -62,8 +62,21 @@ def mo_run_cmd(
     同 seed 同参数两次运行逐位一致。数值全部来自 mo_bo 确定性内核（本叶
     零数值逻辑，薄壳转发）。
     """
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.mo_bo_service import run_mo_bo
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    # --n-eval/--n-obj 帮助契约声明 "≥2"（=1 退化标量显式拒绝），逐名下限 2。
+    errs = validate_count_args(
+        {"--n-eval": n_eval, "--n-obj": n_obj, "--n-init": n_init,
+         "--batch-size": batch_size, "--n-candidates": n_candidates,
+         "--mc-samples": mc_samples},
+        minimums={"--n-eval": 2, "--n-obj": 2})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     kwargs: dict = {}
     if n_obj is not None:
         kwargs["n_obj"] = n_obj

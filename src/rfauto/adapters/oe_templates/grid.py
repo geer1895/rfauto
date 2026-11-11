@@ -305,6 +305,14 @@ def _near_points(template: str, params: dict[str, Any],
         w = float(params.get("w_mm", 0.9058)) * 1e-3
         length = float(params.get("line_len_mm", 40.0)) * 1e-3
         nx += [-w / 2, w / 2]                       # 带缘精确入网（#198）
+        # 线端精确入网（Q-X21 G5 带缘噪声根治，aurora_q Q-RM-4 实证）：
+        # 旧口径只有 edges() 括号线（线端外侧 ±0.5mm 近点带），均匀带名义
+        # 分点 Y0/Y1 脱网 ~2.6µm（runs/aurora_q/qx9_anchor/audit_*.json
+        # line_end_y0 残差 2.557e-6）→ 细档网格带缘曲率分辨不足、|S|>1
+        # 数值噪声 306 点。cps 线端=LumpedPort 面零厚 y 面同法在先
+        # （#212 审计①）；nm 级在位由渲染端守卫 fail-loud 复核（render_tl
+        # _suspended_stripline_lines 尾部，同一根因面）。
+        ny += [-length / 2, length / 2]
         ny += edges(-length / 2, length / 2, 1e-3)             # 线两端（junction）
     elif template == "cpw":
         w = float(params.get("w_mm", 0.849)) * 1e-3

@@ -6,12 +6,12 @@ Run with: E:\\ADS\\ads2023\\tools\\python\\python.exe probe_6_end2end.py
 import os
 import shutil
 
-os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
+os.environ.setdefault("HPEESOF_DIR", r"C:\Program Files\Keysight\ADS 2023")
 
 import keysight.ads.de as de
 
-ADS = r"E:\ADS\ads2023"
-wrk_dir = r"E:\rfauto-workspace\scripts\spike_b_ads\auto_wrk"
+ADS = r"C:\Program Files\Keysight\ADS 2023"
+wrk_dir = r"E:\rfauto_workspace\scripts\spike_b_ads\auto_wrk"
 
 if de.workspace_is_open():
     de.close_workspace()

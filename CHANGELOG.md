@@ -2,6 +2,41 @@
 
 All notable changes to rfauto will be documented in this file.
 
+## [0.14.0] - 2026-11-10
+
+### Added
+
+- EDA/IC parser suite (~30 formats) with dedicated CLI domains and
+  read-only MCP tools (SPICE / Liberty / CITI / SDC / IBIS / IBIS-AMI /
+  Verilog / SPECTRE / Verilog-A / GDSII / LEF-DEF / SPEF / SDF / Gerber /
+  Excellon / IPC-D-356 / Touchstone / VCD / STIL / SKILL / BSDL / ODB++ /
+  STDF / DRC / LVS)
+- Animation pipeline: 17 deterministic chart types with self-check
+- EM benchmark suite: hidden/visible check layers, negative variants,
+  task admission gates, OOD envelope flags; analog task families and
+  inverse-design scoring
+- Neural surrogates (MLP + LOO + batch top-k + active learning loop);
+  gm/ID lookup sizing kernel
+- `rfauto aedt-migrate`: five-stage legacy-project migration with
+  honest verdicts
+- Session capture to sandbox recipe drafts; toolchain lock; request
+  receipts (four-outcome, no silent replay); strict result accessors
+- MCP: 208 read-only tools + 17 resources, per-tool annotations with
+  static read-only verification, sliding-window rate limits, stdio
+  purity enforcement
+- KiCad schematic generation + ERC round-trip certificate; vendor doc
+  retrieval (FTS5); engine identity blocks; netlist semantic overlay
+
+### Fixed and improved
+
+- CLI 358 leaves (16 parser domains + aedt-migrate wired in batch, anchors re-pinned)
+- fake branchline upgraded to ideal TL-matrix closed form (benchmark
+  verdicts flip to PASS)
+- SPEF three-value/scaled/continuation support; schema keys unified;
+  exit-code verdicts centralized (rc=0 with fatal markers fails loudly)
+- Layered-stack root-cause chain closed; recorded-fixture test tier;
+  parser user guide (zh/en) + integration guide
+
 ## [0.13.0] - 2026-11-02
 
 ### Added

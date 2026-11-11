@@ -1,0 +1,54 @@
+{
+  "schema_version": "aurora_r_recorded_fixtures_v1",
+  "tool": "ads",
+  "tool_version": "650.shp",
+  "tool_version_source": "来源 run hpeesofsim 日志横幅（logFile.txt）",
+  "recorded": "2026-11-10",
+  "recorder": "record_real_fixtures v1 (aurora_r R-16, VB-5)",
+  "restricted_data": null,
+  "source_run": "runs/ads_smoke_20260907/ADS2027",
+  "cleaning": {
+    "replacements": {
+      "userdir": 0,
+      "drive": 0,
+      "repo": 0,
+      "run_id": 0,
+      "host": 0,
+      "user": 0,
+      "ip": 0
+    },
+    "total": 0,
+    "judge": "release/scan_release.py FAIL+WARN 双零口径"
+  },
+  "expectations": {
+    "kind": "ads_ds",
+    "magic_form": "full",
+    "byte_order_marker": "DCBA",
+    "format_version": 4,
+    "n_variables": 5,
+    "variable_names": [
+      "DATAMANAGER_INDEX",
+      "DNS_Y=1=0",
+      "DNS_I=1=0",
+      "DNS_D=1=0",
+      "HPvar_top_0"
+    ],
+    "data_variable_names": [
+      "PortName[1]",
+      "PortName[2]",
+      "PortZ[1]",
+      "PortZ[2]",
+      "S[1,1]",
+      "S[1,2]",
+      "S[2,1]",
+      "S[2,2]"
+    ]
+  },
+  "files": [
+    {
+      "name": "smoke.net.ds",
+      "sha256_12": "7bdd16ca3c5f",
+      "bytes": 162304
+    }
+  ]
+}

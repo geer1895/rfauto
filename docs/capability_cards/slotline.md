@@ -6,7 +6,7 @@
 
 - 拓扑：均匀槽线段（路线 A，单面金属开缝、无地开放结构）：槽 |y|≤w/2 贯通至两端边界，两端 WaveguidePort（E/H 模式文件），激励面内移 16·BASE 出 PML_8；基板 z∈[0,h]，上下/侧向 MUR、端口轴 PML_8；槽跨压探针 9 站
 - f0：2.5 GHz ｜ 端口：2 ｜ 时长 ≤30.0 ns ｜ 网格档：0.0 mm
-- 提取口径：WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，）；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
+- 提取口径：WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，DEVLOG（一百九十八））；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
 - 参数：w_mm, line_len_mm, h_mm
 - 基板：{"er":3.66,"h_mm":1.524}
 
@@ -56,7 +56,7 @@
 - 参数语义：w_mm=槽宽，line_len_mm=两测量面间距（设计 ≈1λ' 槽波长，闭式精算），h_mm=基板厚（模板参数：JS 闭式域 d/λ0≥0.006，缺省叠层 0.508@2.5GHz 落域外，设计点 RO4350B 60mil=1.524）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫；槽缘细化步长 min(NEAR, w/8)、地板 10µm（#349，TODO 0df④——自动档恰为 w/8 且引擎 dt 相应减半，真跑前按 et 实测 dt 重排 NrTS，#283）
 - 冒烟现状：真机 PASS（08d63b0）：β 闭式 67.227/NGSolve 67.149/openEMS 67.937 rad/m 互差 ≤1.2%、|S11|@f0 −39.1dB、|S21| −0.32dB 三门。运行前置：模式文件必须先经 adapters/ngsolve_modes.solve_slotline_mode + openems_slotline_port.write_slotline_mode_files 生成，params 传 e_mode_file/h_mode_file 绝对路径（缺省名仅占位，真跑会缺文件报错）；kc/z_mode 缺省由闭式反解，正式口径取 NGSolve 解
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

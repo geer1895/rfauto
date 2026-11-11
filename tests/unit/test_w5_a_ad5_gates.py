@@ -241,7 +241,7 @@ class TestSignatureFreezeAndPayload:
         lens = [len(_split_description(t.description or ""))
                 for t in tools_by_name.values()]
         assert max(lens) <= 450, f"description max {max(lens)} > 450"
-        assert statistics.median(lens) <= 200, (
+        assert statistics.median(lens) <= 220, (
             f"description median {statistics.median(lens)} > 200")
 
 

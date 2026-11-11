@@ -1,25 +1,46 @@
 """DP-13 Z1 单测——criteria_index_build 批量抽取与无静默漏抽门。
 
-判据（内部证据档 §Z1）：
+判据（runs/df6_dp13/criteria.md §Z1）：
 - 门阈值行 regex 抽取（正例抽中+阈值、负例零抽中）；
 - status 双态 migrate_to_v2|legacy_only；
-- 无静默漏抽：index 行数==rglob 扫描文件数（tmp 合成树 + 真实 runs/ 树双向钉）；
+- 无静默漏抽：index 行数==rglob 扫描文件数（tmp 合成树 + 真实 runs/ 树
+  快照双向钉）；
 - 输出确定性：同树重跑逐字节一致；
 - runs/ 历史文件零改写（builder 只读扫描，写点仅 --out）。
+
+真实 runs/ 树钉（test_real_runs_tree_no_silent_miss）自 aurora_m W1-2 起
+改读**冻结帧夹具**（tests/fixtures/criteria_index_frame.json，由
+scripts/refresh_league_criteria_frames.py --face criteria 显式刷新）：全树
+rglob（含 _/. 前缀目录，264 文件实测）单测内两趟实测 ~13-19s 且随湖增
+长膨胀，夹具化后秒级、成本与湖增长脱钩。相等性门语义逐字保留（门是相
+等性不是份数常数——在快照材料化树上 index 行数==rglob 文件数恒成立）；
+帧内建等价门（材料化回放 entries 与活湖逐键一致才落盘）+测试侧新鲜度钉
+（norm_entries_sha256：现引擎在冻结帧上的 entries 指纹=快照时点活帧指
+纹）。opt-in 真仓活湖对照件在 tests/integration/test_league_criteria_
+live.py（RFAUTO_LEAGUE_CRITERIA_LIVE=1 门控）。
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 from criteria_index_build import build_index, extract_gate_lines, write_index
+from refresh_league_criteria_frames import (
+    CRITERIA_FRAME_SCHEMA,
+    materialize_criteria_tree,
+    norm_entries_sha256,
+)
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+CRITERIA_FRAME = (_REPO_ROOT / "tests" / "fixtures"
+                  / "criteria_index_frame.json")
 
 
 def test_extract_gate_lines_positive_and_negative():
@@ -95,12 +116,22 @@ def test_build_index_missing_root():
     assert index["errors"]
 
 
-def test_real_runs_tree_no_silent_miss():
-    """真实 runs/ 树：index 行数==rglob 扫描文件数（并发批次增删文件时
-    等式恒成立——门是相等性不是份数常数，份数以当轮扫描实测为准）。"""
-    runs = _REPO_ROOT / "runs"
-    if not runs.is_dir():  # 罕见：干净检出无 runs/
-        pass
+def test_real_runs_tree_no_silent_miss(tmp_path):
+    """真实 runs/ 树冻结快照：index 行数==rglob 扫描文件数（相等性门在
+    快照材料化树上恒成立——门是相等性不是份数常数；份数以快照 captured
+    值注记，活湖漂移由刷新脚本 --check 与 opt-in live 件对照）。"""
+    if not CRITERIA_FRAME.is_file():
+        pytest.fail(
+            f"冻结帧夹具缺失: {CRITERIA_FRAME}——运行 "
+            f"scripts/refresh_league_criteria_frames.py --face criteria "
+            f"再生成（显式刷新动作，活湖快照 ~11s）；不许 skip 凑绿")
+    frame = json.loads(CRITERIA_FRAME.read_text(encoding="utf-8"))
+    if frame.get("schema_version") != CRITERIA_FRAME_SCHEMA:
+        pytest.fail(
+            f"夹具 schema 漂移: {frame.get('schema_version')} != "
+            f"{CRITERIA_FRAME_SCHEMA}——重跑刷新脚本再锚定")
+    runs = tmp_path / "runs"
+    materialize_criteria_tree(frame, runs)
     index = build_index(runs)
     scanned = sorted(
         p.relative_to(runs).as_posix()
@@ -112,5 +143,10 @@ def test_real_runs_tree_no_silent_miss():
                     if e["status"] == "migrate_to_v2")
     assert n_migrate + sum(1 for e in index["entries"]
                            if e["status"] == "legacy_only") == len(scanned)
-    # 实测份数随行打印（并发批次下非常数，见 criteria.md 附记）
-    print(f"real runs/ criteria.md count = {len(scanned)}")
+    # 新鲜度钉（W1-2）：现引擎在冻结帧上的 entries 指纹=快照时点活帧指纹；
+    # 漂移=引擎抽取行为变化或夹具过期（重跑刷新脚本再锚定）。
+    assert norm_entries_sha256(index) == frame["norm_entries_sha256"]
+    # 实测份数随行打印（快照 captured 值+回放值，见 criteria.md 附记）
+    print(f"frozen runs/ criteria.md count = {len(scanned)} "
+          f"(snapshot head {frame['source_head'][:10]}, "
+          f"captured live = {frame['source_stats']['n_files']})")

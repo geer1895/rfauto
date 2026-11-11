@@ -189,10 +189,18 @@ def bands_env_points_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """环境包络温区等距采样点（供 D3 温区扫描）。"""
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.bands_service import (
         bands_env_points,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args({"--n": n})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=True)
     _emit(bands_env_points(key, n), f"未知环境包络 {key}", json_output=True)
 
 
@@ -312,10 +320,18 @@ def template_spec_recommend_cmd(
     rank 主键 f0 贴近度、次键 param_semantics 覆盖数、三键闭式预览通道命中、
     并列模板名字典序（全序确定性）。
     """
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.gallery_service import (
         recommend_templates,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args({"--top-k": top_k})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     result = recommend_templates(
         f0_ghz=f0_ghz, topology=topology, n_ports=n_ports,
         keywords=keywords, top_k=top_k, f0_tol=f0_tol)
@@ -368,10 +384,18 @@ def uq_yield_at_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """显式名义点的代理蒙特卡洛良率（良率目标函数点值形式）。"""
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.uq_service import (
         surrogate_yield_at,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args({"--n": n})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=True)
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(surrogate_yield_at(samples, _kv_floats(tol, "--tol", json_output=True),
                        _kv_floats(at, "--at", json_output=True),
@@ -393,6 +417,10 @@ def uq_design_center_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """良率目标函数 + 设计中心化（容差盒网格违约 cost≤0 良率，坐标搜索；MC 只做前后认证）。"""
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.contracts import (
         annotate_contract,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
@@ -400,6 +428,11 @@ def uq_design_center_cmd(
         yield_design_center,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args(
+        {"--n-levels": n_levels, "--max-iter": max_iter, "--n-mc": n_mc})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=True)
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("yield_design_center", yield_design_center(
         samples, _kv_floats(tol, "--tol", json_output=True), k_sigma=k_sigma,

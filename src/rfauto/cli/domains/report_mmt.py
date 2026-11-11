@@ -8,6 +8,7 @@ import typer
 from rich.table import Table
 
 from rfauto.cli.domains._core import _emit as _emit
+from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 
@@ -44,6 +45,74 @@ def report_render_cmd(
     console.print(
         f"  schema={result['schema']}  criteria={result['criteria_status']}  "
         f"verdict={result.get('verdict')}  异常 {result.get('n_anomalies')} 条")
+
+
+@report_app.command("run-figures")
+def report_run_figures_cmd(
+    source: str = typer.Argument(..., help="Touchstone 文件（.sNp）或 run 目录（results/params.sNp / sparams.csv）"),
+    ref_span_m: float | None = typer.Option(
+        None, "--ref-span-m",
+        help="参考面跨度 m（端口面间距；εeff 面必由调用方声明，缺省跳过该联——#364-02 零手拍口径，禁名义线长手拍）"),
+    out_dir: str = typer.Option("", "--out-dir", help="产物目录（缺省源旁 hfss_run_figures/）"),
+    s21_pair: str = typer.Option("1,2", "--s21", help="S21 端口对 from,to（1 起物理口号）"),
+    gd_smooth: int = typer.Option(1, "--gd-smooth", help="群时延相位平滑窗点数（1=关闭；声明式参数随信封 notes 落档）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """HFSS run 四联图：S 参数幅值+相位+群时延+εeff 一张 PNG（反馈 P2）。
+
+    外部借用者手写四联图的面补齐（D:/晶圆键合 反馈 §3 P2）；εeff=(β/ω)²c²
+    由 S21 展开相位提取，L 取参考面跨度（--ref-span-m 显式声明）。
+    数字全出数据源（铁律 7），dpi/尺寸走 plot_style 单源。
+
+    示例：rfauto reports run-figures runs/rf_link/results/params.s2p --ref-span-m 0.005
+    """
+    from rfauto.service.hfss_run_report_service import (
+        render_hfss_run_report,  # lazy: run-figures 叶内延迟导入（Q-X5 CLI 305 批）
+    )
+
+    pair_err: str | None = None
+    parts = [p.strip() for p in s21_pair.split(",")]
+    if len(parts) != 2:
+        pair_err = f"--s21 须为 from,to 两整数，实际 {s21_pair!r}"
+        pair = (1, 2)
+    else:
+        try:
+            pair = (int(parts[0]), int(parts[1]))
+        except ValueError:
+            pair_err = f"--s21 须为 from,to 两整数，实际 {s21_pair!r}"
+            pair = (1, 2)
+    if pair_err:
+        _emit_usage_error(pair_err, json_output=json_output)
+    result = render_hfss_run_report(
+        source,
+        out_dir=out_dir or None,
+        ref_span_m=ref_span_m,
+        s21_ports=pair,
+        gd_smooth_window=gd_smooth,
+    )
+    if not result.get("ok"):
+        _emit(result, "HFSS run 四联图生成失败", json_output=json_output)
+        return  # _emit 失败分支恒 raise（此处仅为可读性）
+    if json_output:
+        _emit(result, "", json_output=True)
+        return
+    s = result["summary"]
+    console.print(f"[green]✓[/green] 四联图: {result['png_paths'][0]}")
+    console.print(
+        f"  源 {s['source_kind']} n={s['n_freqs']} 点 "
+        f"{s['f_min_ghz']:.4g}–{s['f_max_ghz']:.4g} GHz  {s['n_ports']} 端口")
+    if s.get("s21"):
+        s21 = s["s21"]
+        console.print(
+            f"  |S21| {s21['mag_db_max']:.3g}…{s21['mag_db_min']:.3g} dB  "
+            f"相位 {s21['phase_unwrap_start_deg']:.3g}…"
+            f"{s21['phase_unwrap_end_deg']:.3g} deg")
+    eps = s.get("eps_eff")
+    if eps is None:
+        console.print("  εeff: 跳过（--ref-span-m 未声明，零手拍口径）")
+    else:
+        val = eps.get("value", eps.get("median"))
+        console.print(f"  εeff ({eps['mode']}): {val:.4g}  L={eps['ref_span_m']:g} m")
 
 
 # ─── mmt（DP-1：自研 RWG/SIW 解析模基 MMT（GSM）秒级求解）───────────────────

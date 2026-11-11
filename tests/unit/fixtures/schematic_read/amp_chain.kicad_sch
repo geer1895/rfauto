@@ -1,0 +1,558 @@
+(kicad_sch
+	(version 20250114)
+	(generator "rfauto")
+	(generator_version "1.0")
+	(uuid "a67c6def-4064-5f35-a266-be780c4ad7f5")
+	(paper "A4")
+	(lib_symbols
+		(symbol "Device:R"
+			(pin_names (offset 0.254))
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "R" (at 0 6.35 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Value" "R" (at 0 -6.35 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Footprint" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Description" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(symbol "R_0_1"
+				(rectangle
+					(start -5.08 -3.81)
+					(end 5.08 3.81)
+					(stroke (width 0.254) (type default))
+					(fill (type none))
+				)
+			)
+			(symbol "R_1_1"
+				(pin passive line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+			)
+		)
+		(symbol "Device:C"
+			(pin_names (offset 0.254))
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "C" (at 0 6.35 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Value" "C" (at 0 -6.35 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Footprint" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Description" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(symbol "C_0_1"
+				(rectangle
+					(start -5.08 -3.81)
+					(end 5.08 3.81)
+					(stroke (width 0.254) (type default))
+					(fill (type none))
+				)
+			)
+			(symbol "C_1_1"
+				(pin passive line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+			)
+		)
+		(symbol "Transistor_BJT:2N3904"
+			(pin_names (offset 0.254))
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "Q" (at 0 7.62 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Value" "2N3904" (at 0 -7.62 0)
+				(effects
+					(font (size 1.27 1.27))
+				)
+			)
+			(property "Footprint" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(property "Description" "" (at 0 0 0)
+				(effects
+					(font (size 1.27 1.27))
+					(hide yes)
+				)
+			)
+			(symbol "2N3904_0_1"
+				(rectangle
+					(start -5.08 -5.08)
+					(end 5.08 5.08)
+					(stroke (width 0.254) (type default))
+					(fill (type none))
+				)
+			)
+			(symbol "2N3904_1_1"
+				(pin passive line
+					(at -7.62 1.27 0)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "1"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "2"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -1.27 0)
+					(length 2.54)
+					(name "3"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+					(number "3"
+						(effects
+							(font (size 1.27 1.27))
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 50.8 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8ba5bdca-170f-5641-af1c-1d3cc5ecbc3c")
+		(property "Reference" "R1" (at 50.8 44.45 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Value" "10k" (at 50.8 57.15 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603" (at 50.8 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~" (at 50.8 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Description" "" (at 50.8 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6bbc719e-8743-5184-a7bb-581aa01db007")
+		)
+		(pin "2"
+			(uuid "c583dc0b-c9d7-575b-8bcb-ad87e2005a48")
+		)
+		(instances
+			(project "rfauto"
+				(path "/a67c6def-4064-5f35-a266-be780c4ad7f5"
+					(reference "R1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 101.6 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e6e01f76-7b54-51d7-821d-ca335f9784b9")
+		(property "Reference" "R2" (at 101.6 44.45 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Value" "22k" (at 101.6 57.15 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603" (at 101.6 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~" (at 101.6 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Description" "" (at 101.6 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4d7be972-223c-5a0a-af6a-1264136e8e92")
+		)
+		(instances
+			(project "rfauto"
+				(path "/a67c6def-4064-5f35-a266-be780c4ad7f5"
+					(reference "R2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 152.4 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "12dc4e2c-3c9a-5343-bb55-7dc0811081d0")
+		(property "Reference" "C1" (at 152.4 44.45 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Value" "100n" (at 152.4 57.15 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603" (at 152.4 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~" (at 152.4 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Description" "" (at 152.4 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "9d8963a2-daf9-5bf4-ba04-73e44bc54ad7")
+		)
+		(pin "2"
+			(uuid "0335d6b8-8b4e-50f8-a1be-5adcd29e7e01")
+		)
+		(instances
+			(project "rfauto"
+				(path "/a67c6def-4064-5f35-a266-be780c4ad7f5"
+					(reference "C1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_BJT:2N3904")
+		(at 203.2 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "3db7691c-b999-5612-932a-6867bf158fad")
+		(property "Reference" "Q1" (at 203.2 43.18 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Value" "2N3904" (at 203.2 58.42 0)
+			(effects
+				(font (size 1.27 1.27))
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline" (at 203.2 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~" (at 203.2 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(property "Description" "" (at 203.2 50.8 0)
+			(effects
+				(font (size 1.27 1.27))
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "9167b632-4710-5d19-9797-0b6ea6c825eb")
+		)
+		(pin "2"
+			(uuid "6957e770-fb9a-526d-ab5f-ca5abceb4782")
+		)
+		(pin "3"
+			(uuid "3b492dd4-9f28-50b8-a0b5-1799ed40489a")
+		)
+		(instances
+			(project "rfauto"
+				(path "/a67c6def-4064-5f35-a266-be780c4ad7f5"
+					(reference "Q1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 43.18 50.8) (xy 38.1 50.8)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "8cf675c9-d810-5059-8813-635d25aedaf2")
+	)
+	(label "VIN"
+		(at 38.1 50.8 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify right bottom)
+		)
+		(uuid "ad147726-4c52-5cee-a3b1-ca078d1c4bf8")
+	)
+	(wire
+		(pts
+			(xy 58.42 50.8) (xy 63.5 50.8)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "c6adfc4d-344f-571e-8350-6c60a9083903")
+	)
+	(label "MID"
+		(at 63.5 50.8 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify left bottom)
+		)
+		(uuid "bfdb2bbc-9640-5276-9264-02bec212f07a")
+	)
+	(wire
+		(pts
+			(xy 144.78 50.8) (xy 139.7 50.8)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "3169c92f-71e0-5c5c-9c30-feb3f7775ab8")
+	)
+	(label "MID"
+		(at 139.7 50.8 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify right bottom)
+		)
+		(uuid "04ed8169-af91-59f0-af6b-4d572bbdc353")
+	)
+	(wire
+		(pts
+			(xy 195.58 49.53) (xy 190.5 49.53)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "eff6e91e-a961-5d32-9056-733210812a8a")
+	)
+	(label "MID"
+		(at 190.5 49.53 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify right bottom)
+		)
+		(uuid "68dbe852-6f9b-5e19-9275-4fb8cb0ba270")
+	)
+	(wire
+		(pts
+			(xy 160.02 50.8) (xy 165.1 50.8)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "82735719-2882-5d6d-9733-fd877b4b6e49")
+	)
+	(label "GND"
+		(at 165.1 50.8 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify left bottom)
+		)
+		(uuid "806b6ebd-0652-5026-92a8-63734de02bb0")
+	)
+	(wire
+		(pts
+			(xy 195.58 52.07) (xy 190.5 52.07)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "d701214f-16d2-5bd5-9500-f773ddd1b08f")
+	)
+	(label "GND"
+		(at 190.5 52.07 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify right bottom)
+		)
+		(uuid "8a4ee6ed-5d9e-50da-96d5-63b2db899997")
+	)
+	(wire
+		(pts
+			(xy 93.98 50.8) (xy 88.9 50.8)
+		)
+		(stroke (width 0) (type solid))
+		(uuid "707ad087-29e2-55d3-b9c9-41ed2261a7af")
+	)
+	(label "OUT"
+		(at 88.9 50.8 0)
+		(effects
+			(font (size 1.27 1.27))
+			(justify right bottom)
+		)
+		(uuid "98ec429e-d394-52bc-b605-d4e13cabce92")
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

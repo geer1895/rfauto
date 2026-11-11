@@ -10,6 +10,12 @@
    既有文档源变动时此红 = "站点未再生成"的明确信号（修复动作见断言
    消息），不是环境故障。
 构建 smoke：mkdocs 可用时真跑 mkdocs build（零 error + 关键页 HTML 产出）。
+
+aurora_m W1-4 再生器去重：3/4 两测的 build_all 产物改由 session 级共享
+夹具 docs_site_fresh（tests/unit/_docs_regen_shared.py，pytest tmp 域内
+单次构建+原子改名缓存）供给——断言面零变化（manifest 仍为 build_all
+真实返回值），同一批跑里三消费文件（本文件+test_check_docs_drift+
+test_kernel_cards）docs_site 只构建一次（A 侧实测 11 次）。
 """
 
 from __future__ import annotations
@@ -23,6 +29,8 @@ from typing import Any
 
 import pytest
 import yaml
+
+from tests.unit._docs_regen_shared import RegenBuild
 
 _REPO = Path(__file__).resolve().parents[2]
 _MKDOCS_YML = _REPO / "mkdocs.yml"
@@ -102,8 +110,9 @@ def test_nav_referenced_files_all_exist() -> None:
 
 # ─── 3. 生成器同源（全 live 互证，零硬编码数字）───────────────────────────
 
-def test_generator_pages_embed_live_counts(tmp_path: Path) -> None:
-    manifest = build_docs_pages.build_all(tmp_path)
+def test_generator_pages_embed_live_counts(docs_site_fresh: RegenBuild) -> None:
+    manifest = docs_site_fresh.manifest
+    built = docs_site_fresh.directory
     assert manifest["cli"] == check_numbers.count_cli()
     assert manifest["mcp"] == check_numbers.count_mcp()
     assert manifest["calculators"] == check_numbers.count_calculators()
@@ -111,14 +120,14 @@ def test_generator_pages_embed_live_counts(tmp_path: Path) -> None:
     assert manifest["anchors"] == check_numbers.count_anchors()
     assert manifest["tests"] == check_numbers.count_tests()[0]
 
-    cli_md = (tmp_path / "reference" / "cli.md").read_text(encoding="utf-8")
+    cli_md = (built / "reference" / "cli.md").read_text(encoding="utf-8")
     assert f"共 **{manifest['cli']}** 条" in cli_md
-    mcp_md = (tmp_path / "reference" / "mcp.md").read_text(encoding="utf-8")
+    mcp_md = (built / "reference" / "mcp.md").read_text(encoding="utf-8")
     assert f"共 **{manifest['mcp']}** 个" in mcp_md
-    calc_md = (tmp_path / "reference" / "calculators.md").read_text(
+    calc_md = (built / "reference" / "calculators.md").read_text(
         encoding="utf-8")
     assert f"实注册 **{manifest['calculators']}** 个" in calc_md
-    tmpl_md = (tmp_path / "catalog" / "index.md").read_text(encoding="utf-8")
+    tmpl_md = (built / "catalog" / "index.md").read_text(encoding="utf-8")
     assert f"共 **{manifest['templates']}** 个" in tmpl_md
     # 首页数字条内容与实测一致（strip 纯函数对纯读回，零硬编码数字）
     strip_fresh = build_docs_pages.numbers_strip(
@@ -129,8 +138,8 @@ def test_generator_pages_embed_live_counts(tmp_path: Path) -> None:
 
 # ─── 4. 已提交 docs_site 保鲜（逐字节；红=需重跑生成器）──────────────────
 
-def test_committed_docs_site_matches_regeneration(tmp_path: Path) -> None:
-    build_docs_pages.build_all(tmp_path)
+def test_committed_docs_site_matches_regeneration(
+        docs_site_fresh: RegenBuild) -> None:
     remedy = (
         "docs_site/ 落后于代码面或源文档——修复：在仓根重跑 "
         "`python scripts/build_docs_pages.py`，产物随本轮代码改动同笔提交"
@@ -138,7 +147,7 @@ def test_committed_docs_site_matches_regeneration(tmp_path: Path) -> None:
     for rel in GENERATED_FILES:
         committed = _DOCS_SITE / rel
         assert committed.exists(), f"缺少已提交产物 docs_site/{rel}；{remedy}"
-        fresh = (tmp_path / rel).read_bytes()
+        fresh = (docs_site_fresh.directory / rel).read_bytes()
         assert committed.read_bytes() == fresh, f"docs_site/{rel} 内容漂移；{remedy}"
     # 首页数字条单独锚（index.md 手写部分不参与逐字节比对）
     committed_strip = build_docs_pages.read_index_strip(_DOCS_SITE)
@@ -164,3 +173,51 @@ def test_mkdocs_build_smoke(tmp_path: Path) -> None:
     assert (site_out / "reference" / "cli" / "index.html").exists()
     assert (site_out / "catalog" / "index.html").exists()
     assert (site_out / "gallery" / "index.html").exists()
+
+
+# ─── 6. 门 prebuild 消费口（aurora_m W1-3：跨段构建收敛）───────────────────
+
+def test_regen_prebuilt_env_port_direct(tmp_path: Path,
+                                        monkeypatch: pytest.MonkeyPatch) -> None:
+    """_maybe_prebuilt 三态钉（白盒）：env 未设 → None（缺省行为不变红线）；
+    env 在场+产物齐 → 直接消费；产物/manifest 缺 → 如实红（不静默回退自建
+    ——静默回退会把"每门 ≤1 次"契约悄悄变 3 次）。"""
+    from tests.unit import _docs_regen_shared as shared
+
+    monkeypatch.delenv(shared.REGEN_FROM_ENV, raising=False)
+    assert shared._maybe_prebuilt("docs_site") is None
+
+    fake = tmp_path / "gate_regen"
+    (fake / "docs_site").mkdir(parents=True)
+    (fake / "docs_site.manifest.json").write_text('{"cli": 3}',
+                                                  encoding="utf-8")
+    monkeypatch.setenv(shared.REGEN_FROM_ENV, str(fake))
+    pre = shared._maybe_prebuilt("docs_site")
+    assert pre is not None
+    assert pre.directory == fake / "docs_site"
+    assert pre.manifest == {"cli": 3}
+
+    monkeypatch.setenv(shared.REGEN_FROM_ENV, str(tmp_path / "absent"))
+    with pytest.raises(RuntimeError, match="prebuild 契约"):
+        shared._maybe_prebuilt("docs_site")
+
+
+def test_docs_site_fixture_consumes_gate_prebuild(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """夹具实体接线钉：env 指向手工 prebuild 目录时获取单源直接返回它
+    （零真实构建——假产物缺真实内容即证）。直呼夹具薄壳下的普通函数
+    _docs_site_product（pytest 8 禁直呼夹具；且不经 session 缓存，判定
+    与同会话他测顺序无关）。"""
+    from tests.unit import _docs_regen_shared as shared
+
+    fake = tmp_path / "gate_regen"
+    (fake / "docs_site").mkdir(parents=True)
+    (fake / "docs_site" / "marker.txt").write_text("prebuilt",
+                                                   encoding="utf-8")
+    (fake / "docs_site.manifest.json").write_text('{"fake": true}',
+                                                  encoding="utf-8")
+    monkeypatch.setenv(shared.REGEN_FROM_ENV, str(fake))
+    built = shared._docs_site_product(tmp_path / "unused-basetemp")
+    assert built.directory == fake / "docs_site"
+    assert (built.directory / "marker.txt").read_text("utf-8") == "prebuilt"
+    assert built.manifest == {"fake": True}

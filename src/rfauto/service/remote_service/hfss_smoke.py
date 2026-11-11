@@ -27,6 +27,11 @@ from rfauto.infra.remote_machines import (
 from rfauto.service.envelope import ok_envelope, skipped_envelope
 from rfauto.service.remote_sftp_pull import record_pull_manifest
 
+from .instance_identity import (
+    instance_verify_enabled,
+    verify_attached_instance,
+    write_launch_instance_record,
+)
 from .mutex import remote_mutex_command, remote_mutex_precheck
 
 REMOTE_SMOKE_ENV = "RFAUTO_REMOTE_SMOKE"
@@ -59,6 +64,7 @@ _C_M_S = 299792458.0       # 真空光速（εeff 反演用）
 def remote_hfss_smoke(
     machine: str | None = None,
     grpc_wait_s: float = 60.0,
+    seat: str | None = None,
 ) -> dict[str, Any]:
     """L1 attach 冒烟（**真机 opt-in**：env ``RFAUTO_REMOTE_SMOKE=1`` 门）。
 
@@ -67,6 +73,13 @@ def remote_hfss_smoke(
     停机清理（本机 release_desktop finally + 服务器侧 ``remote_hfss_cleanup``
     兜底，P2-1 与 L2 同构——launch 成功后的任何失败路径都收掉服务器侧
     ansysedt 与 schtasks 任务，#265 孤儿桌面铁律）。
+
+    VB-4 实例身份绑定（开关 ``RFAUTO_REMOTE_INSTANCE_VERIFY`` **缺省关**：
+    未设时本段整体跳过，缺省路径逐字节零变化）：开关开着 → launch 成功后
+    落实例记录（PID+创建时刻，恰一命中才可记录），attach 后以
+    ``desktop.aedt_process_id``+SSH 查活实例创建时刻核验——失配/记录缺失/
+    损坏/歧义一律拒连（永不回退，ADR-0004），且记录写不出即 fail-closed
+    拒 attach；finally 清理同笔删除服务器侧记录文件（实例亡→记录退役）。
 
     unit 门内（env 未设）直接拒绝执行——真机绝不混进测试（df4⑥）。
     """
@@ -136,7 +149,29 @@ def remote_hfss_smoke(
         if failure is not None:
             return failure
 
-        # 本机 attach（pyaedt 懒加载；版本配对断言在 settings 里钉）
+        # ② 实例身份记录（VB-4，开关缺省关：env 未设时整段跳过）。开关
+        #    开着且记录写不出/歧义 → fail-closed 拒 attach（ADR-0004 永不
+        #    回退：无记录可核绝不消费"该端口上任意实例"）。
+        verify_on = instance_verify_enabled()
+        if verify_on:
+            rec_failure = write_launch_instance_record(
+                cfg, transport, seat=seat, steps=steps,
+                fingerprint=f"grpcsrv.*:{cfg.hfss_grpc_port}:",
+            )
+            if rec_failure is not None:
+                return {"ok": False, "reason": rec_failure["reason"],
+                        "steps": steps}
+
+        # 本机 attach（pyaedt 懒加载；版本配对断言在 settings 里钉）。
+        # 开关开着 → 附带身份核验（开关关时调用形状与既有面逐字节同——
+        # 测试桩按两参签名钉住，不得在缺省路径传额外 kwargs）。
+        if verify_on:
+            return _attach_and_verify(
+                cfg, steps,
+                transport=transport,
+                record_path=steps.get("instance_record", {}).get("local_path"),
+                verify_identity=True,
+            )
         return _attach_and_verify(cfg, steps)
     except Exception as exc:  # fail-closed：链路裸抛也落失败信封（L2 同构）
         steps["l1_error"] = type(exc).__name__
@@ -166,6 +201,8 @@ def remote_hfss_smoke(
                 machine,
                 task_name=steps.get("schtasks", {}).get("task_name"),
                 grpc_match=f":{cfg.hfss_grpc_port}:",
+                record_remote_path=steps.get("instance_record", {})
+                .get("remote_path"),
             )
         steps["cleanup"] = cleanup
 
@@ -259,6 +296,7 @@ def remote_hfss_cleanup(
     *,
     task_name: str | None = None,
     grpc_match: str | None = None,
+    record_remote_path: str | None = None,
 ) -> dict[str, Any]:
     """冒烟清理：按 PID 精确杀远程 grpcsrv ansysedt +删 schtasks 任务+sftp bat。
 
@@ -368,6 +406,15 @@ def remote_hfss_cleanup(
                     f"schtasks /delete /f /tn '{name}'", timeout_s=20.0,
                 )
             steps["deleted_tasks"] = names
+        # 4) VB-4 实例记录退役：实例已杀→记录随之删（精确点名文件，非
+        #    通配；best-effort 不阻塞清理主路径，#105）。
+        if record_remote_path:
+            transport.run_command(
+                f"Remove-Item '{record_remote_path}' -Force "
+                "-ErrorAction SilentlyContinue",
+                timeout_s=20.0,
+            )
+            steps["deleted_instance_record"] = record_remote_path
         return ok_envelope(steps=steps)
     except Exception as exc:
         steps["error"] = type(exc).__name__
@@ -377,7 +424,14 @@ def remote_hfss_cleanup(
         transport.close()
 
 
-def _attach_and_verify(cfg: RemoteMachineConfig, steps: dict[str, Any]) -> dict[str, Any]:
+def _attach_and_verify(
+    cfg: RemoteMachineConfig,
+    steps: dict[str, Any],
+    *,
+    transport: Any = None,
+    record_path: str | None = None,
+    verify_identity: bool = False,
+) -> dict[str, Any]:
     """本机 pyaedt attach 远程会话并做 L1 判定（调用方保证 finally release）。
 
     远程三开关+一环境变量（pyaedt 1.4.0 × AEDT 2025.1.0 无 SP 实证，
@@ -392,6 +446,14 @@ def _attach_and_verify(cfg: RemoteMachineConfig, steps: dict[str, Any]) -> dict[
       客户端 C++ 插件不支持 ``host:port:InsecureMode`` 三段式（pyaedt
       "Service Pack is not detected" 警告同源）——裸 IP:port 连接即可，
       服务端 InsecureMode 监听不变。
+
+    VB-4 实例身份核验（``verify_identity=True`` 才启用；缺省 False=既有
+    行为逐字节零变化）：Desktop 连接建立后取 ``desktop.aedt_process_id``
+    （pyaedt 1.9.0 GetProcessID 实证），SSH 查活实例创建时刻与发射记录
+    核对——判定不匹配/记录缺失/损坏/查询失败一律拒连（fail-closed，
+    ADR-0004 永不回退）：返回失败信封，连接由 finally release 释放，
+    绝不继续消费该会话（``aedt_process_id`` 只有连接后才可得，"拒连"
+    语义＝拒绝使用而非撤回 TCP 握手）。
     """
     try:
         from ansys.aedt.core import Desktop
@@ -419,6 +481,24 @@ def _attach_and_verify(cfg: RemoteMachineConfig, steps: dict[str, Any]) -> dict[
             machine=cfg.host,
             port=cfg.hfss_grpc_port,
         )
+        if verify_identity:
+            verdict = verify_attached_instance(
+                transport, record_path,
+                getattr(desktop, "aedt_process_id", None), steps=steps,
+            )
+            if not verdict.get("allowed"):
+                steps["attach"] = {
+                    "error": "instance_identity_refused",
+                    "instance_verdict": verdict.get("verdict"),
+                }
+                return {
+                    "ok": False,
+                    "reason": (
+                        "实例身份核验拒连（永不回退，ADR-0004）: "
+                        f"{verdict.get('verdict')}: {verdict.get('reason')}"
+                    ),
+                    "steps": steps,
+                }
         version = desktop.current_version
         health = version is not None and len(str(version)) > 0
         steps["attach"] = {"version": str(version), "health": health}
@@ -452,6 +532,7 @@ def remote_hfss_l2_smoke(
     machine: str | None = None,
     grpc_wait_s: float = 90.0,
     out_dir: str | None = None,
+    seat: str | None = None,
 ) -> dict[str, Any]:
     """L2 求解冒烟：远程建模→求解→Touchstone 回拉→判读（**真机 opt-in**）。
 
@@ -467,6 +548,11 @@ def remote_hfss_l2_smoke(
     到服务器侧路径 → sftp 回拉 ``out_dir``（缺省 ``runs/remote_l2/<日期>/``）
     → skrf 判读 → finally：release_desktop + ``remote_hfss_cleanup``
     （杀服务器 ansysedt+删 schtasks）。
+
+    VB-4 实例身份绑定（L1 同构；开关 ``RFAUTO_REMOTE_INSTANCE_VERIFY``
+    **缺省关**＝本段整体跳过零变化）：launch 成功后落实例记录，attach 后
+    ``desktop.aedt_process_id``+SSH 查活实例创建时刻核验——失配/缺失/
+    损坏/歧义一律拒连 fail-closed（永不回退，ADR-0004）。
 
     判据（#122 预声明，全部过=PASS，任何一项不过=FAIL 如实附数字）：
 
@@ -490,6 +576,8 @@ def remote_hfss_l2_smoke(
         gRPC 端口轮询超时。
     out_dir : str, optional
         回拉产物目录（缺省 ``runs/remote_l2/<YYYYMMDD>/``，runs/ 原布局语义）。
+    seat : str, optional
+        发射席位标识（进实例记录 ``seat`` 字段，审计面非鉴权；None="unknown"）。
 
     Returns
     -------
@@ -616,7 +704,30 @@ def remote_hfss_l2_smoke(
                 failure.setdefault(key, envelope[key])
             return failure
 
-        build = _l2_model_solve_export(cfg, project_path, s2p_remote_win, steps)
+        # VB-4 实例身份记录（L1 同构；开关缺省关＝整段跳过零变化）。开关
+        # 开着且记录写不出/歧义 → fail-closed 拒 attach（ADR-0004）。
+        verify_on = instance_verify_enabled()
+        if verify_on:
+            rec_failure = write_launch_instance_record(
+                cfg, transport, seat=seat, steps=steps,
+                fingerprint=f"grpcsrv.*:{cfg.hfss_grpc_port}:",
+            )
+            if rec_failure is not None:
+                envelope["reason"] = rec_failure["reason"]
+                envelope["steps"] = steps
+                return envelope
+
+        # 开关关时保持既有四参位置调用形状（测试桩钉住，缺省路径零变化）；
+        # 开关开着 → 附带身份核验上下文。
+        if verify_on:
+            build = _l2_model_solve_export(
+                cfg, project_path, s2p_remote_win, steps,
+                transport=transport,
+                record_path=steps.get("instance_record", {}).get("local_path"),
+                verify_identity=True,
+            )
+        else:
+            build = _l2_model_solve_export(cfg, project_path, s2p_remote_win, steps)
         if not build.get("ok"):
             envelope["reason"] = build.get("reason") or "L2 建模/求解/导出失败"
             # 失败证据：拉服务器侧 AEDT 控制台日志尾（-Logfile 落盘；含
@@ -697,6 +808,8 @@ def remote_hfss_l2_smoke(
                 machine,
                 task_name=steps.get("schtasks", {}).get("task_name"),
                 grpc_match=f":{cfg.hfss_grpc_port}:",
+                record_remote_path=steps.get("instance_record", {})
+                .get("remote_path"),
             )
         steps["cleanup"] = cleanup
 
@@ -706,6 +819,10 @@ def _l2_model_solve_export(
     project_path: str,
     s2p_remote: str,
     steps: dict[str, Any],
+    *,
+    transport: Any = None,
+    record_path: str | None = None,
+    verify_identity: bool = False,
 ) -> dict[str, Any]:
     """远程建模→求解→导出 Touchstone（pyaedt 直连，L2 本体）。
 
@@ -715,6 +832,12 @@ def _l2_model_solve_export(
     辐射补面"的二义性；积分线=地面(z=0)→导带上缘(y=0, z=h)，df6⑪ 口径
     积分线止于导带不穿带）。薄片导电走 ``assign_perfecte_to_sheets``
     （#356①：零厚度盒 material="pec" 不导电）。
+
+    VB-4 实例身份核验（``verify_identity=True`` 才启用；缺省 False=既有
+    行为零变化）：Desktop 连接建立后取 ``desktop.aedt_process_id`` 与发射
+    记录核对（L1 ``_attach_and_verify`` 同构口径）——不匹配/缺失/损坏/
+    查询失败一律拒连 fail-closed（永不回退，ADR-0004），连接由 finally
+    release 释放，绝不继续建模求解。
 
     Returns
     -------
@@ -738,6 +861,20 @@ def _l2_model_solve_export(
                 machine=cfg.host,
                 port=cfg.hfss_grpc_port,
             )
+            if verify_identity:
+                verdict = verify_attached_instance(
+                    transport, record_path,
+                    getattr(desktop, "aedt_process_id", None), steps=steps,
+                )
+                if not verdict.get("allowed"):
+                    return {
+                        "ok": False,
+                        "reason": (
+                            "实例身份核验拒连（永不回退，ADR-0004）: "
+                            f"{verdict.get('verdict')}: "
+                            f"{verdict.get('reason')}"
+                        ),
+                    }
             steps["attach"] = {"version": str(desktop.current_version)}
             # remote_rpc_session 在 Desktop attach 语义是 bool（_validate_port
             # 远程判定），但 Hfss 设计初始化的 project_properties 加载分支按

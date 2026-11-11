@@ -1,6 +1,6 @@
 """remote_ads_service —— ADS 网表远跑通道（多机协同 v1）。
 
-hpeesofsim 网表远跑四步+互斥预检（Devlog 五百三十三 v1 路线登记；
+hpeesofsim 网表远跑四步+互斥预检（DEVLOG 五百三十三 v1 路线登记；
 playbook §6.1 缺口条目；互斥=X4 批推广补齐）：⓪发射前互斥预检（#261，
 共享单源 remote_mutex_precheck，命中=候跑 SKIP）→ ①sftp 上传网表+依赖
 （自包含化检查，#276）→ ②服务器侧
@@ -29,7 +29,7 @@ hpeesofsim 执行（env 形态=#272 同款）→ ③数据集 sftp 逐文件回�
   形态见 ads_netlist._build_ads_env）。
 
 服务器侧约束（服务器说明 §10/AGENTS 0b）：工作根=注册表
-``hfss.project_root``（E:\\rfauto_remote 语义，**禁 D:\\CloudDrive**），
+``hfss.project_root``（远程工作根语义，**禁生产云盘直写**），
 批次子目录 ``ads_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 每机互斥，X4 批推广，共享单源
 ``remote_service.remote_mutex_precheck``：hpeesofsim 进程指纹直查=权威
@@ -324,7 +324,7 @@ def remote_ads_run(
     if not cfg.hfss_project_root:
         return skipped_envelope(
             "机器未登记 hfss.project_root（服务器侧工作根，"
-            "禁 D:\\CloudDrive 语义靠此钉）",
+            "禁生产云盘直写语义靠此钉）",
             ok=False, steps=steps,
         )
 

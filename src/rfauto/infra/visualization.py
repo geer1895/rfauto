@@ -1,4 +1,4 @@
-"""E5 可视化模块（plan-extension_v2 §E5）。
+"""E5 可视化模块（Plan_Extension_v2 §E5）。
 
 可视化功能：
 - S 参数曲线图（幅度/相位）

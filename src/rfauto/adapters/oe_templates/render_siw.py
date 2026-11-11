@@ -12,7 +12,7 @@ from ..oe_port_semantics import assert_msl_port_geometry
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ══ SIW 族首族：直 SIW 传输线段（2026-09-22 siw-family 立项）══════════════════
-# 权威口径：内部证据档（文献双源/闭式/激励方案利弊/预声明门全账）。
+# 权威口径：runs/siw_family/criteria.md（文献双源/闭式/激励方案利弊/预声明门全账）。
 # 结构：基板 z∈[0,h]（上下显式零厚金属板贴 z 边界 PEC——与边界等电势冗余，使
 # 桥-板-过孔连通图物理化）+ 两列金属化过孔 PEC 圆柱（x=±w/2，心距 s，贯通
 # 全域直入 PML——slotline_lumped"匹配端接"口径，端口背后无开路 stub/短路面）。
@@ -26,7 +26,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 # β 判读：LumpedPort 无 beta 属性（cps 同坑）→ port_beta.csv 落端口元 y 坐标
 # + plane_dist_m（cps 契约复用）；WaveguidePort 解析 β=闭式自证不可作判据
 # （criteria.md §3 弃用理由 2，#118 不自证）。
-# 端口方案 v2（2026-09-23 df5-SE，内部证据档）：opt-in
+# 端口方案 v2（2026-09-23 df5-SE，runs/siw_family/v2_criteria.md）：opt-in
 # 旋钮 params["_port_mode"]="v2"=藩篱止于端口面+端面口径 LumpedPort（跨介质
 # 孔径 ±W/2、R=Z_PV 不变）——按原 G3 门重裁的 §R2 路线；缺省 v1 渲染逐字节
 # 不变（字节钉 test_siw_v1_default_render_byte_pin）。
@@ -109,7 +109,7 @@ def siw_layout(params: dict[str, Any], freq_range_ghz: tuple[float, float],
             "网格线（#311 先例口径：SmoothMesh 不细分 ≤NEAR 区间），藩篱"
             f"泄漏建模粗；收紧 mesh_resolution_mm ≤ "
             f"{4.0 * via_gap * 1e3:.4g}mm 或加大 s−d（设计规则域内）")
-    # 端口方案旋钮（内部证据档 §1/§2，2026-09-23 df5-SE
+    # 端口方案旋钮（runs/siw_family/v2_criteria.md §1/§2，2026-09-23 df5-SE
     # 批；criteria.md §R2 归因裁定后用户选 v2 路线）：
     #   v1（缺省）=z 桥探针悬在贯通 PML 的连续 SIW 中间——端面三支路节点分光，
     #     fixture 汇 ≥0.385，理想探针天花板 −3.10dB（§R2 构造性证明）；
@@ -331,7 +331,7 @@ TEMPLATE_META["siw"] = SIW_META
 TEMPLATE_NOMINAL["siw"] = SIW_NOMINAL
 
 # ══ SIW 族第二成员：MSL 锥形过渡 + SIW 直段（2026-09-24 df6 A2 立项）══════════
-# 权威口径：内部证据档（Deslandes-Wu 两段论/文献互证账/
+# 权威口径：runs/df6_a2siwmsl/criteria.md（Deslandes-Wu 两段论/文献互证账/
 # G3' 预声明门/预算）。结构：基板填满矩形域（z=0 PEC 底界=MSL 地+SIW 底壁
 # 共用+SIW 区显式零厚底板；顶界 MUR 开放——MSL 区是微带环境），顶层金属单
 # 属性 msl_top 三段（50Ω 馈线 → 线性锥 AddPolygon 梯形 → SIW 顶壁显式板，
@@ -646,7 +646,7 @@ MSL_SIW_TAPER_NOMINAL: dict[str, Any] = {
     "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0,
     "taper_len_mm": 10.5121, "siw_len_mm": 63.0724,
     "h_mm": 0.508, "er": 3.66, "tan_d": 0.0037,
-    # 全闭式精算（#1c，内部证据档 §1/§1.1）：w/d/s=
+    # 全闭式精算（#1c，runs/df6_a2siwmsl/criteria.md §1/§1.1）：w/d/s=
     # TEMPLATE_NOMINAL["siw"] 同源沿用（fc10=6.6667GHz=f0/1.5 设计点）；
     # λg=21.0241mm（β=298.856 rad/m 闭式）→ taper_len=round(λg/2,4)=10.5121
     # （缺省锥长；λg/4=5.256 只作旋钮变体——对称双锥确定性级联实测带内
@@ -664,7 +664,7 @@ TEMPLATE_NOMINAL["msl_siw_taper"] = MSL_SIW_TAPER_NOMINAL
 
 # ══ DP-8：模板 pin 契约 + 几何组合契约（2026-09-24 df6；openems_templates.py
 #    唯一增量面=port_pins 注册 + layout 契约，缺省渲染零变化——字节钉复验为门，
-#    内部证据档 §0/§3）════════════════════════════════════
+#    runs/df6_dp8compose/criteria.md §0/§3）════════════════════════════════════
 # 契约形态（图元化，非文本拼接）：compose_layout(params, band, base, h, frame)
 # → {pins, dom/bbox, primitives, plates_top, bottom_plate, bc_compat,
 #    face_on_boundary, clearance_m, span_m, substrate, guards_text}；

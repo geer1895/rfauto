@@ -1,7 +1,23 @@
 ---
 name: rfauto-branchline-coupler
-description: 用 rfauto 调优 branchline_coupler（3 个可调参数，带内目标 2 项）
-version: 1
+description: >-
+  Use when the user wants to design, run or tune a branchline coupler (90-degree hybrid)
+  with rfauto — quarter-wave arm impedance synthesis, recipe-driven
+  run/tune/autotune/calibrate workflows. Triggers: branchline, branch-line, hybrid, 90
+  degree coupler, quadrature ｜ 中文触发: 分支线电桥 90度电桥 正交电桥. Do NOT use for ratrace (180-degree)
+  or Lange/gysel couplers (other rfauto cards). Numbers come only from the rfauto kernel
+  and the card files under references/.
+license: Complete terms in LICENSE.txt
+compatibility: Requires the rfauto CLI on PATH (pip install rfauto). Closed-form synthesis steps run offline; engine-backed steps need openEMS or HFSS installed locally.
+metadata:
+  author: rfauto
+  version: '2'
+  rfauto_model: branchline_coupler
+  card_kind: recipe+capability+kernel
+  generator: 'curated from recipe_to_skill; spec: agentskills.io / rfauto T-Q10'
+  source_recipe: recipes/branchline_coupler_v1.yaml
+  source_cards: docs/capability_cards/branchline.md, docs_site/kernel_cards/branchline.md
+allowed-tools: Bash(rfauto:*) Read
 ---
 
 # rfauto skill：branchline_coupler
@@ -53,3 +69,17 @@ result = solver.solve()
 - LLM/agent 不产生物理数字：所有指标来自求解器与确定性评判器。
 - 对配方的任何修改走沙箱草稿 → 三层 Gate 审批（agent 写面隔离）。
 - FAIL 如实记录，不凑绿。
+
+## When to open the reference files
+
+| you need | open |
+|---|---|
+| the full capability card (playbook, all anchors, engine precision) | `references/capability_card.md` |
+| formulas, docstring pins, precision profile, code entries, test surface | `references/kernel_card.md` |
+| a symptom → pitfall → fix lookup | `references/pitfalls.md` |
+| the read-only stackup facts behind this recipe | `configs/materials.yaml` (source of truth) |
+
+## Verify before you finish
+
+Run `python scripts/verify_output.py --json <saved.json> [--expect KEY=VALUE ... --tol 1e-3]`.
+FAIL is reported as FAIL (rfauto rule #122); never retry a FAIL into green.

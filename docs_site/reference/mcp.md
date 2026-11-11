@@ -1,6 +1,6 @@
 # MCP 工具参考
 
-> `@mcp.tool` 注册工具共 **166** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
+> `@mcp.tool` 注册工具共 **208** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
 
 | 工具 | 模块 | 说明 |
 |---|---|---|
@@ -9,6 +9,8 @@
 | `ads_circuit_diagram` | ads | ADS 前仿链出图（ads-circuit 域）：族+Touchstone → 参数化电路图 .drawio。 |
 | `ads_circuit_run` | ads | ADS 前仿链一条龙（ads-circuit 域）：读图→三态合参→渲染→求解→指标→对拍→反标注。 |
 | `ads_circuit_annotate` | ads | ADS 前仿链离线反标注（ads-circuit 域）：原图+结果 JSON → 指标上图，不重跑仿真。 |
+| `aedt_migrate_run` | aedt_migrate | 批量迁移老版本 .aedt 工程到 AEDT 2025 R1（五阶段决策树）。 |
+| `aedt_migrate_report` | aedt_migrate | 读单份迁移报告 JSON 全文（结构化审计面）。 |
 | `afs_plan` | afs_interop | AFS 频扫计划（afs 域）：频带 → 初始频点表+加密协议+验收判据。 |
 | `read_hfss_touchstone_comments` | afs_interop | HFSS Touchstone 注释直读（afs 域）：.sNp 路径 → Gamma/Zpi 注释块。 |
 | `rf_propose_params` | agent | 调优提议内核（agent 域）：bounds/fixes → 初值落参+探测候选展开。 |
@@ -26,6 +28,7 @@
 | `al_propose` | al | 提议下一批实验点：读湖样本 → 不确定度×距离（或采集族）→ top-k。 |
 | `anchors_list` | anchors | 列出物理标定锚注册表全部锚（DP-3，knowledge/anchors.yaml）。 |
 | `anchors_inspect` | anchors | 单锚全量记录查询（anchors 域）：锚 id → provenance/不确定度/消费面。 |
+| `anim_render` | anim | 动图渲染（anim 域）：声明式 spec JSON → SVG 动画文件（确定性逐字节复现，sha256 钉）。 |
 | `bands_list` | bands | 频段清单查询（bands 域）：过滤词 → 标准频段注册表条目清单。 |
 | `bands_get` | bands | 按 key 取单条频段详情（边界/出处/区域）。 |
 | `bands_find` | bands | 频段查询（bands 域）：频率 GHz → 覆盖该频率的全部频段条目。 |
@@ -39,6 +42,16 @@
 | `doctor` | basic | 环境探测（basic 域）：AEDT/ADS 版本/license/路径/版本组合逐项体检。 |
 | `list_models` | basic | 列出已注册的模型插件。 |
 | `validate_recipe` | basic | 校验配方文件（recipe 域）：YAML 路径 → 结构校验结论，不执行仿真。 |
+| `spef_parse` | cad_formats | SPEF 寄生交换格式解析：.spef 文件 → 全结构化视图（头部/NAME_MAP/PORTS/D_NET）。 |
+| `spef_report` | cad_formats | SPEF 拓扑摘要+耦合统计聚合：.spef 文件 → 拓扑/耦合紧凑报告面。 |
+| `lef_def_parse` | cad_formats | LEF/DEF 组合解析：科技/单元 LEF（单份）+可选 DEF → 双侧结构化信封。 |
+| `sdf_parse` | cad_formats | SDF 标准延时格式解析：.sdf 文件 → 全结构化视图（头部/CELL/celltypes）。 |
+| `sdf_report` | cad_formats | SDF 紧凑报告：.sdf 文件 → 头部+逐 celltype 计数+TIMINGCHECK 摘要。 |
+| `gdsii_parse` | cad_formats | GDSII 版图流解析：.gds 二进制 → lib/单位/结构六桶全结构化视图。 |
+| `gerber_excellon_pair_check` | cad_formats | Gerber+Excellon 交叉校验：光绘包络盒 × 钻孔孔位 → 越界判定报告。 |
+| `ipc356_report` | cad_formats | IPC-D-356 网表提取报告：.ipc 文件 → 统计+单点 net+测试点 bbox 聚合。 |
+| `touchstone_info` | cad_formats | Touchstone 文件嗅探：.sNp → 格式证据+rank 三规则推断+冲突报告。 |
+| `vcd_parse` | cad_formats | VCD 值变化转储解析：.vcd → 头部/scope 树/vars/事件流全结构化视图。 |
 | `render_constraint_check` | certify | 渲染前约束求解（certify 域）：声明式 config → UNSAT 冲突组+witness。 |
 | `import_solid_payload` | certify | STL 实体导入（certify 域）：STL 路径 → 解析+分类+CSX 载荷。 |
 | `certify_design` | certify | 公差盒 → 指标区间证书（三值门面：逐目标 PASS/FAIL/UNKNOWN + 总 verdict）。 |
@@ -63,7 +76,7 @@
 | `cm_cat_critique` | diagnose | Dishal 调谐 critique（cm 域）：τ(f) 峰数指纹+Qe/k 偏差 → typed fixes。 |
 | `correlate_measurement` | diagnose | 仿真 vs 测量相关性分析（measurement 域）：两份 .s2p → 相关性判定。 |
 | `edb_emit_spec` | edb | 发射声明式 EDB spec（平面族发射器）。 |
-| `edb_build_solve` | edb | EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出一站式编排。 |
+| `edb_build_solve` | edb | EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出全流程编排。 |
 | `edb_status` | edb | 扫描 EDB 快车道产物根目录的资产清单（只读，零求解零导入）。 |
 | `em_doctor_check` | em_family | EM 模型清单体检（em doctor）：清单文件 → 16 项几何/端口语义检查报告。 |
 | `runs_verify` | em_family | run 产物新鲜度校验（runs verify）：manifest 收官指纹 vs 盘上产物。 |
@@ -89,6 +102,7 @@
 | `farfield_view` | farfield_kicad | 远场视图（farfield 域）：run id → φ 切面 θ-dB 序列+Dmax/效率/SAR。 |
 | `kicad_extract` | farfield_kicad | PCB 事实提取（kicad 域）：.kicad_pcb → 叠层/走线/过孔/板框/zone 表。 |
 | `kicad_optimize_cpw` | farfield_kicad | CPWG 寻优环（kicad 域）：PCB 提取 → 闭式代理调宽（\|z0−target\|≤tol）。 |
+| `format_overview` | format_overview | 格式速览（"一屏看懂"）：EDA/设计格式文件 → Agent 可读结构化 JSON。 |
 | `get_guidelines_for` | guidelines | 坑规指南检索（guidelines 域）：主题词 → 坑账/playbook/规则三源命中。 |
 | `create_run` | jobs | 提交仿真任务（jobs 域）：配方+适配器 → 同步求解并返回 run_id。 |
 | `create_run_async` | jobs | 异步提交仿真任务（jobs 域）：配方+适配器 → 立即返回 job_id。 |
@@ -116,6 +130,31 @@
 | `dispersion_report` | ops | 材料色散报告（ops 域）：Djordjevic-Sarkar 带内 εr/tanδ 漂移判据。 |
 | `start_tune` | optim | 提交主优化任务（异步），立即返回 job_id。 |
 | `run_sweep` | optim | 运行参数扫描（粗扫→精调，同步返回全量信封）。 |
+| `odbpp_report` | packaging_test | ODB++ 目录报告：目录树 → stack 对齐+net 库存统计聚合面。 |
+| `bsdl_report` | packaging_test | BSDL 统计报告：.bsd 文件 → 指令表+边界分桶+长度一致性三数字。 |
+| `bsdl_boundary_detail` | packaging_test | BSDL 边界单元查询：.bsd → 全量平坦清单或按 port 关联视图。 |
+| `drc_design_validate` | parser_ext | DRC 校验：design JSON × 规则集 → 违规清单+verdict 判定信封。 |
+| `veriloga_module_detail` | parser_ext | Verilog-A 单模块查询：.va 文件 → 指定 module 汇总视图。 |
+| `skill_call_graph` | parser_ext | SKILL/OCEAN 静态调用图：源文件 → define→calls 边+外部调用面。 |
+| `netlist_overlay_file` | parser_ext | SPICE 网表语义 overlay：网表文件 → 逐元件语义标注+覆盖率门。 |
+| `spectre_overlay_file` | parser_ext | Spectre 原生网表语义 overlay：Spectre 文件 → 逐元件语义标注。 |
+| `netlist_overlay_text` | parser_ext | SPICE 网表文本语义 overlay：网表文本 → 逐元件语义标注（零落盘）。 |
+| `spice_netlist_parse` | parser_formats | SPICE 网表解析：网表文件 → 结构化视图（元件/子电路/控制卡/模型/拓扑）。 |
+| `liberty_parse` | parser_formats | Liberty 时序库解析：.lib 文件 → 单元/pin/NLDM 时序表结构化视图。 |
+| `citi_info` | parser_formats | CITI 仪器数据文件解析：.cti 包级结构化信息（段/变量/元数据）。 |
+| `sdc_parse` | parser_formats | SDC 时序约束解析：.sdc 文件 → 约束全结构化视图。 |
+| `ibis_parse` | parser_formats | IBIS IO buffer 模型解析：.ibs 文件 → 器件/模型/引脚结构化视图。 |
+| `verilog_netlist_parse` | parser_formats | Verilog 网表解析：.v 网表 → 模块五桶+例化+拓扑结构化视图。 |
+| `drc_rules_parse` | parser_formats | DRC 规则集解析：规则文件 → 统一结构化规则表（format/rules/groups）。 |
+| `lvs_compare_files` | parser_formats | LVS 网表对照：两份网表文件（layout 侧 vs schematic 侧）→ 对照报告。 |
+| `gdsii_layers` | parser_queries | GDSII 层汇总：.gds 二进制 → 逐 (layer,datatype) 元素计数+包围盒。 |
+| `gdsii_hierarchy` | parser_queries | GDSII 层级报告：.gds 二进制 → 引用计数/未定义引用/孤儿双桶。 |
+| `vcd_report` | parser_queries | VCD 活跃度报告：.vcd → 头部+计数+时间跨窗+信号 top 活跃度聚合。 |
+| `sdf_cell_detail` | parser_queries | SDF 单元查询：.sdf → 单 CELLTYPE(+实例) 命中 CELL+延迟路径清单。 |
+| `spef_net_detail` | parser_queries | SPEF 单 net 查询：.spef → 单 net 全量视图+拓扑摘要单条。 |
+| `ipc356_fab_pair_check` | parser_queries | IPC-D-356 × Gerber/Excellon 配对校验：越界焊盘+钻孔覆盖判定。 |
+| `lef_def_check` | parser_queries | LEF×DEF 交叉校验：单 LEF+DEF → 闭包/连通/对齐三件套+verdict。 |
+| `stil_pattern_detail` | parser_queries | STIL 单 pattern 查询：.stil → 向量平坦清单+账目（loop/shift/ann）。 |
 | `pdn_analyze` | pdn | PDN 阻抗谱分析（pdn 域）：decap+VRM → 并联合成谱+反谐振峰+腔模。 |
 | `pdn_select` | pdn | 贪心 decap 选型（pdn 域）：candidates+budget+target → 选中明细。 |
 | `pdn_gate` | pdn | KiCad AC-PI 门（F-B P2）：平面腔模筛查+安装避让+可选 Z 谱裕量，三值 verdict。 |
@@ -167,6 +206,9 @@
 | `uq_design_center` | uq | 设计中心化（uq 域）：容差盒网格违约 cost → 坐标搜索名义点。 |
 | `uq_temperature_zone` | uq | 温区良率（uq 域）：环境包络温度轴并入 MC+温区两端角点评估。 |
 | `uq_rare_yield` | uq | 稀有失效概率（uq 域）：FORM u* 喂重要性采样+MC 交叉核对。 |
+| `vendor_docs_build` | vendor_docs | 构建厂商文档 FTS5 索引（mutating：写 db_path 指定索引库）。 |
+| `vendor_docs_search` | vendor_docs | 厂商文档带引用检索（只读）：FTS5 trigram MATCH→LIKE 子串回退。 |
+| `vendor_docs_audit` | vendor_docs | 索引库零入库审计（只读）：复核"摘要块非全文"红线。 |
 | `vna_offline_replay` | vna | VNA 离线回放（vna 域）：历史 Touchstone → 采集→校准→相关全链。 |
 | `vna_en_report` | vna | En 计量学相关性报告（vna 域）：实测 vs 参考 → \|En\|≤1 判定（DP-11）。 |
 | `report_narrative` | vna | 报告叙述（vna 域）：run 白名单 → 确定性模板叙述/外来叙述审计。 |

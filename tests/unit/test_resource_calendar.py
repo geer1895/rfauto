@@ -109,7 +109,7 @@ def test_load_repo_calendar_schema_and_windows():
     assert cal["schema"] == CALENDAR_SCHEMA
     assert cal["backup_windows"] == [(170, 335)]  # 02:50-05:35 机读化单源
     assert cal["license_peaks"]["hfss"] == (600, 720)
-    assert cal["machine_caps"]["sim_server"]["memory_gb"] == 80
+    assert cal["machine_caps"]["lab_server"]["memory_gb"] == 80
     assert cal["warnings"] == []
 
 
@@ -126,7 +126,7 @@ license_seats:
   ads:
     peak: "junk"
 machine_caps:
-  sim_server:
+  lab_server:
     memory_gb: 80
 """)
     cal = load_resource_calendar(p)
@@ -227,7 +227,7 @@ def test_calendar_view_envelope_contract(tmp_path):
         {"start": "02:50", "end": "05:35"}]
     assert env2["calendar"]["license_peaks"]["hfss"] == {
         "start": "10:00", "end": "12:00"}
-    assert env2["calendar"]["machine_caps"]["sim_server"] == {"memory_gb": 80}
+    assert env2["calendar"]["machine_caps"]["lab_server"] == {"memory_gb": 80}
 
 
 def test_resources_view_carries_calendar(monkeypatch):

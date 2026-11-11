@@ -83,7 +83,7 @@ from .render_hairpin import coupled_microstrip_even_odd_ohm
 #    异=跨引擎发现（OE 哨预期承载）。
 #    λ/4 短路棒并联谐振条件由 tanθ=∞ 变为 tanθ=Z_r/(ωL_via)（谐振下移）；
 #    combline 装载条件 ωC=(1−x·t)/(Z_r(x+t))、SIR 高阻段 Z_B 按 L 端接变换
-#    （x=ωL/Z，t=tanθ）。Devlog（二百零五）三模板真机峰位 −4.7/−5.15/−4.6%
+#    （x=ωL/Z，t=tanθ）。DEVLOG（二百零五）三模板真机峰位 −4.7/−5.15/−4.6%
 #    与该项同量级——裁判 c3_circuit_sparams(l_via_h=None) 自动取校准值，
 #    l_via_h=0.0（缺省）逐位复现理想短路旧口径。
 # 9) 耦合缝网格守卫（#266，c3_gap_mesh_guard）：NEAR=base/4 ≤ 最小耦合缝/3，

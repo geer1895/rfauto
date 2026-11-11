@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rfauto"
-version = "0.13.0"
+version = "0.14.0"
 description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
 readme = "README.md"
 # PEP 639（0dd⑥）：license 用 SPDX 表达式 + license-files 列表；
@@ -38,9 +38,10 @@ dependencies = [
     "loguru>=0.7.0",
     "rich>=13.7.0",
     "typer>=0.9.0",
-    # <2.5 上界：与 uv.lock 基线（2.4.x）对齐——2.5 起数值路径变化会漂移
-    # 少数优化器轨迹敏感测试（trust_region/topology 等），公开仓独立门实测
-    "numpy>=1.24.0,<2.5",
+    # 旧 <2.5 上界已撤（2026-11-11）：公开仓全量门 36018 passed/0 failed 实测
+    # numpy 2.5.4 无轨迹漂移面（trust_region/topology 敏感族全绿）——钉声明与
+    # 实装一致（pin_health 审计同笔对齐）
+    "numpy>=1.24.0",
     "scipy>=1.11.0",
     "scikit-rf>=2.0,<2.2",  # 2.2.0 上架（2026-10-18 CI 实证）改变 MNA/拟合数值行为连锁 23 红——钉 2.1 行为基线，升版需专项评审
     "matplotlib>=3.8.0",

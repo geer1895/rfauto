@@ -448,7 +448,45 @@ class TestCliHelpPanels:
         # 再上锚=aurora_n O4 2026-10-31 119→122 重钉——O1 mo/O5 competition/
         # O4 al 三域入树，O1/O5 席漏钉本镜像红两轮，随 O4 席邻接回归一并
         # 清偿）
-        assert len(top.commands) == 127
+        # 上锚=T-Q7b（Q-W3-2 2026-11-04）loop 顶层域入树 128→129 重钉
+        # （自主闭环编排器一叶 run：Proposal→既有确定性链→Quality-Checker
+        # →报告阶段状态机，决策①双模 --mode+--resume 中断续作；
+        # closed_loop.orchestrator 薄壳）——镜像钉随顶层命令集同笔（先例=
+        # T-Q15 chat-test-connection 127→128 行注）
+        # 上锚=T-Q3（Q-W5-2R 2026-11-04）anim 顶层域入树 129→130 重钉
+        # （动图渲染一叶 render：typed spec JSON→SVG 动画；
+        # anim_render_service 薄壳，aurora_q 方向 B）
+        # 上锚=T-Q19 批 2（Q-W9-3 2026-11-06）vendor-docs 顶层域入树
+        # 130→131 重钉（厂商帮助文档检索三叶 build/search/audit：
+        # vendor_doc_service 薄壳，--db 必填不落缺省库位，aurora_q 方向 E）
+        # 上锚=T-Q34/T-Q22/T-Q27（Q-X34/Q-X33/Q-X32 2026-11-07 同窗并行）
+        # liberty/spice/skill 三顶层域入树 131→134 重钉（同窗多席计数时序：
+        # 本镜像钉由在树面实测的席按序收口）
+        # 上锚=T-Q36（Q-X36 2026-11-07）sdc 顶层域入树 134→135 重钉
+        # （SDC 约束结构化解析两叶 parse/list：Tcl 词法+SDC 语义内核
+        # core/sdc_parser 单源+service/sdc_service 薄壳，数字自动化借鉴
+        # 方向）
+        # 上锚=T-Q37/T-Q26e（Q-X37/Q-X39 2026-11-07 同窗并行落树）
+        # exploded-view/layer-3d 两顶层域入树 135→137 重钉（爆炸视图
+        # 单场景渲染/逐层 3D 渲染导出两域——本镜像钉由在树面实测的席
+        # 按序收口，同窗多席计数时序先例同上）
+        # 上锚=aurora_q Q-X48 2026-11-07 drc/lvs/ibis 三顶层域入树
+        # 137→140 重钉（DRC 规则文件结构化解析/LVS 对比/IBIS .ibs 解析
+        # 三域；drc 本席落树+2 叶，lvs/ibis 同窗并发席在树注册计数钉未
+        # 动——本席按在树面实测收口如实折入，Q-X39 折 Q-X37 先例同款）
+        # 上锚=aurora_q Q-X47 2026-11-07 verilog 顶层域入树 140→141 重钉
+        # （Verilog 网表结构化解析两叶 parse/list：core/verilog_netlist_
+        # parser 单源+service/verilog_netlist_service 薄壳，数字自动化
+        # 借鉴方向——本镜像钉由在树面实测的席按序收口）
+        # aurora_r 合流笔 2026-11-10：解析器集群 16 顶层组接线 141→157
+        # （FINAL_AUDIT §二A：citi/sdf/gdsii/touchstone/ipc356/lefdef/stil/
+        # skill_parse/odbpp/bsdl/spectre/veriloga/stdf/ibis-ami 十四独立根
+        # +spef/vcd 自注册 re-export，HELP_PANEL_OF 16 行同笔补）
+        # 上锚=aurora_r AM-S4 2026-11-10 aedt-migrate 顶层域入树 157→158
+        # 重钉（老版本 .aedt 批量迁移三叶 run/status/report——citi 同款
+        # 独立根 re-export+add_typer，HELP_PANEL_OF 归"运维与开发"：
+        # AEDT 版本迁移=工具链/环境维护动作，remote/solvers 同域）
+        assert len(top.commands) == 158  # v0.14.0 移除笔：loop 域摘除（专利冻结面，tri-view 后 159→158）
         assert "doctor" in top.commands and "run" in top.commands
 
     def test_subapp_help_unaffected(self):

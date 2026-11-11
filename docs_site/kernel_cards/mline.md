@@ -123,6 +123,7 @@ src/rfauto/core/synthesis.py 公开符号 **43** 个（AST 机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
 - service：`src/rfauto/service/diagram_stackup_service.py`
+- service：`src/rfauto/service/em_bench_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -169,7 +170,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `configs/materials.yaml`——引文："层叠复用 configs/materials.yaml（带 source/verified_by）"
 
-测试面（tests/unit 引用扫描，机读；合计 **1589** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1642** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -218,6 +219,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_qucsator_adapter.py` | 35 |
 | `tests/unit/test_qw10_qw11.py` | 14 |
 | `tests/unit/test_ratrace_template.py` | 19 |
+| `tests/unit/test_rf_matrix_branchline.py` | 53 |
 | `tests/unit/test_ring_resonator_template.py` | 25 |
 | `tests/unit/test_rp1_myj_sec4_05_prototype.py` | 6 |
 | `tests/unit/test_rp1_pozar_patch_example.py` | 3 |

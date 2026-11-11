@@ -19,7 +19,14 @@
    如实先红 #122，无锚=灰色"待验证"；'*' 全局锚不计入卡面徽章——mmt
    全局锚对任意模板恒真，计入会把 72 卡全盖"已验证"章）。
    映射/量程解释仍在 service/gallery_service（前端只渲染）；预览数值全部
-   出自 /api/calculators/run 闭式纯函数（零 EM 求解）。 */
+   出自 /api/calculators/run 闭式纯函数（零 EM 求解）。
+   T-Q18（aurora_q Q-W9-1R）：模板画廊→配方闭环 UX——①卡片级"导出配方"
+   入口（data-gal-export 钮，导出结果就地展开在卡内导出槽）+导出后三步
+   提示条（已导出→validate→run 引导；卡片级与抽屉级共用
+   exportStepsBarHtml 单点）；②recipes/ 预置扩至 7 份的防腐钉在
+   tests/unit/test_gallery_recipe_loop.py（前端无感知）；③配方列表刷新
+   语义=recipes/ live 扫描（配方页每次进页重扫+命令面板 60s TTL），提示条
+   refresh 行如实讲清收录语义（导出落盘后列表自动含新配方，零手动注册）。 */
 
 import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
@@ -83,6 +90,7 @@ const DESC_KEYS = {
   interdigital: "gallery.desc_interdigital",
   inverted_ms: "gallery.desc_inverted_ms",
   isl_shielded: "gallery.desc_isl_shielded",
+  layered_stack: "gallery.desc_layered_stack",
   lange: "gallery.desc_lange",
   loop: "gallery.desc_loop",
   marchand_balun: "gallery.desc_marchand_balun",
@@ -615,6 +623,23 @@ async function renderCredCurvesInto(wrap, c) {
   });
 }
 
+/* ═══ T-Q18（aurora_q Q-W9-1R）：导出后三步提示条（已导出→validate→run）═══
+   卡片级与抽屉级导出结果共用单点；步序文案全走词表（本文件 Han 字面基线
+   =0 棘轮，check_ui_i18n_coverage 对账）；步内零动态数据——UI 导出缺省
+   只回 YAML 不落盘（T-Q14 口径不变），路径占位=词表"配方文件"字样，
+   不渲染任何服务器侧路径。refresh 行=件3 刷新语义的用户面（recipes/
+   live 扫描：view_recipe loadCatalog 每次进页重拉 + palette 60s TTL——
+   导出落盘后列表自动含新配方，零手动注册动作）。 */
+function exportStepsBarHtml() {
+  return `<div style='border:1px solid var(--border);border-radius:10px;padding:6px 10px;margin:6px 0'>` +
+    `<b style='font-size:12px'>${t("gallery.export_steps_title")}</b>` +
+    `<div class='muted' style='font-size:11.5px;margin-top:6px'>${t("gallery.export_step1_done")}</div>` +
+    `<div class='muted' style='font-size:11.5px'>${t("gallery.export_step2_validate")}</div>` +
+    `<div class='muted' style='font-size:11.5px'>${t("gallery.export_step3_run")}</div>` +
+    `<div class='muted' style='font-size:11.5px;margin-top:6px'>${t("gallery.export_steps_refresh")}</div>` +
+    `</div>`;
+}
+
 export async function pageGallery() {
   const v = T.$("view-gallery");
   if (!v.innerHTML)
@@ -665,9 +690,16 @@ export async function pageGallery() {
         </div>
         <div class='muted' style='font-size:11.5px;margin:var(--space-1) 0'>${esc(cardDesc(c))}</div>
         <button class='minor' style='margin-top:6px' data-gal='${escAttr(c.name)}'>${t("gallery.detail_btn")}</button>
+        <button class='minor' style='margin-top:6px' data-gal-export='${escAttr(c.name)}' aria-label='${escAttr(t("gallery.card_export_aria_tpl", { name: c.name }))}'>${t("gallery.export_btn")}</button>
+        <div data-slot='card-export' style='display:none'></div>
       </div>`).join("") + `</div>`;
     for (const btn of grid.querySelectorAll("[data-gal]"))
       btn.onclick = () => openDrawer(btn.getAttribute("data-gal"));
+    // T-Q18：卡片级导出入口（列表级；导出结果就地展开在卡内导出槽）
+    for (const btn of grid.querySelectorAll("[data-gal-export]"))
+      btn.onclick = () => exportRecipeIntoCard(
+        btn.closest(".panel").querySelector("[data-slot=card-export]"),
+        btn.getAttribute("data-gal-export"));
   };
   T.$("gal-filter").oninput = render;
   _galRender = render; // 锚 verdict 晚到补铺钩子（rerenderGalleryCards 消费）
@@ -722,6 +754,11 @@ export async function pageGallery() {
       ${c.topology ? `<div class='muted' style='font-size:11.5px;margin-top:var(--space-1)'><b>${t("gallery.drawer_topology")}</b> ${esc(c.topology)}</div>` : ""}
       <h3 style='margin:var(--space-3) 0 var(--space-1)'>${t("gallery.drawer_params")}</h3>
       <table><thead><tr><th scope='col'>${t("gallery.th_param")}</th><th scope='col'>${t("gallery.th_mean")}</th><th scope='col'>${t("gallery.th_value")}</th><th scope='col'>${t("gallery.th_origin")}</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class='toolbar' style='margin-top:var(--space-2)'>
+        <button class='minor' data-act='export-recipe' aria-label='${escAttr(t("gallery.export_aria_tpl", { name: c.name }))}'>${t("gallery.export_btn")}</button>
+        <span data-slot='export-msg' class='muted'></span>
+      </div>
+      <div data-slot='export' style='display:none;margin-top:var(--space-2)'></div>
       <h3 style='margin:var(--space-3) 0 var(--space-1)'>${t("gallery.drawer_credibility")}</h3>
       <div data-slot='credibility'></div>
       <div data-slot='credcurves-wrap' style='display:none'>
@@ -738,11 +775,68 @@ export async function pageGallery() {
     document.addEventListener("keydown", _drawerKeyHandler, true);
     ov.querySelector("[data-act=close]").onclick = closeDrawer;
     ov.onclick = (e) => { if (e.target === ov) closeDrawer(); };
+    // T-Q14（aurora_q Q-W1-1）：导出配方入口（模板→配方通路单源同款 service）
+    const exportBtn = ov.querySelector("[data-act=export-recipe]");
+    if (exportBtn) exportBtn.onclick = () => exportRecipeInto(
+      ov.querySelector("[data-slot=export]"),
+      ov.querySelector("[data-slot=export-msg]"), c);
     renderCredibilityInto(ov.querySelector("[data-slot=credibility]"), c);
     renderCredCurvesInto(ov.querySelector("[data-slot=credcurves-wrap]"), c);
     renderPreviewInto(ov.querySelector("[data-slot=preview]"), c);
     const fb = ov.querySelector("[data-act=close]");
     if (fb && fb.focus) fb.focus();
+  }
+
+  /* T-Q14（aurora_q Q-W1-1）：导出配方——POST /api/template-recipe/export
+     （CLI templates export-recipe 同源 service/template_recipe_service 单源，
+     参数值全出注册表归档名义值）；缺省只回 YAML 文本不落盘（写面走 CLI
+     --out 或用户复制粘贴，前端只渲染——#4 服务层 JSON 进出）。 */
+  async function exportRecipeInto(slot, msgEl, c) {
+    msgEl.textContent = t("gallery.export_busy");
+    const r = await apiFetch("/api/template-recipe/export", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ family: c.name }),
+    });
+    msgEl.textContent = "";
+    slot.style.display = "";
+    if (!r.ok) {
+      slot.innerHTML = kitErrorPanel(
+        (r.errors || [r.error || "export failed"]).join("; "));
+      return;
+    }
+    const next = r.form === "model"
+      ? t("gallery.export_next_model") : t("gallery.export_next_template");
+    slot.innerHTML =
+      exportStepsBarHtml() + // T-Q18：三步提示条（已导出→validate→run；卡/抽屉共用单点）
+      `<div class='muted' style='font-size:11.5px;margin-bottom:4px'>${t("gallery.export_form_tpl", { form: esc(r.form), next })}</div>` +
+      `<div class='muted' style='font-size:11.5px;margin-bottom:4px'>${t("gallery.export_copy_hint")}</div>` +
+      `<pre style='background:var(--panel2);padding:8px;overflow:auto;max-height:260px;margin:0'><code>${esc(r.yaml || "")}</code></pre>`;
+  }
+
+  /* T-Q18（aurora_q Q-W9-1R）：卡片级导出（列表级入口）——结果就地展开：
+     三步提示条+形态行+YAML 预览（同源 /api/template-recipe/export，与抽屉
+     同款 service；busy 态写卡内槽本体，无独立 msg 位；过滤重铺/切页后槽
+     已换代不写隐藏区——UI-R12 同款纪律）。 */
+  async function exportRecipeIntoCard(slot, name) {
+    const c = _galCards && _galCards.find((x) => x.name === name);
+    if (!c || !slot) return;
+    slot.style.display = "";
+    slot.innerHTML = `<div class='muted' style='font-size:11.5px'>${t("gallery.export_busy")}</div>`;
+    const r = await apiFetch("/api/template-recipe/export", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ family: c.name }),
+    });
+    if (!slot.isConnected) return; // 重铺/切页后旧槽脱离文档——不写隐藏区
+    if (!r.ok) {
+      slot.innerHTML = kitErrorPanel(
+        (r.errors || [r.error || "export failed"]).join("; "));
+      return;
+    }
+    const next = r.form === "model"
+      ? t("gallery.export_next_model") : t("gallery.export_next_template");
+    slot.innerHTML = exportStepsBarHtml() +
+      `<div class='muted' style='font-size:11.5px;margin-bottom:4px'>${t("gallery.export_form_tpl", { form: esc(r.form), next })}</div>` +
+      `<pre style='background:var(--panel2);padding:8px;overflow:auto;max-height:220px;margin:0'><code>${esc(r.yaml || "")}</code></pre>`;
   }
 
   /* 预览段（原 openPreview 逻辑搬入抽屉；信封消费形态逐键不变）。 */

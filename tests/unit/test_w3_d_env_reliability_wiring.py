@@ -565,7 +565,7 @@ class TestMcpWiring:
         tools = asyncio.run(mcp_server.mcp.list_tools())
         names = [t.name for t in tools]
         assert len(names) == len(set(names)), "工具重名（遮蔽事故形态）"
-        assert len(names) == 158 + len(SEAT_TOOL_NAMES), (  # 158=基数（156 + aurora_p 席 B2 两工具 ads_circuit_annotate/design_report 2026-11-01）；156=154 + aurora_o o_ads ADS 前仿链两工具 ads_circuit_diagram/ads_circuit_run 2026-11-01；154=em 五工具 149 + aurora_n 五新工具 mo_run/al_propose/competition_run/surrogate_export_onnx/surrogate_uq；账链见 Devlog 一百二十九~一百三十）
+        assert len(names) == 200 + len(SEAT_TOOL_NAMES), (  # 200=基数（aurora_r M-10 2026-11-10 重钉：解析器五批+parser_ext+aedt_migrate；163=159 + T-Q5+T-Q19 批 2 Q-W9-3 四工具 format_overview/vendor_docs_build/vendor_docs_search/vendor_docs_audit 2026-11-06）；159=158 + T-Q3 Q-W5-2R anim_render 2026-11-04；158=156 + aurora_p 席 B2 两工具 ads_circuit_annotate/design_report 2026-11-01；156=154 + aurora_o o_ads ADS 前仿链两工具 ads_circuit_diagram/ads_circuit_run 2026-11-01；154=em 五工具 149 + aurora_n 五新工具 mo_run/al_propose/competition_run/surrogate_export_onnx/surrogate_uq；账链见 DEVLOG 一百二十九~一百三十）
             f"工具总数漂移: {len(names)}（合流钉由主代理集中更新，"
             "本钉只断言本席 +8 落位）")
 

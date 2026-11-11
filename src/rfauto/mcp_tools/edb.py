@@ -62,7 +62,7 @@ def edb_emit_spec(payload: dict[str, Any] | None = None) -> dict[str, Any]:
 
 @mcp.tool
 def edb_build_solve(payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    """EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出一站式编排。
+    """EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出全流程编排。
 
     **mutating**：向 workdir 写 ``<name>.aedb`` 工程与 ``<name>_config.json``
     存证；``solve=true`` 时拉起 ansysedt 短命批进程真机求解（需 AEDT 在

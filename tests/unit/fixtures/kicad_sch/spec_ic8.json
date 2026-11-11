@@ -1,0 +1,16 @@
+{
+  "schema": "rfauto-sch-spec-v1",
+  "components": [
+    {"ref": "U1", "value": "AMS1117-3.3", "lib_id": "Regulator_Linear:AP1117-33",
+     "pins": ["3"],
+     "footprint": "Package_TO_SOT_SMD:SOT-223-3_TabPin2"},
+    {"ref": "C1", "value": "10u", "lib_id": "Device:C"},
+    {"ref": "C2", "value": "22u", "lib_id": "Device:C"},
+    {"ref": "TP1", "value": "3V3", "lib_id": "Connector:TestPoint"}
+  ],
+  "nets": [
+    {"name": "VIN", "pins": [{"ref": "U1", "pin": "3"}, {"ref": "C1", "pin": "1"}]},
+    {"name": "GND", "pins": [{"ref": "U1", "pin": "1"}, {"ref": "C1", "pin": "2"}, {"ref": "C2", "pin": "2"}]},
+    {"name": "VOUT", "pins": [{"ref": "U1", "pin": "2"}, {"ref": "C2", "pin": "1"}, {"ref": "TP1", "pin": "1"}]}
+  ]
+}

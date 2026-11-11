@@ -70,7 +70,7 @@ SURFACES = frozenset({
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PLAYBOOK_PATH = _REPO_ROOT / "knowledge" / "diagnostics" / "playbook.yaml"
 DEFAULT_CONSUMPTION_PATH = _REPO_ROOT / "knowledge" / "pitfall_consumption.yaml"
-DEFAULT_AGENTS_PATH = _REPO_ROOT / "AGENTS"
+DEFAULT_AGENTS_PATH = _REPO_ROOT / "AGENTS.md"
 
 #: 坑号 token（#NNN / A_xyz 形；compound id 按同样 token 拆开比对）。
 _TOKEN_RE = re.compile(r"#\d+|A\d+")
@@ -125,7 +125,7 @@ def check_pitfall_consumption_sla(
       的坑号 token，seat 口径"坑账=index+AGENTS 速查"）——pit_ref 指向
       未入结构化子集的真坑（如 #262/#84）合法，指向两边都不存在的号
       （typo/虚构）才红（W5-E 实证：playbook 19 个 index 外 ref 全部
-      AGENTS/Devlog 在案）。
+      AGENTS/DEVLOG 在案）。
     """
     violations: list[dict[str, Any]] = []
 

@@ -1,6 +1,6 @@
 """E9b 校准框架单元测试。
 
-验收标准（plan-extension_v2 §E9b）：
+验收标准（Plan_Extension_v2 §E9b）：
 ① SOLT 校准套件加载
 ② TRL 校准套件加载
 ③ 无校准时返回原样数据

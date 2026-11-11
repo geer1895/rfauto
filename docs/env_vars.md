@@ -69,6 +69,7 @@
 
 | 变量 | 消费者 | 用途 |
 |---|---|---|
+| `RFAUTO_HFSS_DIALOG_GUARD` | adapters/hfss_session（hfss_dialog_guard_preflight） | 图形/共享会话求解前 AEDT 模态弹窗只读预检（VB-8 三态巡检；blocked/indeterminate→not_started 不发送，缺省关） |
 | `RFAUTO_REMOTE_SSH_USER` | infra/remote_machines（SshTransport 凭据解析） | SSH 用户名（凭据面=local yaml 覆盖优先，env 为无 yaml 场景回退） |
 | `RFAUTO_REMOTE_SSH_PASSWORD` | infra/remote_machines（SshTransport 凭据解析） | SSH 密码（凭据面=local yaml 覆盖优先，env 为无 yaml 场景回退；doctor `--env` 值不回显） |
 | `RFAUTO_SSH_STRICT` | infra/remote_machines（SshTransport.connect 主机钥策略） | SSH 主机钥严格模式（E3-3 TOFU 折中：缺省 AutoAdd+首连指纹落档告警、变更 error 告警仍放行；设 1=无落档指纹/不匹配即拒连。指纹账本=`<仓根>/runs/ssh_host_fingerprints.json`） |

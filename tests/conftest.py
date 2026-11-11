@@ -6,6 +6,12 @@ import os
 import sys
 from pathlib import Path
 
+# BLAS 单线程钉（v0.14.0 同步批 2026-11-10）：numpy 2.5.4 的 OpenBLAS 多线
+# 程在 scipy least_squares(method="lm") 的 C 层雅可比计算挂死（cm_core 拟合
+# 实证：多线程 >120s 不返回，单线程全族 28s 绿）。注意：OpenBLAS 在库加载
+# 时读 env——本 setdefault 只兜「numpy 尚未加载」的运行形态；权威生效点=
+# 进程启动 env（CI workflow 与本地门命令前置 OPENBLAS_NUM_THREADS=1，与内
+# 部仓 serial 门同款）。
 import pytest
 
 # ── CLI --help 渲染跨平台一致化（2026-11-02；Linux CI 11 红根修）─────────────

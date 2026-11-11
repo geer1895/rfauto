@@ -1,6 +1,6 @@
 """C14 有源链路 ADS 通道：匹配网络 EM S2P × 器件 S2P 联合链 + load-pull 网表。
 
-方案依据（continuation-plan §10.3 C14）:
+方案依据（continuation_plan §10.3 C14）:
     "LNA/PA 匹配网络 EM 提取+ADS 非线性/噪声协同（场-路：EM S 参数进 ADS
     电路层）；PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull，无需硬件）"
 

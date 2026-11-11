@@ -114,10 +114,17 @@ def topology_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """滤波器拓扑提议（typed，禁数值字段）→ 综合初值 →（--campaign）小战役精算。"""
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.topology_service import (
         propose_topology,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args({"--n-trials": n_trials})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=True)
     spec: dict = {"f0_ghz": f0, "fbw": fbw, "rl_db": rl, "stop_fbw_mult": stop_fbw_mult}
     if stop_rejection is not None:
         spec["stop_rejection_db"] = stop_rejection

@@ -60,6 +60,34 @@ class TestReadOnlyCommands:
         for name in ("wilkinson_power_divider", "branchline_coupler", "patch_antenna"):
             assert name in result.output
 
+    def test_models_list_template_footer_fake_split_consistent(self):
+        """models list 模板脚注 76/53/23 三数与 FakeAdapter 分派面同源一致。
+
+        53=TemplateSpec.fake_model 注册数（52）+varactor_bpf（solve 内联
+        分派支路，spec 按 §VI-3 头注显式注册 None）；23=无 fake 前向模型
+        （分派缺失 ValueError"未知模型类型"），仅 template: 直跑 openEMS
+        （Q-X18 2026-11-07 逐族实测口径；#97 数字实测，脚注文案改动须同笔
+        复核本钉）。
+        """
+        from rfauto.adapters.oe_templates.registry import TEMPLATE_META
+        from rfauto.models.template_spec import TEMPLATE_SPECS
+        from rfauto.models.template_specs import bootstrap_template_specs
+
+        bootstrap_template_specs()
+        n_total = len(TEMPLATE_META)
+        n_fake = sum(
+            1 for family in TEMPLATE_META
+            if getattr(TEMPLATE_SPECS.get(family), "fake_model", None)
+        ) + 1  # +varactor_bpf（solve 内联分派支路，spec 注册 None）
+        result = runner.invoke(app, ["models", "list"])
+        assert result.exit_code == 0
+        # rich Console 按终端宽 reflow 脚注（全角混排断点不可预测）——
+        # 断言前空白归一，勿按原始换行匹配
+        flat = " ".join(result.output.split())
+        assert f"{n_total} 族" in flat
+        assert f"{n_fake} 族可 fake 通道" in flat
+        assert f"其余 {n_total - n_fake} 族经 template: 直跑" in flat
+
     def test_models_schema_export(self):
         result = runner.invoke(app, ["models", "list", "--schema", "branchline_coupler"])
         assert result.exit_code == 0
@@ -223,7 +251,7 @@ class TestCommandRegistryCount:
         # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
         # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
         # 同名对已由 89852ba 改名 reports 闭合；df7 程序化裁定注册面=解析面
-        # =140 零 shadow（回归钉 test_zero_shadow_*，Devlog（三九八）"10 面"
+        # =140 零 shadow（回归钉 test_zero_shadow_*，DEVLOG（三九八）"10 面"
         # 系中间稿误计数，全 git 历史仅此一对同名冲突）。
         total = len(app.registered_commands)
         for info in app.registered_groups:
@@ -250,7 +278,7 @@ class TestCommandRegistryCount:
         # 合流实测口径）= 254
         # +2（E-06/PR-15 调度面 v1 2026-10-08：remote resources/queue，
         # 多机资源可见性+队列视图薄壳零逻辑转发 remote_scheduler_service）
-        # = 256（README/agent handoff/docs_site 三处 docs 数字同步=合流收口项）
+        # = 256（README/AGENT_HANDOFF/docs_site 三处 docs 数字同步=合流收口项）
         # +1（Z-11 2026-10-08：pool-patrol，池登记项新鲜度巡检薄壳零逻辑
         # 转发 pool_patrol_service.pool_patrol）= 257
         # +3（P3 尾程项13 2026-10-08：oracle list/check/check-all，QM-2 闭式
@@ -263,7 +291,7 @@ class TestCommandRegistryCount:
         # +3（edb 快车道 2026-10-08：edb build/solve/status，零逻辑转发
         #   新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解
         #   编排全在 service+adapters 确定性内核）= 264（README/
-        #   agent handoff/docs_site 三处 docs 数字随本批同步）
+        #   AGENT_HANDOFF/docs_site 三处 docs 数字随本批同步）
         # +2（aurora36 W2-D 2026-10-11：recast status/replay，RECAST 判据
         #   重放两只读叶——教程 docs/tutorials/recast-walkthrough.md 的
         #   CLI 出口，零逻辑转发 service/recast_service→core/recast；R3
@@ -272,12 +300,12 @@ class TestCommandRegistryCount:
         # +1（aurora_d REST-B 2026-10-14：rest schema，REST 面 schema 导出
         #   只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+
         #   OpenAPI spec 落盘，零逻辑转发 service/rest_api）
-        #   = 267（README/agent handoff/docs_site/CHANGELOG 数字同笔）
+        #   = 267（README/AGENT_HANDOFF/docs_site/CHANGELOG 数字同笔）
         # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化
         #   检索面两叶——索引加载/校验/id 查零逻辑转发
         #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
         #   数据面=knowledge/pitfalls_index_full.json）
-        #   = 269（README/agent handoff/docs_site/CHANGELOG 数字同笔）
+        #   = 269（README/AGENT_HANDOFF/docs_site/CHANGELOG 数字同笔）
         # +1（aurora_e W2-S8 2026-10-18：templates golden-diff，EC-8 全模板
         #   golden 几何回归仓叶——零逻辑转发 service/template_golden_service）
         #   = 270（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
@@ -375,7 +403,7 @@ class TestCommandRegistryCount:
         #   改值→J3 run 读图三态合参渲染求解解析指标对拍→J4 反标注
         #   annot_sim 层上图→J5 迭代；annotate=离线重放只反标注不重跑），
         #   零数值逻辑转发新建 service/circuit_sim_service，带 --json；
-        #   docs 数字随本席同笔回填（README/agent handoff/docs_site；
+        #   docs 数字随本席同笔回填（README/AGENT_HANDOFF/docs_site；
         #   docs/reference.md 留合流批））
         #   = 292
         # +1（aurora_p A1 2026-11-01：diagram schematic，引脚级原理图
@@ -424,7 +452,112 @@ class TestCommandRegistryCount:
         #   不落信封），零数值逻辑转发新建 service/remote_board_service，
         #   带 --json；docs 数字随本席同笔回填）
         #   = 297
-        assert total == 297
+        # +1（T-Q15 2026-11-04：chat-test-connection，LLM 通道接通性检测
+        #   叶（真实用户反馈 P0 五条②：LLM 错误不透传/429 无法区分额度
+        #   vs 限速——最小 1 消息探针+分诊结论，code/provider/http_status/
+        #   message/advice 结构化透传，未配置 not_configured 分诊），零
+        #   数值逻辑转发新建 service/llm_error_service，带 --json；docs
+        #   数字随本席同笔回填）
+        #   = 298
+        # +1（T-Q14 2026-11-04：templates export-recipe，模板→配方一键导出
+        #   叶（真实用户反馈 P0 五条①：模板注册表 75 族与 models 注册表
+        #   4 模型名字空间断裂，model: pifa 死胡同——75 族映射表单源
+        #   service/template_recipe_service，有模型族出 model: 形态/其余
+        #   template: 形态；--out 显式写路径+--force 防覆盖+--json；零数值
+        #   逻辑转发，参数值全出 TEMPLATE_NOMINAL 注册表归档名义值；docs
+        #   数字随本席同笔回填）
+        #   = 299
+        # +1（T-Q3 Q-W5-2R 2026-11-04：anim render，动图渲染叶（aurora_q
+        #   方向 B 接线席——typed spec JSON→SVG 动画，16 图型/11 数据源
+        #   kind；零数值逻辑转发新建 service/anim_render_service，带
+        #   --json+--self-check+--out；docs 数字随本席同笔回填）
+        #   = 301
+        # +3（T-Q19 批 2 Q-W9-3 2026-11-06：vendor-docs build/search/audit
+        #   三叶，厂商帮助文档检索 CLI 域（aurora_q 方向 E——本机 v251
+        #   Help+ADS27 doc 语料 FTS5 索引+带引用检索+零入库审计；--db 三叶
+        #   必填不落缺省库位 #144 同族；零数值逻辑转发既有
+        #   service/vendor_doc_service 三函数（Q-W6-4 批 1 单源），带
+        #   --json；docs 数字随本席同笔回填）
+        #   = 304
+        # +1（T-Q22 Q-X5 2026-11-07：reports run-figures，HFSS run 四联图叶
+        #   （晶圆键合反馈 P2：外部借用者手写"S 参数+相位+群时延+εeff"四联
+        #   图面补齐——Touchstone/run 目录 → 单张四联 PNG+信封；εeff=(β/ω)²c²
+        #   由 S21 展开相位提取，L=参考面跨度 --ref-span-m 调用方显式声明，
+        #   #364-② 零手拍口径缺省跳过该联），零数值逻辑转发新建
+        #   service/hfss_run_report_service（S 参数装载复用 si_channel_service
+        #   _load_source 单源），带 --json；docs 数字随本席同笔回填）
+        #   = 305
+        # +2（T-Q34 Q-X34 2026-11-07：liberty parse/list 两叶，Liberty (.lib)
+        #   时序库结构化解析域（数字自动化借鉴方向——cells/pins/timing 四张
+        #   NLDM 查找表/internal_power/leakage_power/工况/模板结构化输出，
+        #   缺省紧凑面+--timing/--power 展开；零逻辑转发新建
+        #   service/liberty_service，数值内核 core/liberty_parser 单源，
+        #   带 --json；docs 数字随本席同笔回填；注册序金快照重钉=合流批
+        #   --write-gold 显式评审项）
+        #   = 307
+        # +1（桥接口径：T-Q22 Q-X33 spice parse 单叶已落树注册——链条目
+        #   同笔落 test_check_numbers；本文件跨记桥接保持算术自洽）
+        #   = 308
+        # +3（T-Q27 Q-X32 2026-11-07：skill list/render/lint 三叶，SKILL 代码
+        #   模板生成域（Virtuoso-Bridge-lite 核心模式借鉴化用——Python 侧模板
+        #   化生成 SKILL 代码字符串输出 .il 供本地 Virtuoso 加载执行，零
+        #   Cadence 依赖零真机调用：list=模板目录只读视图/render=模板+变量直出
+        #   --var k=v+--out 落盘+--force 防覆盖/lint=SKILL 语法守卫 error 级
+        #   退出码 1）；内核=新建 core/skill_template_engine（Jinja2 形态自制
+        #   微实现零新依赖）+core/skill_templates 5 模板注册表；零数值逻辑
+        #   转发新建 service/skill_template_service，全叶带 --json；docs 数字
+        #   随本席同笔回填）
+        #   = 311
+        # +2（T-Q36 Q-X36 2026-11-07：sdc parse/list 两叶，SDC（Synopsys
+        #   Design Constraints，Tcl 语法子集）约束结构化解析域（数字自动化
+        #   借鉴方向——时钟定义/IO 延迟/路径例外/负载驱动扇出案例分析/
+        #   时钟网络结构化输出，--clocks/--timing/--paths/--constraints
+        #   四旗标 human 分支展开+--json 恒全结构；Tcl 词法+SDC 语义内核
+        #   core/sdc_parser 单源，零逻辑转发新建 service/sdc_service，带
+        #   --json；docs 数字随本席同笔回填；注册序金快照重钉=合流批
+        #   --write-gold 显式评审项）
+        #   = 313
+        # +2（T-Q26e Q-X39 2026-11-07：layer-3d render 单叶 +1，KiCad
+        #   .kicad_pcb 逐层 3D 渲染导出域（铜/阻焊/丝印/钻孔逐层 PNG+
+        #   叠层合成预览 PNG/SVG；纯文本 s-expr 直读零 pcbnew 零 license；
+        #   glb/step=接口预留 skipped 信封；零数值逻辑转发新建
+        #   service/layer_3d_render_service，带 --json；docs 数字随本席
+        #   同笔回填）+1 桥接口径：T-Q37 Q-X37 exploded-view render 单叶
+        #   已落树注册而计数钉未动——本席按在树面实测收口如实折入
+        #   （Q-X33 spice 桥接同款先例），保持链算术自洽）
+        #   = 315
+        # +5（aurora_q Q-X48 2026-11-07：drc parse/validate 两叶 +2，DRC
+        #   规则文件结构化解析域（JSON/CSV/自由文本三形态统一 schema+
+        #   validate 面+RF 特化检查器四件 --rf；内核=新建 core/drc_parser
+        #   单源，零逻辑转发新建 service/drc_service，全叶带 --json）
+        #   +3 桥接口径：同窗并发落树席 lvs compare +1/ibis parse+list +2
+        #   已在树注册而计数钉未动——本席按在树面实测收口如实折入
+        #   （Q-X39 折 Q-X37 先例同款），保持链算术自洽）
+        #   = 320
+        # +2（aurora_q Q-X47 2026-11-07：verilog parse/list 两叶，Verilog
+        #   HDL 结构子集网表结构化解析域（module/port/wire/assign/门级原语
+        #   26 键注册表+模块实例/parameter/defparam+拓扑三件套；内核=新建
+        #   core/verilog_netlist_parser 单源，零逻辑转发新建
+        #   service/verilog_netlist_service，全叶带 --json）——在树面实测
+        #   收口（live count_cli() 落钉，合流席统一对账共享钉）
+        #   = 322
+        # +32（aurora_r 合流笔 2026-11-10：aurora_q §二-1 批量接线合流，
+        #   蓝图=qx74_audit/FINAL_AUDIT §二A——解析器集群 16 孤儿域接线
+        #   （11 独立根 citi/sdf/gdsii/touchstone/ipc356/lefdef/stil/
+        #   skill_parse/odbpp+bsdl/spectre/veriloga/stdf/ibis_ami 五域
+        #   收官接线+spef/vcd 自注册 re-export）：+30 叶+16 顶层组；
+        #   live count_cli() 实测落钉）
+        #   = 354
+        # +3（aurora_r AM-S4 2026-11-10：aedt-migrate 三叶 run/status/
+        #   report，老版本 .aedt 工程批量迁移通道（设计稿
+        #   aedt_migrate_design_handoff §1 五阶段决策树：直开→体检→对比
+        #   →桥接→抢救；run 零逻辑转发 service/aedt_migrate_service.
+        #   migrate_batch，status/report 消费 read_migration_report——S1
+        #   service docstring 挂账处方原文落位；三叶全带 --json，路径
+        #   参数 str 注解 #269；citi 同款独立根 re-export+add_typer
+        #   name="aedt-migrate"）；live count_cli() 实测 357 落钉）
+        #   = 357
+        assert total == 358
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""
@@ -491,6 +624,9 @@ class TestCommandRegistryCount:
         assert set(fab_cmd.commands) == {
             "go", "pipeline", "snapshot", "draw", "audit",
             "pack", "rules", "catalog", "export",
+            # Q-X59 fab 组内 +2 叶（gerber/excellon parse+summary；
+            # aurora_r 合流笔 2026-11-10 收编——席位钉点清单 7 项之一）
+            "parse", "summary",
         }
 
     def test_fab_rules_catalog_smoke(self, tmp_path, monkeypatch):
@@ -527,11 +663,11 @@ class TestCommandRegistryCount:
         from rfauto.infra.remote_machines import RemoteMachineConfig
 
         cfg = RemoteMachineConfig(
-            name="sim_server", host="198.51.100.20", ssh_port=22,
+            name="lab_server", host="192.0.2.10", ssh_port=22,
             probe_ports={"rdp": 3389},
         )
         monkeypatch.setattr(rsvc, "load_remote_machines",
-                            lambda: {"sim_server": cfg})
+                            lambda: {"lab_server": cfg})
         monkeypatch.setattr(
             rsvc, "probe_machine",
             lambda c: {"name": c.name, "host": c.host, "reachable": True,
@@ -540,11 +676,11 @@ class TestCommandRegistryCount:
                        "probe_s": 0.01},
         )
         runner = CliRunner()
-        result = runner.invoke(app, ["remote", "probe", "sim_server", "--json"])
+        result = runner.invoke(app, ["remote", "probe", "lab_server", "--json"])
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)
         m = payload["machines"][0]
-        assert m["name"] == "sim_server" and m["reachable"] is True
+        assert m["name"] == "lab_server" and m["reachable"] is True
         assert m["ports"]["ssh"]["open"] is True
 
     def test_afs_plan_json_smoke(self):
@@ -1130,7 +1266,7 @@ _SLOT_SUB = ["--h-mm", "1.524", "--eps-r", "3.66", "--freq-ghz", "2.5"]
 class TestSlotlineTransitionsCommands:
     """rfauto slotline（2）/ transitions（3）薄壳（W2⑨）：零逻辑转发 slotline_service，
     --json 直出信封；越域红字 exit 1；synth 不可达=退 0+realizable=False（D5
-    语义，同文件 :578-588 钉）。数值锚同 Devlog（二百二十二）②③（数值只出
+    语义，同文件 :578-588 钉）。数值锚同 DEVLOG（二百二十二）②③（数值只出
     内核，壳层不复算）。"""
 
     def test_help_lists_commands(self):

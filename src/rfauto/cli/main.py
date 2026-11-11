@@ -446,7 +446,7 @@ from rfauto.cli.domains.hints import hints_list_cmd as hints_list_cmd
 # re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
 # `pitfalls` 命令（#df6① 冲突检查 2026-10-14：全 CLI 树零撞名，grep 实测）。
 # 数据面=knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 全量
-# 解析 AGENTS 踩坑速查）；索引加载/校验零逻辑转发
+# 解析 AGENTS.md 踩坑速查）；索引加载/校验零逻辑转发
 # service/pitfall_index_service 只读面。
 
 from rfauto.cli.domains.pitfalls import pitfalls_app as pitfalls_app
@@ -464,6 +464,29 @@ from rfauto.cli.domains.dag import dag_run as dag_run
 from rfauto.cli.domains.dag import dag_run_cmd as dag_run_cmd
 from rfauto.cli.domains.dag import dag_status as dag_status
 from rfauto.cli.domains.dag import dag_status_cmd as dag_status_cmd
+
+
+# ─── anim（T-Q3 接线席 Q-W5-2R aurora_q 方向 B：动图渲染一叶；dag ──
+# 同款：域内自注册 cli/domains/anim.py 模块级 add_typer——此处只 re-export
+# （二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 `anim` 域
+# （#df6① 冲突检查 2026-11-04：全 CLI 树零撞名）。
+
+from rfauto.cli.domains.anim import anim_app as anim_app
+from rfauto.cli.domains.anim import anim_render_cmd as anim_render_cmd
+
+
+# ─── vendor-docs（T-Q19 批 2 接线席 Q-W9-3，aurora_q 方向 E：厂商帮助 ──
+# 文档检索三叶 build/search/audit；dag/loop/anim 同款：域内自注册
+# cli/domains/vendor_docs.py 模块级 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 `vendor-docs` 域
+# （#df6① 冲突检查 2026-11-06：全 CLI 树零撞名，唯一近名 db 域语义=
+# 注册表数据库非厂商语料）。--db 三叶必填不落缺省库位（#144 同族）。
+# append-only 注册序尾。
+
+from rfauto.cli.domains.vendor_docs import vendor_docs_app as vendor_docs_app
+from rfauto.cli.domains.vendor_docs import vendor_docs_audit_cmd as vendor_docs_audit_cmd
+from rfauto.cli.domains.vendor_docs import vendor_docs_build_cmd as vendor_docs_build_cmd
+from rfauto.cli.domains.vendor_docs import vendor_docs_search_cmd as vendor_docs_search_cmd
 
 
 # ─── env_reliability（F-10 六服务壳接线批 W3-D，Phase 3：五子应用七叶； ──
@@ -686,6 +709,303 @@ from rfauto.cli.domains.watchdog import watchdog_watch_cmd as watchdog_watch_cmd
 
 from rfauto.cli.domains.cal_wizard import cal_wizard_app as cal_wizard_app
 from rfauto.cli.domains.cal_wizard import cal_wizard_trl_cmd as cal_wizard_trl_cmd
+
+
+# ─── liberty（T-Q34 席位 Q-X34 2026-11-07，aurora_q 数字自动化借鉴方向：
+# Liberty (.lib) 时序库结构化解析两叶 parse/list——cells/pins/timing 四张
+# NLDM 查找表/internal_power/leakage_power/operating_conditions/
+# lu_table_template 结构化输出，缺省紧凑面+--timing/--power 展开；
+# dag/loop/anim/vendor-docs 同款：域内自注册 cli/domains/liberty.py
+# 模块级 add_typer——此处只 re-export（二次 add_typer 会双注册打红
+# zero-shadow 钉）；顶层无同名 `liberty` 域（零撞名自查 2026-11-07：全
+# CLI 树零 liberty 前缀组/命令；单源=core/liberty_parser+service/
+# liberty_service，不落盘零网络零真机纯读面）。append-only 注册序尾。
+
+from rfauto.cli.domains.liberty import liberty_app as liberty_app
+from rfauto.cli.domains.liberty import liberty_list_cmd as liberty_list_cmd
+from rfauto.cli.domains.liberty import liberty_parse_cmd as liberty_parse_cmd
+
+
+# ─── spice（T-Q22 席位 Q-X33 2026-11-07，aurora_q 方向 F 仿真格式域：──
+# SPICE 网表深度解析单叶 parse——ngspice/HSPICE/Spectre 三格式统一五维度
+# 结构化输出（elements/subckts/controls/models/topology：元件实例端口对+
+# 单位提取、子电路层次树、控制语句+扫描步进、模型卡、MNA 维度+节点双向
+# 图+孤立节点检测+接地归一）；--flavor auto 内容启发式判定，--topology
+# 三态缺省开（#277 家法）；零数值逻辑转发新建 service/spice_netlist_
+# service（解析纯函数 core/spice_netlist_parser 单源——core 零外部依赖，
+# 不触碰 Q-X20 冻结面 spice_service/fit_macromodel），带 --json；
+# liberty 同款域内自注册 add_typer——此处只 re-export（二次 add_typer 会
+# 双注册打红 zero-shadow 钉）；顶层无同名 `spice` 域（零撞名自查
+# 2026-11-07：全 CLI 树零 spice 前缀组/命令，唯一近名=adapters/
+# spice_netlist 渲染器（非 CLI 面）与 ads_circuit 域语义不同）。
+# append-only 注册序尾。
+
+from rfauto.cli.domains.spice import spice_app as spice_app
+from rfauto.cli.domains.spice import spice_parse_cmd as spice_parse_cmd
+
+
+# ─── skill（SKILL 代码模板生成 CLI 出口，2026-11-07 aurora_q T-Q27）────
+# （Virtuoso-Bridge-lite 核心模式借鉴化用——Python 侧模板化生成 SKILL 代码
+# 字符串，输出 .il 供用户在本地 Virtuoso 加载执行，零 Cadence 依赖零真机
+# 调用：list=模板目录只读视图/render=模板+变量直出（--var k=v 可多次，
+# 值按 JSON 字面量解析失败回退字符串；--out 落盘+--force 防覆盖）/
+# lint=SKILL 语法守卫（括号配对/引号闭合/let 绑定/函数名白名单，error 级
+# 退出码 1）。内核=新建 core/skill_template_engine（Jinja2 形态自制微实现
+# 零新依赖）+core/skill_templates 5 模板注册表（cell_layout/
+# schematic_instance/aedt_run_simulation/waveform_export/layer_setup）；
+# 零数值逻辑转发新建 service/skill_template_service，全叶带 --json。
+# spice/liberty 同款域内自注册 add_typer——此处只 re-export（二次 add_typer
+# 会双注册打红 zero-shadow 钉）；顶层无同名 `skill` 域（零撞名自查
+# 2026-11-07：全 CLI 树唯一近名 `recipe skill` 为组内叶语义=配方→SKILL.md
+# agent 格式导出，非 Cadence SKILL 代码生成）。append-only 注册序尾。
+
+from rfauto.cli.domains.skill import skill_app as skill_app
+from rfauto.cli.domains.skill import skill_lint_cmd as skill_lint_cmd
+from rfauto.cli.domains.skill import skill_list_cmd as skill_list_cmd
+from rfauto.cli.domains.skill import skill_render_cmd as skill_render_cmd
+
+
+# ─── sdc（T-Q36 席位 Q-X36 2026-11-07，aurora_q 数字自动化借鉴方向）──
+# SDC（Synopsys Design Constraints，Tcl 语法子集）约束结构化解析两叶
+# parse/list——create_clock/create_generated_clock（period/waveform/
+# divide_by/multiply_by）+IO 延迟（input/output min/max）+路径例外
+# （false_path/max_delay/min_delay/multicycle）+负载/驱动/扇出/案例
+# 分析+时钟网络（latency/uncertainty）结构化输出；--clocks/--timing/
+# --paths/--constraints 四旗标 human 分支展开，--json 恒全结构信封。
+# skill/liberty 同款域内自注册 cli/domains/sdc.py 模块级 add_typer——
+# 此处只 re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层
+# 无同名 `sdc` 域（零撞名自查 2026-11-07：全 CLI 树零 sdc 前缀组/命令，
+# 唯一近名是 knowledge 术语表 Sdc 混模 S 参数词条语义无关）。单源=
+# core/sdc_parser（Tcl 词法+SDC 语义确定性内核）+service/sdc_service，
+# 不落盘零网络零真机纯读面。append-only 注册序尾。
+
+from rfauto.cli.domains.sdc import sdc_app as sdc_app
+from rfauto.cli.domains.sdc import sdc_list_cmd as sdc_list_cmd
+from rfauto.cli.domains.sdc import sdc_parse_cmd as sdc_parse_cmd
+
+
+# ─── exploded-view（版图 3D 爆炸视图 CLI 出口，2026-11-07 aurora_q Q-X37
+# T-Q37：render 单叶——layered_stack spec / KiCad .kicad_pcb s-expr →
+# SVG/JSON/PNG 三形态 + geometry_lint 六检查零 ERROR 闭环（lint 报告随信封
+# 与 <stem>_lint.json 同落；铁律 7：渲染坐标=layout 单源直通+explode_factor
+# 声明参数）。anim/cal-wizard 同款域内自注册 add_typer——此处只 re-export
+# （二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 exploded-view
+# 域（#df6① 冲突检查 2026-11-07：全 CLI 树零撞名，唯一近名 diagram 域
+# 语义=工程图绘制非 3D 渲染）。append-only 注册序尾。
+
+from rfauto.cli.domains.exploded_view import exploded_view_app as exploded_view_app
+from rfauto.cli.domains.exploded_view import exploded_view_render_cmd as exploded_view_render_cmd
+
+
+# ─── layer-3d（版图分层 3D 渲染导出 CLI 出口，2026-11-07 aurora_q Q-X39）──
+# （逐层 PNG+叠层合成预览 PNG/SVG：铜层/阻焊层/丝印层/钻孔（Edge.Cuts）
+# 每层独立 3D 场景+mplot3d 合成（Agg OO 零 GUI 零真机零 license，纯文本
+# s-expr 直读——零 pcbnew 零 KiCad 安装依赖）；glb/step=接口预留 skipped
+# 信封如实。exploded-view/cal-wizard 同款域内自注册 add_typer——此处只
+# re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
+# layer-3d 域（#df6① 冲突检查 2026-11-07：全 CLI 树零撞名，唯一近名
+# exploded-view 语义=爆炸视图单场景渲染非逐层导出、layout 语义=互格式
+# 面）。append-only 注册序尾。
+
+from rfauto.cli.domains.layer_3d import layer_3d_app as layer_3d_app
+from rfauto.cli.domains.layer_3d import layer_3d_render_cmd as layer_3d_render_cmd
+
+
+# ─── drc（DRC 规则文件结构化解析 CLI 出口，2026-11-07 aurora_q Q-X48）──
+# （DRC 自动化借鉴方向：规则文件 JSON/CSV/自由文本三形态统一解析到内部
+# schema（name/type/layer_scope/value/unit/priority/enabled+groups+
+# metadata）+validate 面 design×规则集→violations/verdict+RF 特化检查
+# 器四件（rf_impedance 阻抗精度/rf_pad_clearance 焊盘间距/
+# rf_ground_via_fence 地过孔隔离度/rf_shield_clearance 屏蔽罩间距，
+# --rf 启用；无 --rules 时内置缺省 RF 规则集）；--rules/--rf human 分支
+# 展开+--json 恒全结构信封；违规≠exit 1（verdict 语义，exit 1 保留调用
+# 失败）。sdc 同款域内自注册 cli/domains/drc.py 模块级 add_typer——
+# 此处只 re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层
+# 无同名 `drc` 域（零撞名自查 2026-11-07：全 CLI 树唯一近名 `kicad drc`
+# 叶=KiCad 真机 DRC 运行面语义≠规则文件解析）。单源=core/drc_parser
+# （文法+单位归一+方向判定+RF 检查确定性内核）+service/drc_service，
+# 不落盘零网络零真机纯读面。append-only 注册序尾。
+
+from rfauto.cli.domains.drc import drc_app as drc_app
+from rfauto.cli.domains.drc import drc_parse_cmd as drc_parse_cmd
+from rfauto.cli.domains.drc import drc_validate_cmd as drc_validate_cmd
+
+
+# ─── lvs（Q-X49 席位 2026-11-07，aurora_q LVS 网表对照域）────────────
+# LVS（Layout vs Schematic）网表拓扑一致性对照单叶 compare——两份网表
+# （SPICE 三格式/Verilog 门级子集）归一统一图表示→图同构（1-WL 颜色
+# 精化+回溯）→missing/extra/mismatched 差异清单+参数容差比对+--rf 特化
+# （S 参数端口数量/序号/阻抗+传输线串联/并联/耦合线分类）→
+# {verdict, score, differences, summary} 报告信封；verdict 拦截退出码
+# MATCH=0/其余=1（layout lvs LVS_FLAG 同族），usage 错 exit 2；零数值
+# 逻辑转发新建 service/lvs_compare_service（netgen 思想借鉴化用自研，
+# SPICE 消费 Q-X33 冻结面 core/spice_netlist_parser 只读），带 --json；
+# drc 同款域内自注册 cli/domains/lvs.py 模块级 add_typer——此处只
+# re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
+# `lvs` 域（零撞名自查 2026-11-07：全 CLI 树唯一近名 `layout lvs` 叶=
+# 几何网表 flag 级对照语义≠两份网表全图同构比对）。append-only 注册序尾。
+
+from rfauto.cli.domains.lvs import lvs_app as lvs_app
+from rfauto.cli.domains.lvs import lvs_compare_cmd as lvs_compare_cmd
+
+
+# ─── ibis（T-Q46 席位 Q-X46 2026-11-07，aurora_q 数字自动化借鉴方向）──
+# IBIS（Input/Output Buffer Information Specification，数字 IO buffer
+# 行业标准格式）结构化解析两叶 parse/list——[IBIS Ver/File Rev/Date/
+# Source]/[Component]/[Manufacturer]/[Package]/[Pin]/[Model]/
+# [Model Selector]/[Pullup]/[Pulldown]/[GND Clamp]/[POWER Clamp]/[Ramp]/
+# [Rising Waveform]/[Falling Waveform]+[End] → 结构化输出
+# {header, components, models, model_selectors, pins}；IV 查找表
+# （Voltage→Current）+暂态表（time→voltage）+线性插值在 core 确定性内
+# 核（铁律 7）；--component/--model 过滤+--tables 表体展开，--json 恒
+# 全结构信封。skill/sdc 同款域内自注册 cli/domains/ibis.py 模块级
+# add_typer——此处只 re-export（二次 add_typer 会双注册打红 zero-shadow
+# 钉）；顶层无同名 `ibis` 域（零撞名自查 2026-11-07：全 CLI 树零 ibis
+# 前缀组/命令，唯一近名 liberty/spice 语义=其他 EDA 格式解析面）。单源
+# =core/ibis_parser+service/ibis_service，不落盘零网络零真机纯读面。
+# append-only 注册序尾。
+
+from rfauto.cli.domains.ibis import ibis_app as ibis_app
+from rfauto.cli.domains.ibis import ibis_list_cmd as ibis_list_cmd
+from rfauto.cli.domains.ibis import ibis_parse_cmd as ibis_parse_cmd
+
+
+# ─── verilog（T-Q47 席位 Q-X47 2026-11-07，aurora_q 数字自动化借鉴方向）
+# Verilog HDL（IEEE 1364）结构子集——数字后端 gate-level netlist 标准
+# 交接格式——结构化解析两叶 parse/list：module（ANSI 2001 头内全声明与
+# 1995 体内方向声明双形态统一）/wire/reg/assign（连续赋值多目标+延迟）/
+# instance（门级原语 LRM 14 章全集 26 键注册表 GATE_PRIMITIVES 位置→
+# 命名归一 out/inN/ctrl+模块实例 named/positional 双形态）/parameter/
+# localparam/defparam 结构化输出+拓扑三件套（instance→driven nets→
+# driving instances 三层关系+孤立网 undriven/unloaded 双桶检测——reg
+# 与行为块跳过盲区如实豁免不凑报+实例级 DAG 树深度 longest-chain 含
+# 组合环检测 cyclic 如实置 None）；--module 单模块过滤+--topology/
+# --no-topology 三态缺省开（#277 家法），--json 恒全结构信封。
+# sdc/liberty 同款域内自注册 cli/domains/verilog.py 模块级 add_typer——
+# 此处只 re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层
+# 无同名 `verilog` 域（零撞名自查 2026-11-07：全 CLI 树零 verilog 前缀
+# 组/命令，唯一近名=fl1_sg13g2 脚本注释"零 Verilog-A"语义无关）。单源
+# =core/verilog_netlist_parser+service/verilog_netlist_service，不落
+# 盘零网络零真机纯读面。append-only 注册序尾。
+
+from rfauto.cli.domains.verilog import verilog_app as verilog_app
+from rfauto.cli.domains.verilog import verilog_list_cmd as verilog_list_cmd
+from rfauto.cli.domains.verilog import verilog_parse_cmd as verilog_parse_cmd
+
+
+# ─── 批量接线合流（aurora_q §二-1 主代合流笔 2026-11-10；蓝图=runs/aurora_q/
+# qx74_audit/FINAL_AUDIT.md §二A+Q-X77/79/80/86/88 五域收官接线）。两种形态：
+# ①独立根 14 域=citi/sdf/gdsii/touchstone/ipc356/lefdef/stil/skill_parse/
+#   odbpp/bsdl/spectre/veriloga/stdf/ibis_ami——re-export + _core.app
+#   add_typer（各域 docstring 处方两步式；此处共用已导入的 `app` 单别名，
+#   与各域处方 `_X_reg_app` 同对象同语义）；skill_parse 注册名带下划线、
+#   ibis_ami 注册名带连字符（Q-X62/Q-X86 处方原文，零撞名自查各席已做）。
+# ②域内自注册 2 域=spef/vcd——模块级已 add_typer，main 只 re-export
+#   （二次 add_typer 会双注册打红 zero-shadow 钉）。append-only 注册序尾。
+
+# citi（Q-X35，CITIfile 仪器数据三叶 info/segments/network，独立根）
+from rfauto.cli.domains.citi import citi_app as citi_app
+
+app.add_typer(citi_app, name="citi")
+
+# sdf（Q-X61，SDF 标准延迟两叶 parse/report，独立根）
+from rfauto.cli.domains.sdf import sdf_app as sdf_app
+
+app.add_typer(sdf_app, name="sdf")
+
+# gdsii（Q-X58，GDSII 二进制两叶 parse/layers，独立根）
+from rfauto.cli.domains.gdsii import gdsii_app as gdsii_app
+
+app.add_typer(gdsii_app, name="gdsii")
+
+# touchstone（Q-X64，Touchstone 统一解析一叶 info，独立根）
+from rfauto.cli.domains.touchstone import touchstone_app as touchstone_app
+
+app.add_typer(touchstone_app, name="touchstone")
+
+# ipc356（Q-X65，IPC-D-356A 裸板测试网表一叶 report，独立根）
+from rfauto.cli.domains.ipc356 import ipc356_app as ipc356_app
+
+app.add_typer(ipc356_app, name="ipc356")
+
+# lefdef（Q-X57，LEF/DEF 5.8 子集两叶 parse/check，独立根三步入）
+from rfauto.cli.domains.lefdef import lefdef_app as lefdef_app
+
+app.add_typer(lefdef_app, name="lefdef")
+
+# stil（Q-X72，IEEE 1450 测试向量两叶 parse/report，独立根）
+from rfauto.cli.domains.stil import stil_app as stil_app
+
+app.add_typer(stil_app, name="stil")
+
+# skill_parse（Q-X62，SKILL/OCEAN 语言两叶 parse/report，独立根；
+# 注册名 skill_parse≠skill——skill 域（Q-X32 模板生成）已占顶名）
+from rfauto.cli.domains.skill_parse import skill_parse_app as skill_parse_app
+
+app.add_typer(skill_parse_app, name="skill_parse")
+
+# odbpp（Q-X68，ODB++ 制造数据一叶 report，独立根）
+from rfauto.cli.domains.odbpp import odbpp_app as odbpp_app
+
+app.add_typer(odbpp_app, name="odbpp")
+
+# bsdl（Q-X77，IEEE 1149.1 边界扫描描述两叶 parse/report，独立根）
+from rfauto.cli.domains.bsdl import bsdl_app as bsdl_app
+
+app.add_typer(bsdl_app, name="bsdl")
+
+# spectre（Q-X79r，Cadence Spectre 网表两叶 parse/report，独立根）
+from rfauto.cli.domains.spectre import spectre_app as spectre_app
+
+app.add_typer(spectre_app, name="spectre")
+
+# veriloga（Q-X80r，Verilog-A 行为级两叶 parse/report，独立根）
+from rfauto.cli.domains.veriloga import veriloga_app as veriloga_app
+
+app.add_typer(veriloga_app, name="veriloga")
+
+# stdf（Q-X88r，STDF V4 半导体测试数据两叶 parse/report，独立根）
+from rfauto.cli.domains.stdf import stdf_app as stdf_app
+
+app.add_typer(stdf_app, name="stdf")
+
+# ibis_ami（Q-X86r，IBIS-AMI 参数两叶 parse/report，独立根；注册名 ibis-ami）
+from rfauto.cli.domains.ibis_ami import ibis_ami_app as ibis_ami_app
+
+app.add_typer(ibis_ami_app, name="ibis-ami")
+
+# spef（Q-X60，SPEF 寄生网表两叶 parse/report，域内自注册→只 re-export）
+from rfauto.cli.domains.spef import spef_app as spef_app
+from rfauto.cli.domains.spef import spef_parse_cmd as spef_parse_cmd
+from rfauto.cli.domains.spef import spef_report_cmd as spef_report_cmd
+
+# vcd（Q-X63，VCD 波形两叶 parse/report，域内自注册→只 re-export）
+from rfauto.cli.domains.vcd import vcd_app as vcd_app
+from rfauto.cli.domains.vcd import vcd_parse_cmd as vcd_parse_cmd
+from rfauto.cli.domains.vcd import vcd_report_cmd as vcd_report_cmd
+
+# tri_view（Q-X38，原理图↔版图↔3D 三视图联动一叶 link，独立根；
+# aurora_r M-10 接线清偿 Q-X38 挂账——域 docstring"合流契约"两步式）
+from rfauto.cli.domains.tri_view import tri_view_app as tri_view_app
+
+app.add_typer(tri_view_app, name="tri-view")
+
+
+# ─── aedt_migrate（aurora_r AM-S4 席位 2026-11-10，老版本 .aedt 批量迁移 ──
+# 通道）。AEDT 版本迁移三叶 run/status/report（设计稿
+# aedt_migrate_design_handoff §1 五阶段决策树：直开→体检→对比→桥接→
+# 抢救，每工程产出结构化迁移报告；verdict 9 枚举诚实终态，CLI 层零重
+# 试零凑绿 #122；run 零逻辑转发 service/aedt_migrate_service.migrate_
+# batch，status/report 消费 read_migration_report——S1 service docstring
+# 挂账处方原文落位；三叶全带 --json，路径参数 str 注解 #269）。citi 同
+# 款独立根 re-export + _core.app add_typer（两步式）；顶层无同名
+# `aedt-migrate` 域（零撞名自查 2026-11-10：全 CLI 树无该前缀组/命令，
+# 唯一近名 hfss-import=工程导入器语义≠版本迁移通道）。append-only 注
+# 册序尾。
+
+from rfauto.cli.domains.aedt_migrate import aedt_migrate_app as aedt_migrate_app
+
+app.add_typer(aedt_migrate_app, name="aedt-migrate")
 
 
 # ─── help 按域分组（aurora_n wave_ui_c D1，审计 P2-4：--help 119 命令 ──

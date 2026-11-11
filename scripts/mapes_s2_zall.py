@@ -1,6 +1,6 @@
 r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍（6×6）。
 
-链路（Devlog（五十二）stage-1 未尽项 / §10.24 A8 stage-2）：
+链路（DEVLOG（五十二）stage-1 未尽项 / §10.24 A8 stage-2）：
 1. **Z_ALL 实采**：6×6 像素单层 PCB（底面地 + 基板 + 36 浮地贴片），Q=150
    端口（io×2 + pixel 36 + h/v 60 + diag 50 + via_ground 2，PixelLayout
    stage-1 槽序）。进程隔离激励轮转（#208 同款）：每端口渲染一份单激励
@@ -210,7 +210,7 @@ def render_mesh_lines(
 
     中线语义（core.mapes.probe_midlines）：u 探针横断面中心线 + i 探针激励
     轴中面线；盒边已是结构线，三线齐备 → 每盒每轴恰 ≥2 格，探针逐位落位，
-    不再被吸附到盒角/PEC 面（Devlog（二百零一）跨轮漂移根因）。
+    不再被吸附到盒角/PEC 面（DEVLOG（二百零一）跨轮漂移根因）。
     """
     xs, ys, zs = mesh_lines(geom)
     mid_x, mid_y, mid_z = probe_midlines(geom)

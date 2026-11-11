@@ -200,7 +200,7 @@ def windows_to_wsl_path(path: str | Path) -> str:
     解析用 ``PureWindowsPath``（被解析对象是 Windows 宿主路径，与运行平台
     无关）：Windows 上与 ``Path`` 逐位同解；非 Windows 解释器下 ``Path`` 不认
     反斜杠分隔符会把 ``E:\\a\\b.cir`` 整段当单个 part 误拒（aurora_p H4
-    Linux CI 实证）。
+    Linux CI 实证；公开仓同款修复回冲，2026-11-05）。
     """
     parts = PureWindowsPath(path).parts
     if not parts or _DRIVE_SEG_RE.fullmatch(parts[0]) is None:

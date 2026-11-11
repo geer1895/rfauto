@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-30000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-36000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -23,16 +23,16 @@
 > **所有物理数字（频率、损耗、几何尺寸）都由确定性公式内核或求解器产生，
 > 永远不由大语言模型编造。**
 
-它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **75 个参数化器件模板**和
-**341 个闭式计算器**（340 常规 + 1 实验键），提供 **297 条 CLI 命令**和 **166 个 MCP 工具**（+10 个
+它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **76 个参数化器件模板**和
+**340 个闭式计算器**（340 常规 + 1 实验键），提供 **358 条 CLI 命令**和 **208 个 MCP 工具**（+17 个
 resources），用 **87 个标定锚**和 **30000+ 条单元测试**兜底——这些测试不需要
 任何商业许可就能跑。
 
 本版实测计数（精确值，可用 `scripts/check_numbers.py` 复验）：
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
-`ANCHORS 87` · CLI 命令 297（叶子） · （166 个工具 + 10 个 resources）
+`CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 76` · `EXPECTED_TEMPLATES 76` ·
+`ANCHORS 87` · CLI 命令 357（叶子） · （208 个工具 + 17 个 resources）
 <!-- numbers-end -->
 
 **目录** · [功能全景](#一功能全景九个域) · [快速上手](#二快速上手八步跑通) ·
@@ -154,7 +154,7 @@ rfauto remote status
 
 ### 1.8 AI 编排（MCP）
 
-**166 个 MCP 工具 + 10 个 resources**：Claude Desktop、Cursor 或你自己的 agent
+**208 个 MCP 工具 + 17 个 resources**：Claude Desktop、Cursor 或你自己的 agent
 都能操作整个框架。agent 的修改先落沙箱草稿、过验证门，才允许碰工作区；它只产出
 类型化工具调用，物理数字由内核填写。
 
@@ -173,7 +173,7 @@ S 参数、3D 场、模板画廊、战役看板、校准工作台、数据集、
 
 ![模板画廊（75 个族，每张卡是白话参数说明）](docs/assets/ui/zh/gallery.png)
 
-![微波工具箱（341 个计算器，选键、填参数、出结果，每个键带公式出处）](docs/assets/ui/zh/tools.png)
+![微波工具箱（选键、填参数、出结果，每个键带公式出处）](docs/assets/ui/zh/tools.png)
 
 ---
 
@@ -259,7 +259,7 @@ rfauto ui --port 8643     # 端口被旧实例占用时换一个
 ```
 
 左侧是工作区：**总览**（三步上手）、**Run 历史**、**S 参数分析**、**模板画廊**、
-**微波工具箱**（341 个计算器）、**校准工作台**、**数据集**……右上角可切 zh/EN。
+**微波工具箱**、**校准工作台**、**数据集**……右上角可切 zh/EN。
 
 ### 第 6 步 · 调一轮参数
 
@@ -386,8 +386,8 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 
 ```text
 src/rfauto/
-├── cli/            # 命令行（297 条叶子命令）
-├── mcp_server/     # MCP 服务（166 工具 + 10 resources）
+├── cli/            # 命令行（358 条叶子命令）
+├── mcp_server/     # MCP 服务（208 工具 + 17 resources）
 ├── ui/             # 浏览器工作台（34 视图，零构建原生 ESM）
 ├── service/        # 业务层：JSON 进、JSON 出
 ├── linkage/        # HFSS ↔ 电路联动
@@ -396,7 +396,7 @@ src/rfauto/
 ├── adapters/       # 16 条引擎/工具通道 + 模板渲染
 ├── pipeline/       # 运行流水线
 ├── infra/          # 基础设施（runs 路径 / 缓存 / 日志）
-└── core/           # 确定性内核：341 个计算器 + 物理判据
+└── core/           # 确定性内核：计算器注册表 + 物理判据
 ```
 
 ### 计算器分域
@@ -478,6 +478,65 @@ openEMS 官方源码自行编译。
 
 ## 更新日志
 
+### v0.14.0（2026-11-10）
+
+新增：
+
+- EDA/IC 解析器套件（约 30 种格式）：带 schema 自描述的结构化解析器覆盖
+  SPICE、Liberty、CITI、SDC、IBIS、IBIS-AMI、Verilog 网表、SPECTRE、
+  Verilog-A、GDSII、LEF/DEF、SPEF、SDF、Gerber、Excellon、IPC-D-356、
+  Touchstone、VCD、STIL、SKILL/OCEAN、BSDL、ODB++、STDF、DRC 规则文件与
+  LVS 对照——每种格式都有独立 CLI 域与只读 MCP 工具
+- 动图管线：17 种确定性图型（S 参数演变、Smith 轨迹、调参赛跑、场热力图、
+  VSWR 历程、星座/眼图、预算漏斗等）+自检闭环+`rfauto anim render` CLI/MCP
+- EM 基准套件：确定性判据任务族（闭式仲裁、锚复验、措辞变体战役），支持
+  公开/隐藏双层判据、负例探针、任务准入门（no-op 必败+oracle 稳定）与分布
+  外包络旗标；模拟侧任务族（spec-to-VA、testbench 生成、端到端、bugfix）
+  与逆设计打分
+- 神经代理：MLP 训练+留一评估（torch 可选 extra，numpy 回退）、批量评估
+  top-k 排序（LHS 候选）、主动学习环挑选最不确定点做全波补点
+- AEDT 工程迁移：`rfauto aedt-migrate` 按五阶段决策树迁移老版本工程
+  （直开 → 体检 → 基线对比 → 桥接 → CAD 重导出），结局诚实不凑绿，逐工程
+  出迁移报告
+- gm/ID 查表定尺寸内核：建表+lookup / size / size-from-fT 三 API+指纹缓存
+  +越界夹取旗标
+- 会话捕获：录制工作会话并编译成沙箱内的配方草稿（生产配方区零触碰）
+- 工具链 lock：采集本机求解器指纹（HFSS/ADS/openEMS/python 包）并与远程
+  机器比对
+- MCP 面扩到 208 只读工具+17 资源：解析器工具、SKILL 包资源与工作流提示
+  词；全部工具带注解（只读/破坏性提示经静态分析验证），发射类工具带滑窗
+  限流与合并调用提示；stdio 信道纯度运行期强制
+- 请求回执：幂等键+四态结局（not_started / completed / failed / unknown）
+  覆盖远程与异步运行——unknown 永不静默重放
+- 严格结果访问器：`read_touchstone(strict=True)` 校验读边界（唯一文件匹配、
+  路径逃逸与符号链接逃逸拒收、ULP 级重复频点、精确键名不猜别名）
+- veriloga-authoring 技能包：教 agent 写出内置解析器能接受的 .va 模型
+  （全部示例经测试验证）
+- KiCad 原理图生成+ERC 解析+round-trip 证书；厂商文档检索（SQLite FTS5
+  索引 PDF/CHM/HTML，带零收录审计）
+- 引擎身份：run 可携带机器可读的引擎/版本块；网表解析新增可选语义标注层
+  （source / confidence / evidence 三件套+覆盖率门）
+
+修复与改进：
+
+- CLI 扩到 358 叶：16 个新解析器域一批接线，help 面板、注册序金快照与
+  计数锚同笔重钉
+- fake branchline 模型升级为理想 TL 矩阵闭式（Pozar 奇偶半电路）——基准
+  判据从 as-recorded FAIL 翻绿为 PASS，物理四判据机器精度
+- SPEF 解析器支持三值（min:typ:max）条目、缩放乘积与续行，回收钉逐位；
+  SPEF 错误类型改为 ValueError 派生
+- 解析器套件 schema 键统一（`"schema": "domain/1.0"`）并补齐 n_warnings
+  统计；verilog 保留双键兼容一版
+- 退出码判读统一收口：SPICE/ADS/openEMS 适配器在「退出码 0 但日志含致命
+  标记」时响亮失败
+- layered_stack 模板族根因链闭合（馈段四壁结构修复+窗长主导终证）；
+  branchline/hairpin 知识注记同步扩展
+- 新增录制夹具测试层：清洗+manifest 的真机产物离线回放（`recorded` 标记
+  与 `unit` / `real_edt` 并列）
+- 文档：解析器集群用户指南（中英双语）+全集群集成指南；docs_site 同笔再生
+
+目前版本：v0.14.0（上一版本：v0.13.0）。
+
 ### v0.13.0（2026-11-02）
 
 新增：
@@ -499,6 +558,6 @@ openEMS 官方源码自行编译。
 
 - 串行终门固定 BLAS 单线程，消除多线程环境下的偶发测试超时
 - 对拍门未通过时不再误报为“ADS 段失败”，两种失败分开提示
-- CLI 命令 297 条，MCP 工具 166 个，单元测试 30738 条（README 徽章同源）
+- CLI 命令 358 条，MCP 工具 208 个，单元测试 36454 条（README 徽章同源）
 
 当前版本 v0.13.0，上一版本 v0.12.1。

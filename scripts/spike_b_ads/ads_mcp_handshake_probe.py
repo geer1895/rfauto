@@ -5,8 +5,8 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-# ADS 27 治理（2026-09-18）：安装根 env 优先、E:\ADS\ADS27 回退
-ADS = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
+# ADS 27 治理（2026-09-18）：安装根 env 优先、C:\Program Files\Keysight\ADS2027 回退
+ADS = os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027")
 
 
 async def main():

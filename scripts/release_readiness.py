@@ -282,7 +282,7 @@ def build_leaderboard_payload() -> dict[str, Any]:
     return {
         "kind": "rfauto_public_leaderboard",
         "note": "全部数值为 runs/ 既有 JSON 的原值搬运（本生成器零算术改写）；"
-                "verdict/门限语义见各源文件 criteria 与 Devlog 对应教训编号。",
+                "verdict/门限语义见各源文件 criteria 与 DEVLOG 对应教训编号。",
         "sources": sources,
         "anchors": anchors,
         "mesh_convergence": mesh_rows,
@@ -404,13 +404,8 @@ def sec_f4_mcp(staging: Path, build: bool) -> Section:
 # 发布包禁入片段（与 pyproject [tool.hatch.build.targets.sdist].exclude 对应并更严）
 DIST_FORBIDDEN_FRAGMENTS = (
     "/.hypothesis/", "/.zcode/", "/ads_reference/", "/pyaedt_reference/", "/runs/",
-    "/.venv/", "chat_settings.yaml",
-    # 精化（aurora_p H4）：密钥配置面指 chat_settings.yaml 本体——加载器
-    # chat_settings_io.py 是公开源码（无密钥实证），原 "chat_settings" 前缀
-    # 误伤。教训：改列表元素时行内注释吞并同行后续元素（/_tmp_ 等四项曾
-    # 被吞——注释必须自占一行，与 #146/#259 文档吞标题同族）。
-    "/_tmp_", "/Devlog.md", "/TODO", "/AGENTS",
-    "/agent handoff", "/uv.lock", "/skills/",
+    "/.venv/", "chat_settings", "/_tmp_", "/DEVLOG.md", "/TODO.md", "/AGENTS.md",
+    "/AGENT_HANDOFF", "/uv.lock", "/skills/",
 )
 
 
@@ -664,7 +659,7 @@ def sec_h1_pdk(staging: Path, build: bool) -> Section:
         *rows,
         "",
         "线宽/几何一律以 rfauto 综合内核（skrf HJ）按基底精算，禁止直接沿用",
-        "任何来源的毫米数（仓库 AGENTS 规则 1c）。",
+        "任何来源的毫米数（仓库 AGENTS.md 规则 1c）。",
         "",
     ])
     (pdk / "README.md").write_text(readme, encoding="utf-8")

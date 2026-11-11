@@ -36,10 +36,10 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake          # fake 通道首
 | 维度 | 数量 |
 |---|---|
 | 全量门测试 | 28000+ |
-| CLI 叶子命令 | 297 |
-| MCP 工具 | 166 |
+| CLI 叶子命令 | 357 |
+| MCP 工具 | 208 |
 | 确定性计算器（含实验键） | 340（341） |
-| 器件模板 | 75 |
+| 器件模板 | 76 |
 | 标定锚注册表 | 87 |
 
 （tests 计数来源：README 徽章下限口径（跨平台稳定；精确计数以 rfauto doctor/check_numbers 实测为准））
@@ -50,15 +50,18 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake          # fake 通道首
 | 分区 | 内容 |
 |---|---|
 | [用户指南](tutorials/getting-started.md) | 安装、CLI 快速上手、首条链路 |
+| [CLI 快速上手](guide/cli-quickstart.md) | 高频命令怎么串成一条链路 |
 | [第一次优化闭环](tutorials/first_optimization_loop.md) | syn → run → tune → refine → replay 全链走读 |
 | [UI 工作台导览](tutorials/ui_workbench_tour.md) | 人工核验看板首开：页面清单、主题、命令面板 |
 | [MCP 实战](tutorials/mcp_in_practice.md) | 把 rfauto 接进 Claude Desktop / Cursor 等 MCP 客户端 |
+| [SKILL 能力包](tutorials/skill-packages.md) | agentskills.io 规范技能包的安装与包内容解剖 |
 | [实测对齐链路](tutorials/measurement-alignment.md) | Touchstone ↔ 仿真对齐、偏差诊断、修正提案 |
 | [真机仿真](tutorials/real-simulation.md) | 第一个 openEMS 求解点：离线审计 → 真跑 → 判读 |
 | [RECAST 走查](tutorials/recast-walkthrough.md) | 归档判读的判据重放（可复算性对照） |
 | [战役逐阶段推进](tutorials/campaign-walkthrough.md) | plan → run → status → event → final_verify 五命令手册 |
 | [compose 组合链与引擎联赛](tutorials/compose_and_league.md) | 模板链一次仿真与跨引擎 run 排名 |
 | [数据集与健康门](tutorials/datasets_and_health_gates.md) | run 沉淀成可查数据集与 G11 体检三态判读 |
+| [数据工厂](tutorials/data_factory.md) | 预声明判据→批量采集→数据集→代理模型全链 |
 | [数据湖与查询面](tutorials/data_lake.md) | run 产物 → 数据集 → DuckDB 湖 → 查询 |
 | [UQ 与代理模型](tutorials/uncertainty_and_surrogates.md) | Sobol/Morris 灵敏度、良率收口、代理注册表 |
 | [锚导览](tutorials/anchor-guide.md) | 物理标定锚：是什么、为什么可信、怎么查、怎么消费 |

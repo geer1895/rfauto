@@ -607,6 +607,120 @@ def energy_closure(p_absorbed_w: float, p_boundary_w: float,
     }
 
 
+# ── 静默失效双守卫（2026-11-02 专利3 venv 外借批反馈实录，T-Q16）───────────────
+# 反馈原件 runs/aurora_q/feedback/rfauto使用反馈-20261102.md；11 坑全账
+# docs/comsol_references.md §8。两守卫统一纪律：**缺省零行为变化**——检测面
+# 拿不到（无 Java 链/方法缺失/返回非数值）一律按 unknown 放行，绝不误报；
+# 只在可检测形态出现时拦截/告警（坑1=Tref 静默零解 2h 级、坑2=空 mesh 静默
+# "成功"——两形态共同点是 std.run() 正常返回、全程无任何警告）。
+THERMAL_EXPANSION_FEATURE_TYPE = "ThermalExpansion"  # solid lemm1 子特征（官方例）
+
+EMPTY_MESH_GUARD_MSG = (
+    "空网格守卫：mesh 序列未产生任何单元（getNumElem()=0），求解不启动——"
+    "网格序列可能只有 Size 节点、缺 FreeTet/Map 等网格操作特征，"
+    "请检查网格配置（实录 docs/comsol_references.md §8 坑2）")
+
+ZERO_SOLUTION_GUARD_NOTE_FMT = (
+    "热弹性静默零解守卫：解全为精确零且模型含 ThermalExpansion 特征（{tags}）"
+    "——ThermalExpansion userdef 模式下 Tref 未显式设置会使特征静默失效"
+    "（解恒零、全程无警告），请检查 ThermalExpansion Tref 显式设置"
+    "（按 alpha_mat→alpha→T→Tref 顺序设置；实录 docs/comsol_references.md §8 坑1）")
+
+
+def mesh_element_count(model: Any) -> int | None:
+    """全部 mesh 序列的单元总数（getNumElem 口径，坑2 实录）；拿不到→None。
+
+    扫描面：逐 component → mesh 列表 → 各序列 ``getNumElem()`` 求和（adapter
+    两模板的网格都建在 component 级 ``comp.mesh()``）。任何环节缺失（无
+    component/mesh 链、getNumElem 不可用、返回非数值）→ None＝unknown——
+    守卫不误报，调用方不得把 None 当 0。
+    """
+    if model is None:
+        return None
+    try:
+        comp_tags = list(model.java.component().tags())
+    except Exception:
+        return None
+    total = 0
+    seen = False
+    for ctag in comp_tags:
+        try:
+            mesh_tags = list(model.java.component(ctag).mesh().tags())
+        except Exception:
+            continue
+        for mtag in mesh_tags:
+            try:
+                value = model.java.component(ctag).mesh(mtag).getNumElem()
+            except Exception:
+                continue
+            try:
+                total += int(value)
+            except (TypeError, ValueError):
+                continue
+            seen = True
+    return total if seen else None
+
+
+def thermal_expansion_feature_tags(model: Any) -> tuple[str, ...] | None:
+    """扫描全部 physics 特征找 ThermalExpansion（坑1 静默失效特征形态）。
+
+    命中形态=固体力学接口默认线弹性特征（lemm1）下的 ThermalExpansion 子
+    特征（``add_thermal_expansion`` 落点，官方 cavity_filter 例同构）；顶层
+    特征同型也认。返回值三态：命中=tag 路径元组（``物理场/特征[/子特征]``）、
+    扫描成功无命中=``()``、扫描面拿不到=None（unknown，守卫不误报）。
+    """
+    if model is None:
+        return None
+    try:
+        comp_tags = list(model.java.component().tags())
+    except Exception:
+        return None
+    hits: list[str] = []
+    for ctag in comp_tags:
+        try:
+            phys_tags = list(model.java.component(ctag).physics().tags())
+        except Exception:
+            continue
+        for ptag in phys_tags:
+            try:
+                feat_tags = list(
+                    model.java.component(ctag).physics(ptag).feature().tags())
+            except Exception:
+                continue
+            for ftag in feat_tags:
+                try:
+                    feat = model.java.component(ctag).physics(ptag).feature(ftag)
+                    if str(feat.getType()) == THERMAL_EXPANSION_FEATURE_TYPE:
+                        hits.append(f"{ptag}/{ftag}")
+                except Exception:
+                    continue
+                try:
+                    sub_tags = list(feat.feature().tags())
+                except Exception:
+                    continue
+                for stag in sub_tags:
+                    try:
+                        sub = feat.feature(stag)
+                        if str(sub.getType()) == THERMAL_EXPANSION_FEATURE_TYPE:
+                            hits.append(f"{ptag}/{ftag}/{stag}")
+                    except Exception:
+                        continue
+    return tuple(hits)
+
+
+def solution_all_zero(data: Any) -> bool:
+    """解数据是否**全为精确零**（坑1 静默零解可检测面：解恒等于 0.0）。
+
+    空数据/含 NaN → False（无证据不告警）；逐位 ==0 才 True——浮点极小量
+    不算零（静默失效形态是精确零，与物理小量有区分度；同
+    ``_extract_sparams_full`` 全零列=未定义的既有判别口径）。
+    """
+    arr = np.asarray(data)
+    if arr.size == 0:
+        return False
+    return bool(np.all(arr == 0))
+
+
 # ── 适配器 ────────────────────────────────────────────────────────────────────
 
 class ComsolAdapter(EMSolverAdapter):
@@ -1394,6 +1508,13 @@ class ComsolAdapter(EMSolverAdapter):
                 self._client = client
                 model = self._build_model(client)
                 self._model = model
+                # 守卫①（坑2）：空 mesh 序列（getNumElem()=0）std.run() 仍静默
+                # "成功"——求解前拦截，study 不启动；unknown（None）放行不误报。
+                if mesh_element_count(model) == 0:
+                    wall = time.time() - t0
+                    logger.error("%s", EMPTY_MESH_GUARD_MSG)
+                    return EMSolverResult(success=False, wall_time_s=round(wall, 1),
+                                          message=EMPTY_MESH_GUARD_MSG)
                 # MPh Model.solve() 按节点 label 查 study（Java 建的 study label 是
                 # "Study 1"/本地化名），按 tag 求解走官方 Java model.study(tag).run()
                 model.java.study(STUDY_TAG).run()
@@ -1405,6 +1526,18 @@ class ComsolAdapter(EMSolverAdapter):
                     freq_ghz, s = self._extract_sparams(model)
                     touchstone = {}
                     sparam_fill = self.SPARAM_FILL_NOTE
+                # 守卫②（坑1）：解全精确零 + 模型含 ThermalExpansion 特征 →
+                # Tref 静默失效告警（success 不变；warning 进 message/
+                # field_data；检测面拿不到=unknown 放行，缺省零行为变化——
+                # RF 通道两模板不含热膨胀特征，守卫恒不触发）。
+                guard_notes: list[str] = []
+                if solution_all_zero(s):
+                    te_tags = thermal_expansion_feature_tags(model)
+                    if te_tags:
+                        note = ZERO_SOLUTION_GUARD_NOTE_FMT.format(
+                            tags=", ".join(te_tags))
+                        guard_notes.append(note)
+                        logger.warning("%s", note)
                 if (self._config.extra_params or {}).get("save_mph"):
                     self._model_path = self._working_dir / "comsol_model.mph"
                     model.save(str(self._model_path.resolve()))
@@ -1417,20 +1550,26 @@ class ComsolAdapter(EMSolverAdapter):
         self._write_csv(freq_ghz, s)
         mesh_info = (dict(MLINE_MESH_HMAX) if self._template == "mline"
                      else float(self._config.mesh_resolution_mm))
+        field_data: dict[str, Any] = {
+            "sparam_fill": sparam_fill,
+            "physics": f"{PHYSICS_TYPE}({PHYSICS_TAG})",
+            "mesh_hmax_mm": mesh_info,
+            "touchstone": touchstone,
+            "template": self._template,
+            "port_chain": self._port_chain,
+            "loss_tangent": self._loss_tangent}
+        message = (f"COMSOL {self._version} 频域求解完成（{self._template}，"
+                   f"{len(freq_ghz)} 频点，"
+                   + ("端口扫描全 S 矩阵" if self._port_sweep
+                      else "EvalGlobal 取 S11/S21") + "）")
+        if guard_notes:  # 守卫②触发才加键/加尾——缺省路径逐字节不变
+            field_data["guard_warnings"] = guard_notes
+            message += "；" + "；".join(guard_notes)
         self._result = EMSolverResult(
             success=True, freq_ghz=freq_ghz, s_params=s,
-            field_data={"sparam_fill": sparam_fill,
-                        "physics": f"{PHYSICS_TYPE}({PHYSICS_TAG})",
-                        "mesh_hmax_mm": mesh_info,
-                        "touchstone": touchstone,
-                        "template": self._template,
-                        "port_chain": self._port_chain,
-                        "loss_tangent": self._loss_tangent},
+            field_data=field_data,
             wall_time_s=round(wall, 1),
-            message=(f"COMSOL {self._version} 频域求解完成（{self._template}，"
-                     f"{len(freq_ghz)} 频点，"
-                     + ("端口扫描全 S 矩阵" if self._port_sweep
-                        else "EvalGlobal 取 S11/S21") + "）"),
+            message=message,
         )
         return self._result
 

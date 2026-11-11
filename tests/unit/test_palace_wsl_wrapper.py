@@ -25,7 +25,7 @@ import palace_wsl_wrapper as psw
 
 # 生成的 wrapper 资产（tools/ 不入 git；在位与否决定真实资产门是否执行）
 _REAL_BIN_DIR = scripts_dir.parent / "tools" / "palace-install" / "bin"
-_HELPER_PIN = "/mnt/e/rfauto-workspace/tools/palace-install/bin/palace_wsl.sh"
+_HELPER_PIN = "/mnt/e/rfauto_workspace/tools/palace-install/bin/palace_wsl.sh"
 
 
 @pytest.fixture()
@@ -46,7 +46,7 @@ class TestDriveLetterGuard:
 
     def test_windows_drive_forms(self):
         # Path.parts 首段实测形态（bridge_criteria §2）：'E:\\' 带反斜杠尾
-        assert psw.extract_drive_letter(("E:\\", "rfauto-workspace", "tools")) == "e"
+        assert psw.extract_drive_letter(("E:\\", "rfauto_workspace", "tools")) == "e"
         assert psw.extract_drive_letter(("C:", "x")) == "c"
         assert psw.extract_drive_letter(("d:/", "y")) == "d"
 

@@ -2200,7 +2200,7 @@ def _register_slotline_family() -> None:
             recipe_draft=_slotline_recipe_draft("marchand_balun", params,
                                                 f0_ghz, objectives),
             notes=[
-                "**单支节最小族已被两引擎互证证伪**（Devlog（二百零四）四门 FAIL）——"
+                "**单支节最小族已被两引擎互证证伪**（DEVLOG（二百零四）四门 FAIL）——"
                 "本 spec 的 fake/判据面为两节对称耦合段电路级模型（"
                 "synthesize_marchand_two_section），与模板双槽臂几何不同源（如实）",
                 f"真 Marchand 名义点：50Ω→280Ω 差分、C={m2.coupling_db:.2f}dB、"
@@ -2779,6 +2779,71 @@ def _register_ms_mushroom() -> None:
     ))
 
 
+def _register_layered_stack() -> None:
+    """layered_stack 晶圆键合叠层+空腔族（aurora_q Q-X6 批 2，2026-11-07）。
+
+    综合入口 = Z0 目标 → strip 宽反解单源 adapters/layered_stack_spec.
+    design_params（core.calculators._suspended_stripline_ri 二分反解+正向
+    复算 |ΔZ0|≤1e-9Ω 独立裁判，铁律 7），本处只组装零数值。hfss_plugin=
+    None（纯 openEMS 锚模板）；fake_model=None（族无解析近似前向——配方
+    走 template: 直跑形态，template_model_mapping 映射面同口径）。
+    """
+    from rfauto.adapters.layered_stack_spec import design_params
+    from rfauto.adapters.openems_templates import (
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_layered_stack_model(
+        z0_ohm: float = 50.0, **_: Any,
+    ) -> ModelSynthesisResult:
+        """layered_stack spec 综合入口：Z0 目标 → design_params 反解链
+        （strip 宽二分+1e-9 自洽裁判），只组装零数值。"""
+        dp = design_params(z0_target_ohm=float(z0_ohm))
+        params: dict[str, Any] = dict(dp["params"])
+        f0 = float(TEMPLATE_META["layered_stack"]["f0_ghz"])
+        recipe_draft = {
+            "template": "layered_stack",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [f0 * 0.96, f0 / 0.96],
+                      "points": 401},
+            "objectives": [
+                {"metric": "s11_db", "band": [f0 * 0.98, f0 * 1.02],
+                 "op": "max_below", "value": -20.0},
+            ],
+        }
+        return ModelSynthesisResult(
+            model="layered_stack",
+            goal={"z0_ohm": float(z0_ohm)},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"名义带宽 strip_w={params['strip_w_mm']}mm（50Ω 悬置闭式"
+                "反解单源 design_params；正向复算 |ΔZ0|≤1e-9Ω=#118 独立"
+                "裁判；HFSS 反馈 §2.1 实测 w=0.52→Z0≈50.2 经验锚背书）",
+                "叠层 layers=族常量（§3.4 示例）不入参数表；腔 z0=-h/2"
+                " 对称派生（spec 校验器唯一合法形态）；真机发射留后续批",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="layered_stack",
+        meta=dict(TEMPLATE_META["layered_stack"]),
+        synthesizer=synthesize_layered_stack_model,
+        physics_roles={
+            "strip_w_mm": "impedance_line_width_mm",
+            "line_len_mm": "line_length_mm",
+        },
+        render_script=partial(render_script, "layered_stack"),
+        fake_model=None,
+        hfss_plugin=None,
+    ))
+
+
 def bootstrap_template_specs() -> None:
     """把现有模板 spec 登记进全局注册表（幂等，入口处调用一次）。
 
@@ -2827,6 +2892,9 @@ def bootstrap_template_specs() -> None:
         # TA-13 EBG/FSS 净表注册件（2026-10-08，ms 族段内尾部追加）
         _register_ms_mushroom,
         _register_vi3_filters,
+        # layered_stack（aurora_q Q-X6 批 2，2026-11-07）：晶圆键合叠层+
+        # 空腔族（TEMPLATE_META 75→76 同批；design_params 反解单源综合入口）
+        _register_layered_stack,
     )
     used = {s for s in plan if isinstance(s, str)}
     assert used == set(simple), (

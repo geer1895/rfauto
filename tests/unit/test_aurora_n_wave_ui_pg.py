@@ -17,7 +17,7 @@
 
 红线：零服务端语义变化（只消费既有 3 端点；单键模式逐位保留=源码钉）；
 i18n zh/en 同笔（compare_b/compare_b_none/compare_b_no_metric_tpl/help_5
-四键）；三禁（不 commit/不写 Devlog·TODO/不改 docs）。
+四键）；三禁（不 commit/不写 DEVLOG·TODO/不改 docs）。
 
 变异验证（移除增强必红，开发期逐钉实测记录于 runs/aurora_n/wave_ui_pg/
 MUTATION_LOG.md）：源码钉关键串即增强本体（删除即断言红）；node 行为钉
@@ -320,8 +320,6 @@ class TestModelCardNineKeys:
 
     @pytest.mark.parametrize("kind", list(_CARD_KEYS))
     def test_synthetic_small_sample_fit_smoke(self, kind: str):
-        if kind == "siren":
-            pytest.importorskip("torch", reason="torch extra (rfauto[torch]) 未安装")
         """合成小样本拟合冒烟（键活着旁证）：registry.create 最小 config +
         确定性合成样本 fit + 界中点 predict——8 键全绿（siren 快档 25 epoch）。
         失败即红（卡键对应可实例化模型是出卡面的地基）。"""

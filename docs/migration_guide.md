@@ -3,7 +3,7 @@
 > 场景：E: 是移动硬盘，旧机开发完成后插到新工作机（先装好 Zcode），
 > **在本机它是 F: 盘**；拷贝到新机本地 E: 盘后继续开发。
 > **单工作区原则（用户拍板）**：开发所需的一切（代码+数据+免 license
-> 求解器+缓存）都收进 **一个文件夹 `D:\rf_workspace`**——备份/迁移只
+> 求解器+缓存）都收进 **一个文件夹 `E:\rfauto_workspace`**——备份/迁移只
 > 拷一个夹。openEMS 运行时放进工作区 `vendor\` 子目录（已 gitignore，
 > GPL 二进制永不入库），路径经 `RFAUTO_OPENEMS_BIN` 环境变量注入
 > （configs/solvers.yaml 已改为 `${RFAUTO_OPENEMS_BIN}` 可移植形式，
@@ -11,20 +11,20 @@
 > 仍在工作区**外**的只有商用 EDA（HFSS/ADS/KiCad，用户重装+授权）与
 > ZCode 本体——这是"单文件夹"的物理上限。
 
-## 1. 要拷贝什么（源盘 F:\ → 新机 D:\rf_workspace）
+## 1. 要拷贝什么（源盘 F:\ → 新机 E:\rfauto_workspace）
 
 | # | 源（移动盘上 F:\） | 拷到新机 | 说明 |
 |---|---|---|---|
-| 1 | `D:\rf_workspace` **整个目录** | `D:\rf_workspace` | git 仓库/源码/测试/配方/skills/docs 全在；**排除** `.venv`、`__pycache__`、`.pytest_cache`（重建）。**runs/ 全拷**——仅 0.2GB，含三份不可再生战役数据集（wilkinson ρ=0.845 / branchline ρ=0.909 / 0.3mm 种子）与 runs\audit_freq_scale\ 证据链 |
-| 2 | `F:\openEMS\install` | `D:\rf_workspace\vendor\openEMS\install` | **放进工作区**（方案 B 核心）。自包含 exe/DLL，零 license 中保真求解器；重编译要 vcpkg+VS，几小时级——拷它换几小时 |
-| 3 | `D:\rf_workspace\.venv\Lib\site-packages\` 下的 `CSXCAD`、`openEMS` 两包及同名 .pth/.egg-link | 暂存 `%TEMP%\openems_bindings\` → 新 venv 建好后回填 | **openEMS Python 绑定源码编译进 venv，PyPI 装不回来**——唯一不能"重建"的包 |
-| 4 | `F:\cache`（pip/uv 缓存） | `D:\rf_workspace\.cache`（可选） | 新机装依赖提速；已 gitignore，不拷也行 |
+| 1 | `F:\rfauto_workspace` **整个目录** | `E:\rfauto_workspace` | git 仓库/源码/测试/配方/skills/docs 全在；**排除** `.venv`、`__pycache__`、`.pytest_cache`（重建）。**runs/ 全拷**——仅 0.2GB，含三份不可再生战役数据集（wilkinson ρ=0.845 / branchline ρ=0.909 / 0.3mm 种子）与 runs\audit_freq_scale\ 证据链 |
+| 2 | `F:\openEMS\install` | `E:\rfauto_workspace\vendor\openEMS\install` | **放进工作区**（方案 B 核心）。自包含 exe/DLL，零 license 中保真求解器；重编译要 vcpkg+VS，几小时级——拷它换几小时 |
+| 3 | `F:\rfauto_workspace\.venv\Lib\site-packages\` 下的 `CSXCAD`、`openEMS` 两包及同名 .pth/.egg-link | 暂存 `%TEMP%\openems_bindings\` → 新 venv 建好后回填 | **openEMS Python 绑定源码编译进 venv，PyPI 装不回来**——唯一不能"重建"的包 |
+| 4 | `F:\cache`（pip/uv 缓存） | `E:\rfauto_workspace\.cache`（可选） | 新机装依赖提速；已 gitignore，不拷也行 |
 
 **不拷（新机自行解决，拷目录无效）**：
 - `F:\HFSS`（AEDT 2023.1+2026）、`F:\ADS`（2027）、`F:\KiCad`（10）——
   商用软件官方包重装+换机授权（license 常绑机器，提前找供应商确认）。
   未装好前 fake/openEMS 通道开发不受影响，仅真机档不可用。
-  KiCad 重装到安装盘符路径（如 `<drive>:\KiCad`）同路径（src 里 kicad_drc/pcell 有三处该路径引用）。
+  KiCad 重装到 `E:\KiCad` 同路径（src 里 kicad_drc/pcell 有三处该路径）。
 - ZCode 本体及其 MCP 工具 key（web_reader/zai 等）——新机自行安装配置。
   项目内 `configs/chat_settings.yaml`（LLM key）与
   `configs/settings.local.yaml`（EDA 路径）都在 .gitignore，整目录拷贝
@@ -36,7 +36,7 @@
 
 1. 装 Zcode（自带/安装 uv）→ `uv python install 3.12`。
 2. 插移动硬盘（本机 F:），按 §1 清单 robocopy（§4 提示词可让 Agent 全自动）。
-3. 重建虚拟环境（在 `D:\rf_workspace` 下）：
+3. 重建虚拟环境（在 `E:\rfauto_workspace` 下）：
    ```cmd
    uv venv .venv --python 3.12
    .venv\Scripts\python.exe -m pip install -e .[dev]
@@ -49,11 +49,11 @@
    x64 二进制兼容；运行时 DLL 走 RFAUTO_OPENEMS_BIN 指向的 vendor 目录）。
 5. 设系统环境变量（setx，**单工作区方案 B 的三行**）：
    ```cmd
-   setx RFAUTO_OPENEMS_BIN "D:\rf_workspace\vendor\openEMS\install\bin"
-   setx PIP_CACHE_DIR "D:\rf_workspace\.cache\pip"
-   setx UV_CACHE_DIR "D:\rf_workspace\.cache\uv"
+   setx RFAUTO_OPENEMS_BIN "E:\rfauto_workspace\vendor\openEMS\install\bin"
+   setx PIP_CACHE_DIR "E:\rfauto_workspace\.cache\pip"
+   setx UV_CACHE_DIR "E:\rfauto_workspace\.cache\uv"
    ```
-   （`RFAUTO_AEDT_PATH=<drive>:\HFSS\v231` 等 HFSS 装好后再设。）
+   （`RFAUTO_AEDT_PATH=E:\HFSS\v231` 等 HFSS 装好后再设。）
 6. 重装 HFSS 2023.1 / ADS 2027 / KiCad 10（官方包+授权），核对
    `configs/settings.local.yaml`。
 
@@ -69,40 +69,40 @@
 .venv\Scripts\rfauto.exe ui --port 8643                    :: UI 起得来（含 S参数/成本/报告三页）
 ```
 
-**验收后按项目交接说明继续后续开发**
-（新机内存 ≥5.5GB 可 workers=2，≥4GB 串行）。
+**验收后按 `docs/history/handoffs/handoff_prompt_20260906.md` 继续开发——patch 校准战役
+是当前关键路径**（新机内存 ≥5.5GB 可 workers=2，≥4GB 串行）。
 
 ## 4. 给 Agent 的自动迁移提示词（新机 Zcode 里直接粘贴）
 
 > 你是 rfauto 项目的迁移 Agent。移动硬盘已插好，**在本机上盘符是 F:**
 > （若实际不是 F: 请先告诉我并全部替换再动手）；新机目标 = **单工作区
-> `D:\rf_workspace`**——openEMS 运行时也放进工作区 vendor 子目录（路径
+> `E:\rfauto_workspace`**——openEMS 运行时也放进工作区 vendor 子目录（路径
 > 经 RFAUTO_OPENEMS_BIN 注入，configs/solvers.yaml 已是 ${VAR} 可移植
 > 形式）。拷贝方向与目的地：
-> - `D:\rf_workspace` → `D:\rf_workspace`（排除 .venv/__pycache__/
+> - `F:\rfauto_workspace` → `E:\rfauto_workspace`（排除 .venv/__pycache__/
 >   .pytest_cache）
-> - `F:\openEMS\install` → `D:\rf_workspace\vendor\openEMS\install`
-> - `F:\cache` → `D:\rf_workspace\.cache`（可选）
+> - `F:\openEMS\install` → `E:\rfauto_workspace\vendor\openEMS\install`
+> - `F:\cache` → `E:\rfauto_workspace\.cache`（可选）
 >
 > 步骤（任何一步异常就停下报告，不要自行变通）：
-> 1. `dir F:\` 与 `dir E:\` 确认源/目标：源上应有 工作区、
->    openEMS\install、cache；目标 E: 上若已有 工作区，停下来报告
+> 1. `dir F:\` 与 `dir E:\` 确认源/目标：源上应有 rfauto_workspace、
+>    openEMS\install、cache；目标 E: 上若已有 rfauto_workspace，停下来报告
 >    我，不要覆盖。迁移指南全文在
->    `D:\rf_workspace\docs\migration_guide.md`（拷完即在新机 docs\），
+>    `F:\rfauto_workspace\docs\migration_guide.md`（拷完即在新机 docs\），
 >    先读它再动手。
 > 2. robocopy 三项（/E /XD .venv __pycache__ .pytest_cache /XF *.pyc；
 >    第三项可选），拷完核对源/目标文件数与字节数一致。
-> 3. 暂存 `D:\rf_workspace\.venv\Lib\site-packages\` 下的 `CSXCAD`、
+> 3. 暂存 `F:\rfauto_workspace\.venv\Lib\site-packages\` 下的 `CSXCAD`、
 >    `openEMS` 两包及同名 .pth/.egg-link 到 `%TEMP%\openems_bindings\`。
-> 4. `uv python install 3.12` → 在 `D:\rf_workspace` 下
+> 4. `uv python install 3.12` → 在 `E:\rfauto_workspace` 下
 >    `uv venv .venv --python 3.12` → `pip install -e .[dev]` → 再装
 >    `smt>=2.9` 与 `torch --index-url
 >    https://download.pytorch.org/whl/cpu`（torch 必须 CPU 源）。
 > 5. 回填步骤 3 的绑定包到新 `.venv\Lib\site-packages\`。
 > 6. 设用户级环境变量（setx）：RFAUTO_OPENEMS_BIN=
->    `D:\rf_workspace\vendor\openEMS\install\bin`、
->    PIP_CACHE_DIR=`D:\rf_workspace\.cache\pip`、
->    UV_CACHE_DIR=`D:\rf_workspace\.cache\uv`。
+>    `E:\rfauto_workspace\vendor\openEMS\install\bin`、
+>    PIP_CACHE_DIR=`E:\rfauto_workspace\.cache\pip`、
+>    UV_CACHE_DIR=`E:\rfauto_workspace\.cache\uv`。
 >    （RFAUTO_AEDT_PATH 等 HFSS 装好后再设。）
 > 7. 按 docs/migration_guide.md §3 验收清单逐条执行并汇报：pytest
 >    1059+ 全绿、ruff 0、import-linter 1 kept、openEMS 绑定 import、
@@ -110,16 +110,16 @@
 >    任何一条不过就停下报告，不要跳过。
 > 8. HFSS/ADS/KiCad 重装与 ZCode 的 MCP 工具配置我没有授权你操作，
 >    跳过并在最后提醒我补做。
-> 9. 验收全过后：按项目交接说明继续后续开发
->    （新机内存 ≥5.5GB 可 workers=2）。
+> 9. 验收全过后：读 docs/history/handoffs/handoff_prompt_20260906.md 并按它继续开发
+>    （patch 校准战役是关键路径；新机内存 ≥5.5GB 可 workers=2）。
 >    最后写迁移报告（拷贝量/耗时/验收结果/遗留项）到 runs\ 下。
 
 ## 5. 已知坑
 
-- **盘符/路径硬要求**：项目必须落 `D:\rf_workspace`（单根）。openEMS 已
+- **盘符/路径硬要求**：项目必须落 `E:\rfauto_workspace`（单根）。openEMS 已
   可移植化（走 RFAUTO_OPENEMS_BIN），但 KiCad 源码引用仍是
-  安装盘符路径（如 `<drive>:\KiCad`，重装同路径即闭合）。若该盘符被占用，
-  给别的盘换盘符，
+  `E:\KiCad`（重装同路径即闭合）。若新机 E: 被占用，给别的盘换盘符，
+  不要改项目内路径。
 - **vendor/ 与 .cache/ 永不入库**：openEMS 二进制是 GPL 且体积大，已
   gitignore（2026-09-06 提交）——开源发布前 grep 确认无泄漏。
 - **torch 别裸装**：不带 `--index-url .../whl/cpu` 会拉 CUDA 版。
@@ -141,10 +141,10 @@
    `CSXCAD_INSTALL_PATH`），不是 `RFAUTO_OPENEMS_BIN`——后者只喂
    solvers.yaml 的 exe_path。setx 清单实际需要**四行**：
    ```cmd
-   setx RFAUTO_OPENEMS_BIN "D:\rf_workspace\vendor\openEMS\install\bin"
-   setx OPENEMS_INSTALL_PATH "D:\rf_workspace\vendor\openEMS\install\bin"
-   setx PIP_CACHE_DIR "D:\rf_workspace\.cache\pip"
-   setx UV_CACHE_DIR "D:\rf_workspace\.cache\uv"
+   setx RFAUTO_OPENEMS_BIN "E:\rfauto_workspace\vendor\openEMS\install\bin"
+   setx OPENEMS_INSTALL_PATH "E:\rfauto_workspace\vendor\openEMS\install\bin"
+   setx PIP_CACHE_DIR "E:\rfauto_workspace\.cache\pip"
+   setx UV_CACHE_DIR "E:\rfauto_workspace\.cache\uv"
    ```
 2. **依赖安装清单缺包**（旧 venv 手动装、pyproject 未声明或 extra 未提）：
    `pip install -e ".[dev,openems]"`（openems extra 才有 h5py，绑定
@@ -158,12 +158,12 @@
    解析链：`load_solvers_config()` 展开 `${RFAUTO_OPENEMS_BIN}` 后
    openEMS.exe 存在且指向 vendor 路径（实测过）。
 4. **本机 EDA 实况（2026-09-07）**：AEDT **2025.1** 在
-   AEDT 安装目录（如 `<drive>:\ANSYSINC\ANSYS Inc\v251`，ANSYSEM_ROOT251 自动发现，
+   `C:\Program Files\ANSYS Inc\v251`（ANSYSEM_ROOT251 自动发现，
    RFAUTO_AEDT_PATH 已 setx 钉住）；ADS **2027** 在
-   ADS 安装目录（如 `<drive>:\ADS\ADS27`；settings.local.yaml hpeesof_dir；env RFAUTO_HPEESOF_DIR 优先；license=EEsof FlexNet License Server 服务）。
+   `C:\Program Files\Keysight\ADS2027`（settings.local.yaml hpeesof_dir；2026-09-18 治理：旧口径 E:\ads2026\ADS_2026 / E:\Ads2027 均失效，env RFAUTO_HPEESOF_DIR 优先；license=EEsof FlexNet License Server 服务 27009@localhost，C:\Program Files\Keysight\EEsof_License_Tools）。
    与已测组合（HFSS 2023.1/2026 + ADS 2027）有版本漂移，均 best_effort
    档，真机档跑前先冒烟。KiCad 仍未装（kicad_drc/pcell 通道不可用，
-   装到 `<drive>:\KiCad` 同路径即闭合）。
+   装到 `E:\KiCad` 同路径即闭合）。
 5. **实测体量/耗时**：工作区净荷 2.391G/21553 文件（du 4.9G 是移动盘
    大簇分配虚高）、openEMS install 116.5M/565 文件、cache 13.56G/27212
    文件；USB 读约 85-135MB/s，三项合计约 11 分钟；新 venv（3.12.14，

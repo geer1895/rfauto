@@ -236,6 +236,16 @@ def tune(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """启动优化外环（TPE / NSGA-II / --fidelity auto 多保真）。"""
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
+
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    errs = validate_count_args(
+        {"--max-trials": max_trials, "--n-gen": n_gen, "--pop-size": pop_size})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     if not json_output:
         console.print(f"[cyan]开始优化: {recipe}[/cyan]")
         mode_str = '多保真' if fidelity == 'auto' else ('多目标 NSGA-II' if multi else '单目标 TPE')

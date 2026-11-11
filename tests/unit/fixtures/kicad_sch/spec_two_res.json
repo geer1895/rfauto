@@ -1,0 +1,12 @@
+{
+  "schema": "rfauto-sch-spec-v1",
+  "components": [
+    {"ref": "R1", "value": "10k", "lib_id": "Device:R"},
+    {"ref": "R2", "value": "20k", "lib_id": "Device:R"}
+  ],
+  "nets": [
+    {"name": "VIN", "pins": [{"ref": "R1", "pin": "1"}]},
+    {"name": "MID", "pins": [{"ref": "R1", "pin": "2"}, {"ref": "R2", "pin": "1"}]},
+    {"name": "GND", "pins": [{"ref": "R2", "pin": "2"}]}
+  ]
+}

@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 
-ADS = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
+ADS = os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027")
 os.environ["HPEESOF_DIR"] = ADS
 env = os.environ.copy()
 env["PATH"] = ";".join([os.path.join(ADS, "bin"),
@@ -11,7 +11,7 @@ env["PATH"] = ";".join([os.path.join(ADS, "bin"),
                         os.path.join(ADS, "tools", "python"),
                         env.get("PATH", "")])
 
-BASE = r"E:\rfauto-workspace\scripts\spike_b_ads\p3_d5_out"
+BASE = r"E:\rfauto_workspace\scripts\spike_b_ads\p3_d5_out"
 SRC = os.path.join(BASE, "wilkinson_like.s3p")
 d = os.path.join(BASE, "run3p")
 shutil.rmtree(d, ignore_errors=True)

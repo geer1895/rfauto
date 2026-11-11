@@ -33,20 +33,35 @@
   10-60s / 1-10s 三层计数 + 最慢 top-20 明细）——常驻慢测试从"门总时长
   涨了"变"谁在涨"直接可见。段日志的 durations 表行不含 "N passed"
   形态（_parse_summary 末次匹配语义不受扰，test 钉）。
+- **再生器跨段 prebuild（aurora_m W1-3，2026-10-26）**：docs 再生三消费
+  文件（test_check_docs_drift/test_docs_site/test_kernel_cards，加收口后
+  的 test_w6_d_so_leftovers）在 5 段终门口径下分属 seg1/seg2/seg3/seg5
+  ——session 级夹具缓存（tests/unit/_docs_regen_shared.py，W1-4）只在单
+  进程内有效，跨段各自重建（改前实测 docs_site ×3 + kernel_cards ×2）。
+  本门在**发射段前**构建一次两产物落 ``gate_parts/<name>_regen/``，经
+  env ``RFAUTO_DOCREGEN_FROM`` 传给段进程；夹具检测到该 env 直接消费
+  预构建产物（跳过自身构建）——同树同生成器=与段内自建逐字节等价，
+  测试断言面零变化。``--no-prebuild`` 逃生口恢复段内自建；收集文件集与
+  消费文件无交集时自动跳过（构建省了也是白省）。产物目录在 gate_parts/
+  子目录内（#355：顶层 ``*gate*full*.log`` glob 非递归，不受扰）；每航
+  先清陈旧目录再重建（预构建产物不跨航复用，无陈旧消费面）。
 
 用法（仓根执行）::
     .venv/Scripts/python.exe scripts/wf_gate_full_v2.py \\
         --name wf_gate_full_w3_phase3 [--segments 5]
 产物：runs/<name>.log（聚合，末行 TOTAL，顶层唯一权威数字源）+
 gate_parts/<name>.seg<i>.log/.xml + gate_parts/<name>.retry.log/.xml
-（仅 rc≠0 时）。退出码=聚合判定。
+（仅 rc≠0 时）+ gate_parts/<name>_regen/（prebuild 产物，缺省开）。
+退出码=聚合判定。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -74,8 +89,64 @@ _FAILED_LINE_RE = re.compile(r"^FAILED (\S+)", re.MULTILINE)
 # durations 表行（实测形态：``0.30s call     tests/unit/test_x.py::test_y``；
 # ms/s 双单位皆容）。行不含 " in "/"N passed" 形态——_parse_summary 末次
 # 匹配语义与 check_numbers 数字源均不受扰（tests 钉）。
+# nodeid 捕获用 (.+?) 非贪婪收全行（aurora_m W0-1 席实证：(\S+) 丢弃
+# 参数化 id 含空格的行，单轮 22 条；含空格 id 照收，尾随空白归正则）。
 _DUR_LINE_RE = re.compile(
-    r"^\s*([\d.]+)(ms|s)\s+(setup|call|teardown)\s+(\S+)\s*$", re.MULTILINE)
+    r"^\s*([\d.]+)(ms|s)\s+(setup|call|teardown)\s+(.+?)\s*$", re.MULTILINE)
+
+# ── 再生器跨段 prebuild（aurora_m W1-3）───────────────────────────────────
+#: 段进程消费预构建产物的环境变量名（消费者=tests/unit/_docs_regen_shared.py
+#: 夹具，单源见其 REGEN_FROM_ENV——两处字面量必须一致，test 钉）。
+REGEN_FROM_ENV = "RFAUTO_DOCREGEN_FROM"
+#: 消费共享再生夹具/直建 build_all 的测试文件（与 tests/unit 收集路径同形）。
+#: 收集文件集与它无交集 → prebuild 自动跳过。
+_REGEN_CONSUMER_FILES = (
+    "tests/unit/test_docs_site.py",
+    "tests/unit/test_check_docs_drift.py",
+    "tests/unit/test_kernel_cards.py",
+    "tests/unit/test_w6_d_so_leftovers.py",
+)
+
+
+def _load_regen_module(tag: str, script_name: str):
+    """按文件路径装载再生器脚本（_docs_regen_shared._load_module 同款——
+    build_docs_pages 含 @dataclass，须先注册 sys.modules 再 exec）。"""
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / script_name
+    spec = importlib.util.spec_from_file_location(tag, path)
+    if spec is None or spec.loader is None:  # pragma: no cover - 防御
+        raise RuntimeError(f"无法装载 {path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[tag] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _write_regen_manifest(dest: Path, key: str, manifest) -> None:
+    """manifest 原子落盘（与 _docs_regen_shared._atomic_shared_dir 同 JSON
+    形态：ensure_ascii=False + sort_keys；消费者只按值消费，格式不敏感）。"""
+    tmp = dest / f"{key}.manifest.json.{os.getpid()}.tmp"
+    tmp.write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True),
+        encoding="utf-8")
+    os.replace(tmp, dest / f"{key}.manifest.json")
+
+
+def prebuild_regen(dest: Path) -> None:
+    """构建一次 docs_site + kernel_cards 产物落 dest（W1-3 跨段收敛）。
+
+    与 tests/unit/_docs_regen_shared.py 夹具同一对生成器入口（build_all /
+    build）+ 同 manifest 形态——同树同生成器=与段内自建逐字节等价，测试
+    断言面零变化。构建失败直接抛（门在发射段前崩溃=失败前移，不烧 50min
+    段跑；漂移类红本就该红，只是从 seg2 提前到门启动）。"""
+    bdp = _load_regen_module("_gate_prebuild_bdp", "build_docs_pages.py")
+    bkc = _load_regen_module("_gate_prebuild_bkc", "build_kernel_cards.py")
+    dest.mkdir(parents=True, exist_ok=True)
+    docs_manifest = bdp.build_all(dest / "docs_site")
+    _write_regen_manifest(dest, "docs_site", docs_manifest)
+    kc_manifest = {"written": bkc.build(dest / "kernel_cards")}
+    _write_regen_manifest(dest, "kernel_cards", kc_manifest)
 
 
 def _parse_durations(text: str) -> dict[str, float]:
@@ -173,13 +244,22 @@ def _slow_mode_args() -> list[str]:
     return []
 
 
-def _run_segment(files: list[str], log_path: Path, xml_path: Path) -> dict:
+def _run_segment(files: list[str], log_path: Path, xml_path: Path,
+                 durations_top: int = DURATIONS_TOP,
+                 env_extra: dict[str, str] | None = None) -> dict:
     cmd = [PY, "-m", "pytest", *files, "-q", "--tb=line",
-           "-p", "no:cacheprovider", f"--durations={DURATIONS_TOP}",
+           "-p", "no:cacheprovider", f"--durations={durations_top}",
            f"--junitxml={xml_path}", *_slow_mode_args()]
+    env = os.environ.copy()
+    # OPENBLAS_NUM_THREADS=1 与并行门对等（aurora_p H1 P1-1，#258 家族：
+    # svgp n5000 墙钟钉 16 线程 62s FAIL vs 1 线程 1.97s——串行门不钉则
+    # 小矩阵批量 solve 反被 BLAS 多线程拖慢，终门必红且重试仍红）。
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    if env_extra:
+        env.update(env_extra)  # W1-3：RFAUTO_DOCREGEN_FROM 传段进程
     with open(log_path, "w", encoding="utf-8", errors="replace") as fh:
         proc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
-                              cwd=str(REPO_ROOT))
+                              cwd=str(REPO_ROOT), env=env)
     text = log_path.read_text(encoding="utf-8", errors="replace")
     p, f, s = _parse_summary(text)
     failed_ids = _FAILED_LINE_RE.findall(text)
@@ -193,6 +273,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--name", required=True,
                     help="聚合日志名（如 wf_gate_full_w3_phase3；.log 自动加）")
     ap.add_argument("--segments", type=int, default=5)
+    ap.add_argument("--durations-top", type=int, default=DURATIONS_TOP,
+                    help="每段 --durations 取最慢前 N（0=全量画像，W0-1 "
+                         "durations manifest 数据源；正常门保持缺省 20）")
+    ap.add_argument("--no-prebuild", action="store_true",
+                    help="W1-3 逃生口：关闭再生器跨段 prebuild，恢复段内"
+                         "自建（docs_site ×3/kernel_cards ×2 旧口径）")
+    ap.add_argument("--collect-from", type=str, default=None,
+                    help="实验/小门口径：从文本文件读收集清单（每行一个 "
+                         "tests/ 路径）；缺省仍全量收集 tests/unit（终门"
+                         "口径不变）")
     args = ap.parse_args(argv)
 
     out_log = RUNS / f"{args.name}.log"
@@ -201,7 +291,15 @@ def main(argv: list[str] | None = None) -> int:
     parts.mkdir(exist_ok=True)
     t0 = time.monotonic()
 
-    files = _collect_files()
+    if args.collect_from:
+        files = sorted({
+            ln.strip()
+            for ln in Path(args.collect_from).read_text(encoding="utf-8")
+            .splitlines() if ln.strip()})
+        if not files:
+            raise RuntimeError(f"--collect-from 空清单: {args.collect_from}")
+    else:
+        files = _collect_files()
     n_seg = max(1, args.segments)
     size, rem = divmod(len(files), n_seg)
     chunks = []
@@ -213,11 +311,38 @@ def main(argv: list[str] | None = None) -> int:
         start = end
 
     slow_mode = os.environ.get("RFAUTO_GATE_SLOW_MODE", "").strip().lower()
+    # 再生器跨段 prebuild（W1-3）：收集集含消费文件且未 --no-prebuild 才做；
+    # 陈旧 regen 目录先清（预构建产物不跨航复用）。构建失败=异常直抛（门
+    # 在发射段前崩溃，不烧段跑；漂移类红本就该红，只是提前到门启动）。
+    regen_env_extra: dict[str, str] | None = None
+    has_consumers = any(f in _REGEN_CONSUMER_FILES for f in files)
+    if args.no_prebuild:
+        lines_skip = "# regen prebuild skip（--no-prebuild 逃生口）：段内自建"
+        print(lines_skip, flush=True)
+    elif not has_consumers:
+        lines_skip = "# regen prebuild skip（收集集无再生消费文件）"
+        print(lines_skip, flush=True)
+    else:
+        regen_dir = parts / f"{args.name}_regen"
+        if regen_dir.is_dir():
+            shutil.rmtree(regen_dir)
+        prebuild_regen(regen_dir)
+        regen_env_extra = {REGEN_FROM_ENV: str(regen_dir)}
+        pre_line = (f"# regen prebuild -> {parts.name}/{regen_dir.name} "
+                    f"（{REGEN_FROM_ENV} 传段；docs_site/kernel_cards 全门"
+                    "构建收敛 ≤1）")
+        print(pre_line, flush=True)
     lines: list[str] = [
         f"GATE_START v2 segments={len(chunks)} files={len(files)}"
         + (f" slow_mode={slow_mode}" if slow_mode in ("day", "night") else ""),
         "# 分段独立进程串行（内存随进程退出归还；#122 红线见脚本 docstring）",
     ]
+    if args.no_prebuild:
+        lines.append("# regen prebuild skip（--no-prebuild 逃生口）：段内自建")
+    elif not has_consumers:
+        lines.append("# regen prebuild skip（收集集无再生消费文件）")
+    else:
+        lines.append(pre_line)
     total_p = total_f = total_s = 0
     all_failed: list[str] = []
     seg_broken: list[str] = []
@@ -225,7 +350,8 @@ def main(argv: list[str] | None = None) -> int:
     for i, chunk in enumerate(chunks, 1):
         seg_log = parts / f"{args.name}.seg{i}.log"
         seg_xml = parts / f"{args.name}.seg{i}.xml"
-        res = _run_segment(chunk, seg_log, seg_xml)
+        res = _run_segment(chunk, seg_log, seg_xml, args.durations_top,
+                           env_extra=regen_env_extra)
         seg_results.append(res)
         total_p += res["passed"]
         total_f += res["failed"]
@@ -260,7 +386,8 @@ def main(argv: list[str] | None = None) -> int:
         unique_failed = sorted(set(all_failed))
         retry_log = parts / f"{args.name}.retry.log"
         res = _run_segment(unique_failed, retry_log,
-                           parts / f"{args.name}.retry.xml")
+                           parts / f"{args.name}.retry.xml",
+                           args.durations_top, env_extra=regen_env_extra)
         retried_green = res["passed"]
         still_failed = res["failed_ids"]
         # 门完整性（2026-10-07）：重跑进程本身失败（rc≠0）且解析不出任何
@@ -294,7 +421,7 @@ def main(argv: list[str] | None = None) -> int:
         for nid, sec in (res.get("durations") or {}).items():
             if sec > merged_durations.get(nid, 0.0):
                 merged_durations[nid] = sec
-    lines.extend(durations_tier_lines(merged_durations))
+    lines.extend(durations_tier_lines(merged_durations, top=args.durations_top))
     lines.append(
         f"====== TOTAL: {total_p} passed, {len(still_failed)} failed, "
         f"{total_s} skipped（重跑定性后口径；retried_green={retried_green}）======")

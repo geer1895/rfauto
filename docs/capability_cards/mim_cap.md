@@ -65,7 +65,7 @@
 - 参数语义：w_um/l_um=上极板叠合区宽/长（μm，C 的 A=w·l），d_um=介质厚（μm， SiNx 0.2μm 典型档），bot_overhang_um=下极板四周外伸（μm，抑制边缘场 集中），port_um=端口盒 x/y 跨距（μm，≥2 格 #283），h_mm=基板厚 （仓内基板惯例 mm，GaAs 100μm 档）；er_diel/tand_diel=介质 εr/损耗 （SiNx）；er/tan_d 走 substrate/nominal（GaAs）——W/L/D 全 μm 为 IPD 工艺口径，经 core.stackup.to_mm(v,'um') 单源换算（μm 帮手函数）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(port,d)（μm 尺度 几何驱动网格——base 取最细 x/y 特征端口盒，#266 守卫 NEAR=base/4 ≤ port/3；禁 λ_sub/50 口径）；极板缘/端口盒边+中线精确入网（#198）； 介质薄层 z 向三线（H、H+d/2、H+d）显式入网——端口激励体积 ≥2 格 （#283），#152 去重阈值 z 轴降为 d/4（全局 1µm 阈值吞介质线——薄层 适配）；min z-cell=d/2 → dt≈d/2c（薄介质 FDTD 物理成本，真机预算留 登记）
 - 冒烟现状：未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记 （C/SRF 低频回收对拍待真机批，本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

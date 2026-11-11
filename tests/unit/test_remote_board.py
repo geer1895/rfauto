@@ -42,7 +42,7 @@ _PROBED_AT = 1700000000.0  # fake 时间戳：透传原值钉（board 零新造�
 
 def _fake_probe_env() -> dict:
     return {"ok": True, "machines": [{
-        "name": "sim_server", "host": _HOST, "reachable": True,
+        "name": "lab_server", "host": _HOST, "reachable": True,
         "probe_s": 0.01,
         "ports": {"rdp": {"port": 3389, "open": True, "latency_ms": 1.5}},
     }]}
@@ -50,7 +50,7 @@ def _fake_probe_env() -> dict:
 
 def _fake_status_env() -> dict:
     return {"ok": True, "machines": [{
-        "name": "sim_server", "host": _HOST, "reachable": True,
+        "name": "lab_server", "host": _HOST, "reachable": True,
         "probe_s": 0.01,
         "ports": {"rdp": {"port": 3389, "open": True, "latency_ms": 1.5}},
         "ssh": {"auth": "ok", "rc": 0},
@@ -77,7 +77,7 @@ def _fake_queue_env() -> dict:
         "write_lock": {"owner": None, "queue_length": 0},
         "seat_occupancy": {"solver:hfss": ["job_a"]},
         "remote": {
-            "machine": "sim_server", "state": "ok", "reason": None,
+            "machine": "lab_server", "state": "ok", "reason": None,
             "reachable": True,
             "ports": {"rdp": {"open": True, "latency_ms": 1.5}},
             "ssh": {"auth": "registered"},
@@ -136,7 +136,7 @@ def test_board_snapshot_aggregates_four_sources(
 ):
     """四源 fake 注入：机器行透传/队列行透传/本机互斥/零降级逐键钉。"""
     _install_fakes(monkeypatch)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     assert next(iter(snap)) == "ok" and snap["ok"] is True
     # 机器行=queue 源 remote 子面透传（含 probed_at 原值——零新造时间戳）
     assert snap["machines"] == [_fake_queue_env()["remote"]]
@@ -184,7 +184,7 @@ def test_unknown_machine_error_envelope(monkeypatch: pytest.MonkeyPatch):
     """未登记机器名（RemoteConfigError）→ error 信封（既有叶同语义）。"""
 
     def _raise(_m):
-        raise RemoteConfigError("远程机器 'ghost' 未登记（可用：sim_server）")
+        raise RemoteConfigError("远程机器 'ghost' 未登记（可用：lab_server）")
 
     _install_fakes(monkeypatch, probe=_raise, status=_raise, queue=_raise,
                    mutex=_raise)
@@ -205,11 +205,11 @@ def test_single_source_failure_degrades_not_blocks(
         raise ConnectionError("net down")
 
     _install_fakes(monkeypatch, probe=_boom)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     assert snap["ok"] is True, "单源失败不翻 ok（#105 观测面）"
     assert [d["source"] for d in snap["degradations"]] == ["probe"]
     assert "ConnectionError" in snap["degradations"][0]["reason"]
-    assert snap["machines"] and snap["machines"][0]["machine"] == "sim_server"
+    assert snap["machines"] and snap["machines"][0]["machine"] == "lab_server"
     assert snap["counts"]["n_jobs"] == 2
 
 
@@ -237,11 +237,11 @@ def test_queue_fallback_row_from_probe_status(monkeypatch: pytest.MonkeyPatch):
         raise RuntimeError("registry gone")
 
     _install_fakes(monkeypatch, queue=_boom)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     assert snap["ok"] is True
     assert snap["machines"], "回落组装仍出机器行"
     row = snap["machines"][0]
-    assert row["machine"] == "sim_server"
+    assert row["machine"] == "lab_server"
     assert row["reachable"] is True
     assert "host" not in row, "回落路径同样零主机名"
     assert row["ssh"] == {"auth": "ok", "rc": 0}
@@ -266,7 +266,7 @@ def test_remote_subface_unknown_degradation_rows(
     qenv["remote"]["state"] = "unknown"
     qenv["remote"]["reason"] = "机器不可达（TCP 探活不通）"
     _install_fakes(monkeypatch, queue=lambda m: qenv)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     faces = {(d["source"], d["face"]) for d in snap["degradations"]}
     assert ("queue", "remote.openems") in faces
     assert ("queue", "remote.disk") in faces
@@ -280,7 +280,7 @@ def test_status_ssh_failed_degradation_row(monkeypatch: pytest.MonkeyPatch):
     senv = _fake_status_env()
     senv["machines"][0]["ssh"] = {"auth": "failed", "error": "TimeoutError"}
     _install_fakes(monkeypatch, status=lambda m: senv)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     assert any(d["source"] == "status" and d["face"] == "ssh"
                and "TimeoutError" in d["reason"]
                for d in snap["degradations"])
@@ -292,7 +292,7 @@ def test_local_mutex_unknown_degradation_row(monkeypatch: pytest.MonkeyPatch):
                         "reason": "本机 python 进程枚举失败/超时"},
             "hfss": _face_ok(busy=False, n=0)}
     _install_fakes(monkeypatch, mutex=lambda m: menv)
-    snap = rbs.board_snapshot("sim_server")
+    snap = rbs.board_snapshot("lab_server")
     assert any(d["source"] == "mutex" and d["face"] == "local.openems"
                for d in snap["degradations"])
     assert snap["local_mutex"]["openems"]["state"] == "unknown"
@@ -304,9 +304,9 @@ def test_local_mutex_unknown_degradation_row(monkeypatch: pytest.MonkeyPatch):
 def test_snapshot_deterministic_two_runs(monkeypatch: pytest.MonkeyPatch):
     """同 fake 注入两跑：快照逐字节相等；时间戳=源原值（board 零新造）。"""
     _install_fakes(monkeypatch)
-    a = json.dumps(rbs.board_snapshot("sim_server"), ensure_ascii=False,
+    a = json.dumps(rbs.board_snapshot("lab_server"), ensure_ascii=False,
                    sort_keys=False)
-    b = json.dumps(rbs.board_snapshot("sim_server"), ensure_ascii=False,
+    b = json.dumps(rbs.board_snapshot("lab_server"), ensure_ascii=False,
                    sort_keys=False)
     assert a == b, "同 fake 数据快照必须逐字节相等（确定性红线）"
     assert str(_PROBED_AT) in a
@@ -327,7 +327,7 @@ def test_cli_one_shot_json_service_parity_zero_write(
     assert threading.active_count() == threads_before
     assert list(tmp_path.rglob("*")) == [], "缺省一次性零文件写（看板零落盘）"
     cli_env = _first_json(r.output)
-    direct = rbs.board_snapshot("sim_server")
+    direct = rbs.board_snapshot("lab_server")
     assert cli_env == direct, "缺省一次性动作必须逐字节同 service 直调语义"
 
 
@@ -338,7 +338,7 @@ def test_cli_one_shot_human_board(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     r = _invoke()
     assert r.exit_code == 0, r.output[:400]
     assert "队列看板" in r.output
-    assert "sim_server" in r.output
+    assert "lab_server" in r.output
     assert "任务队列" in r.output
     assert "互斥态" in r.output
 
@@ -375,7 +375,7 @@ def test_cli_json_out_without_json_flag(tmp_path: Path,
     assert r.exit_code == 0, r.output[:400]
     assert "队列看板" in r.output, "无 --json 仍走人读渲染"
     snap = json.loads(out.read_text(encoding="utf-8"))
-    assert snap == rbs.board_snapshot("sim_server"), "落盘与 service 直调同构"
+    assert snap == rbs.board_snapshot("lab_server"), "落盘与 service 直调同构"
 
 
 def test_cli_refresh_error_envelope_stops_loop(

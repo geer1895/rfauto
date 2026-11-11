@@ -5,16 +5,27 @@
 与端口，生成 rfauto 配方草稿（hfss_var_map + 参数范围），供 UI 展示与
 agent 提案-审批链路继续调优。
 
-PyAEDT 为可选依赖（延迟 import，缺失时报可读错误，#105 best-effort 原则）。
+PyAEDT 为可选依赖（延迟 import，缺失时报可读错误并带安装指引（T-Q17④），
+#105 best-effort 原则）。
+
+T-Q17（aurora_q，2026-11-04）AEDT 导入兼容三修：
+② 版本切换丢路径——ANSYSEM_ROOT 剪枝改"先验证后删除+快照恢复"（见
+   ``_prune_ansysem_env``）；
+③ COM 回退通道——gRPC 连接类失败自动以 ``use_grpc_api=False`` 重试一次
+   （见 ``_launch_hfss_with_com_fallback``），缺省 gRPC 路径零变化；
+④ 缺装优雅降级——``import ansys.aedt.core`` 失败转抛带
+   ``pip install -e ".[hfss]"`` 指引的 :class:`HfssDependencyMissing`。
 """
 
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import logging
 import os
 import re
 import shutil
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -26,6 +37,139 @@ from typing import Any
 from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
 
 logger = logging.getLogger(__name__)
+
+
+class HfssDependencyMissing(ImportError):
+    """PyAEDT 可选依赖缺失（T-Q17④）：缺装时携带安装指引，不裸抛
+    ``No module named 'ansys'``（外部用户按公开 README 克隆安装后默认无
+    [hfss] extra 的实证面）。"""
+
+
+_PYAEDT_INSTALL_GUIDE = (
+    "未检测到 PyAEDT（HFSS 导入依赖缺失: {detail}）。修复：在项目根执行 "
+    'pip install -e ".[hfss]" 安装 HFSS 依赖组（含 pyaedt），或单独安装 '
+    'pip install "pyaedt>=1.9.0,<2"；版本兼容矩阵见 README「快速开始 → '
+    '接真机 HFSS」。'
+)
+
+
+def _import_hfss_cls():
+    """``ansys.aedt.core`` 延迟导入单源（T-Q17④）：缺装（ModuleNotFoundError）
+    转抛带指引的 :class:`HfssDependencyMissing`，原始模块名保留在消息与
+    ``__cause__``。所有 Hfss 类取用点（本地/远程/COM 重试）统一走本函数。"""
+    try:
+        from ansys.aedt.core import Hfss
+    except ModuleNotFoundError as exc:
+        raise HfssDependencyMissing(
+            _PYAEDT_INSTALL_GUIDE.format(detail=exc)) from exc
+    return Hfss
+
+
+class HfssComFallbackError(RuntimeError):
+    """gRPC 与 COM 双通道均启动失败（T-Q17③）：错误携带两次尝试的诊断。"""
+
+
+# T-Q17③ COM 回退通道进程态：gRPC 连接类失败 → use_grpc_api=False 重试一次；
+# 回退翻转记入本表，由 :func:`_restore_com_fallback_state` 在会话释放后恢复。
+# 不能在 COM 会话存活期把全局设置翻回——settings.use_grpc_api 有运行期读点
+# （pyaedt desktop.py ``odesktop`` 属性按它分流），中途翻转会让 COM 会话的
+# odesktop 访问误走 gRPC 分支。非重入：导入链单会话串行（UI 工作线程同款）。
+_COM_FALLBACK_STATE: dict[str, Any] = {"active": False, "previous": None}
+
+# 连接类异常分类 token（类型名/消息 lowercase 包含即判连接类）。两实锚：
+# pyaedt GrpcApiError("Failed to connect to Desktop Session")
+# （internal/grpc_plugin_dll_class.py:359）与 Desktop.__init__
+# "Failed to connect to AEDT via gRPC."（desktop.py，__init_grpc 失败分支）。
+_GRPC_CONN_TOKENS = ("grpc", "connect", "timeout", "timed out", "channel",
+                     "wnua")
+
+
+def _is_grpc_connection_error(exc: BaseException) -> bool:
+    """gRPC 启动连接类异常判定（T-Q17③）：按类型名/消息 token 分类，不硬
+    依赖 pyaedt 异常类（缺装/旧版本形态差时判定仍可用）。"""
+    name = type(exc).__name__.lower()
+    msg = str(exc).lower()
+    return (any(t in name for t in _GRPC_CONN_TOKENS)
+            or any(t in msg for t in _GRPC_CONN_TOKENS))
+
+
+def _com_channel_available() -> bool:
+    """COM 回退可达性（T-Q17③）：COM 仅在 Windows + pythonnet 可用时可达
+    ——pyaedt check_starting_mode 在 pythonnet 未装时无视 use_grpc_api=False
+    仍强制 grpc（desktop.py ``"pythonnet" not in modules`` 分支），此时回退
+    重试必然空转，直接跳过并原样抛出 gRPC 错误。"""
+    if sys.platform != "win32":
+        return False
+    try:
+        return importlib.util.find_spec("pythonnet") is not None
+    except (ImportError, ValueError):  # 畸形包名/损坏 dist-info 时 find_spec 抛
+        return False
+
+
+def _restore_com_fallback_state() -> None:
+    """恢复 COM 回退翻转的全局 ``settings.use_grpc_api``（T-Q17③）。
+
+    会话释放后调用（import_project_spec / import_project_spec_readonly 的
+    finally 或 COM 构造失败分支）；未翻转时零操作。缺省 gRPC 路径从不进入
+    本态，逐字节不变。"""
+    if not _COM_FALLBACK_STATE["active"]:
+        return
+    from ansys.aedt.core.generic.settings import settings as aedt_settings
+
+    aedt_settings.use_grpc_api = _COM_FALLBACK_STATE["previous"]
+    _COM_FALLBACK_STATE.update(active=False, previous=None)
+    logger.info("COM 回退通道全局设置已恢复（use_grpc_api=%r）",
+                aedt_settings.use_grpc_api)
+
+
+def _open_hfss_com(**kwargs):
+    """COM 通道构造（T-Q17③）：``Settings.use_grpc_api=False`` + 重试一次。
+
+    pyaedt 1.9.0 的 TransportMode 枚举全 gRPC 系（INSECURE/UDS/MTLS/WNUA，
+    无 COM 成员），COM 通道唯一正规入口=全局 settings.use_grpc_api=False
+    （settings.py ALLOWED 表；Desktop.__init__ 无 transport 参数）。
+    翻转前记快照、失败即恢复；成功态由调用方会话 finally 恢复。"""
+    from ansys.aedt.core.generic.settings import settings as aedt_settings
+
+    if aedt_settings.use_grpc_api is False:
+        # 已处 COM 语义（调用方显式设置）——不重复翻转，直接构造
+        return _import_hfss_cls()(**kwargs)
+    _COM_FALLBACK_STATE["previous"] = aedt_settings.use_grpc_api
+    _COM_FALLBACK_STATE["active"] = True
+    aedt_settings.use_grpc_api = False
+    logger.info("COM 回退通道启用（use_grpc_api=False，T-Q17③）")
+    try:
+        return _import_hfss_cls()(**kwargs)
+    except Exception:
+        _restore_com_fallback_state()
+        raise
+
+
+def _launch_hfss_with_com_fallback(**kwargs):
+    """本地 Hfss 构造单源（T-Q17③）：缺省 gRPC 路径逐字节不变（kwargs 原样
+    透传给 Hfss）；连接类失败且 COM 可达时回退 COM 重试一次。远程分支不经
+    本函数（machine/port 只在 gRPC 通道有意义，COM 无远程语义）。"""
+    Hfss = _import_hfss_cls()  # ④ 缺装在此统一报指引（先于回退判定）
+    try:
+        return Hfss(**kwargs)
+    except Exception as exc:
+        try:
+            from ansys.aedt.core.generic.settings import settings as aedt_settings
+            already_com = aedt_settings.use_grpc_api is False
+        except Exception:  # 设置面不可读时不判定（#105：不遮蔽原始错误）
+            already_com = False
+        if already_com or not _is_grpc_connection_error(exc) \
+                or not _com_channel_available():
+            raise
+        logger.warning("gRPC 启动失败（%s: %s）——尝试 COM 回退通道（T-Q17③）",
+                       type(exc).__name__, exc)
+        try:
+            return _open_hfss_com(**kwargs)
+        except Exception as com_exc:
+            raise HfssComFallbackError(
+                "gRPC 与 COM 通道均启动失败：gRPC: "
+                f"{type(exc).__name__}: {exc}；COM: "
+                f"{type(com_exc).__name__}: {com_exc}") from com_exc
 
 
 def _remote_session_info(remote_machine: str | None,
@@ -78,13 +222,16 @@ def _open_hfss(project_path: str, design_name: str | None, version: str,
     remote_info 给定时走远程分支（多机协同 v0）：Hfss 透传
     machine=/port=（hfss_session/hfss_adapter 同款），构造窗口包
     remote_session_switches 四开关（远程必须走 TCP，缺省 WNUA 是本机
-    通道）；remote_rpc_session 在 Hfss 构造前置 None（Devlog 五百四十二
+    通道）；remote_rpc_session 在 Hfss 构造前置 None（DEVLOG 五百四十二
     坑 1 双语义）。project 路径按服务器侧文件系统解释（调用方负责不传
-    本地临时路径）。
-    """
-    from ansys.aedt.core import Hfss
+    本地临时路径）。远程分支**不回退 COM**——machine/port 只在 gRPC 通道
+    有意义，COM 无远程语义（T-Q17③）。
 
+    本地分支走 COM 回退通道（T-Q17③）：缺省 gRPC 路径逐字节不变，仅
+    gRPC 连接类失败时以 use_grpc_api=False 重试一次。
+    """
     if remote_info:
+        Hfss = _import_hfss_cls()
         from ansys.aedt.core.generic.settings import settings as aedt_settings
 
         from rfauto.adapters.hfss_session import remote_session_switches
@@ -100,7 +247,7 @@ def _open_hfss(project_path: str, design_name: str | None, version: str,
                 machine=remote_info["machine"],
                 port=remote_info["port"],
             )
-    return Hfss(
+    return _launch_hfss_with_com_fallback(
         project=project_path,
         design=design_name,
         version=version,
@@ -231,16 +378,44 @@ def _read_parametrics(hfss: Any) -> dict[str, dict[str, str]]:
     return ranges
 
 
-def _prune_ansysem_env(version: str) -> None:
+def _prune_ansysem_env(version: str) -> dict[str, str]:
     """多版本 ANSYSEM_ROOTxxx 并存会使 PyAEDT 混淆（issue #7410）——只保留
-    与目标版本匹配的环境变量（"2025.1"→ROOT251，"2023.1"→ROOT231）。"""
+    与目标版本匹配的环境变量（"2025.1"→ROOT251，"2023.1"→ROOT231）。
+
+    T-Q17② 先验证后删除：目标版本的环境变量不在当前进程环境时**零删除**——
+    旧行为会把既有注册路径删光且不恢复（外部用户 2022 R2 实证：UI 缺省
+    2025.1 与实装版本不一致时，唯一有效路径被剪掉，PyAEDT 无路径可用）。
+
+    Returns
+    -------
+    dict
+        被移除变量的快照 {名: 值}，供 :func:`_restore_ansysem_env` 在会话
+        结束/打开失败时恢复（剪枝是会话作用域，不永久改写进程环境）。
+    """
     digits = version.split(".")
     want = ("ANSYSEM_ROOT" + digits[0][-2:] + digits[1] if len(digits) >= 2
             else "ANSYSEM_ROOT" + version[-3:])
+    if want not in os.environ:
+        logger.warning(
+            "目标版本环境变量 %s 不在当前进程环境——跳过 ANSYSEM_ROOT 剪枝"
+            "（保留既有注册路径，T-Q17②）", want)
+        return {}
+    removed: dict[str, str] = {}
     for k in list(os.environ):
         if k.startswith("ANSYSEM_ROOT") and k != want:
             logger.info("移除冲突环境变量 %s（目标 %s）", k, want)
+            removed[k] = os.environ[k]
             del os.environ[k]
+    return removed
+
+
+def _restore_ansysem_env(removed: dict[str, str]) -> None:
+    """恢复 :func:`_prune_ansysem_env` 移除的环境变量（T-Q17② 恢复语义）。
+
+    会话结束或打开失败即回位：版本切换失败不丢既有注册路径；同进程先后
+    两个版本导入互不吞路径。空快照零操作。"""
+    for k, v in removed.items():
+        os.environ[k] = v
 
 
 def import_project_spec(
@@ -281,11 +456,15 @@ def import_project_spec(
             return {"ok": False, "error":
                     f"工程被锁定（{project_path}.lock 存在）：先关闭占用它的 AEDT"
                     " 会话；若是残留锁可手动删除该 .lock 目录"}
-    _prune_ansysem_env(version)
+    removed_env = _prune_ansysem_env(version)
     try:
         hfss = _open_hfss(project_path, design_name, version, non_graphical,
                           remote_info=remote_info)
     except Exception as exc:
+        # T-Q17②：打开失败即恢复被剪枝的既有注册路径（版本切换失败不丢路径）
+        _restore_ansysem_env(removed_env)
+        if isinstance(exc, HfssDependencyMissing):
+            return {"ok": False, "error": str(exc)}  # ④ 缺装指引信封
         return {"ok": False, "error": f"打开 HFSS 工程失败: {exc}"}
 
     try:
@@ -308,6 +487,11 @@ def import_project_spec(
         # 统一走本文件单源三级回退（release_desktop → close_desktop → release），
         # 绝不保存工程。
         _release_hfss(hfss)
+        # T-Q17②：剪枝限定会话作用域——释放即恢复，进程环境零遗留（同进程
+        # 先后两个版本导入互不吞路径）；T-Q17③：COM 回退态同点恢复（运行期
+        # 读点随会话存活，不能中途翻回全局 use_grpc_api）。
+        _restore_ansysem_env(removed_env)
+        _restore_com_fallback_state()
 
 
 def spec_to_recipe_draft(spec: dict[str, Any], *, model_name: str = "custom_hfss",
@@ -445,14 +629,15 @@ def _open_hfss_readonly(project_path: str, design_name: str | None, version: str
     remote_info 给定时走远程分支：透传 machine=/port=（hfss_session 同款
     四开关构造窗口），project 路径按服务器侧文件系统解释——调用方须传
     服务器侧路径（本地临时副本路径在服务器上无意义，远程模式调用方跳过
-    本地复制）。
-    """
-    from ansys.aedt.core import Hfss
+    本地复制）。远程分支**不回退 COM**（T-Q17③，同 _open_hfss 口径）。
 
+    本地分支走 COM 回退通道（T-Q17③）：缺省 gRPC 路径逐字节不变。
+    """
     # 真机实证（2026-09-12）：不要开 settings.use_multi_desktop——开了之后
     # variable_manager 读回 0 个变量（design 能开、变量全丢）；默认路径实测
     # 稳定读回 35 个变量。安全性由"只打开副本"保证，不靠会话隔离。
     if remote_info:
+        Hfss = _import_hfss_cls()
         from ansys.aedt.core.generic.settings import settings as aedt_settings
 
         from rfauto.adapters.hfss_session import remote_session_switches
@@ -470,7 +655,7 @@ def _open_hfss_readonly(project_path: str, design_name: str | None, version: str
                 machine=remote_info["machine"],
                 port=remote_info["port"],
             )
-    return Hfss(
+    return _launch_hfss_with_com_fallback(
         project=project_path,
         design=design_name,
         version=version,
@@ -532,7 +717,8 @@ def import_project_spec_readonly(
     1. 打开的是临时目录里的**副本**——任何意外保存都落在副本，原件不动；
     2. 源目录的 .lock 不影响读取（副本不带锁）；
     3. 独立 new_desktop 会话 + remove_lock=False；
-    4. timeout_s 内未返回即报超时（后台线程自行释放并清理副本）。
+    4. timeout_s 内未返回即报超时（后台线程自行释放会话、恢复环境变量并
+       清理副本——T-Q17② 恢复语义在 worker 侧收尾，主线程不代恢复）。
 
     remote_machine（多机协同 v0，B13 透传）：注册表机器名——带该键走远程
     会话（版本配对断言 + machine/port 透传）；此时 project 路径按**服务器
@@ -554,7 +740,7 @@ def import_project_spec_readonly(
     # （同 hfss_adapter 远程分支"本地存在性不判定"口径）。
     if remote_info is None and not src.exists():
         return {"ok": False, "error": f"工程文件不存在: {project_path}"}
-    _prune_ansysem_env(ver)
+    removed_env = _prune_ansysem_env(ver)
     local_copy = remote_info is None
     tmp_dir: str | None = None
     copy_path: Path | None = None
@@ -572,6 +758,9 @@ def import_project_spec_readonly(
                 hfss = _open_hfss_readonly(open_path, design_name, ver,
                                            non_graphical,
                                            remote_info=remote_info)
+            except HfssDependencyMissing as exc:
+                box["error"] = str(exc)  # ④ 缺装指引原样透传
+                return
             except Exception as exc:
                 box["error"] = (
                     f"打开 HFSS 工程副本失败: {exc}" if copy_path is not None
@@ -587,6 +776,11 @@ def import_project_spec_readonly(
             if tmp_dir is not None:
                 with contextlib.suppress(Exception):
                     shutil.rmtree(tmp_dir, ignore_errors=True)
+            # T-Q17②③：会话作用域恢复（剪枝快照+COM 回退态）。超时场景由
+            # 仍存活的 worker 在本 finally 恢复，主线程不代恢复——避免与
+            # 存活的启动线程竞写进程环境。
+            _restore_ansysem_env(removed_env)
+            _restore_com_fallback_state()
 
     worker = threading.Thread(target=_worker, name="hfss-import-readonly",
                               daemon=True)
@@ -595,7 +789,7 @@ def import_project_spec_readonly(
     if worker.is_alive():
         return {"ok": False, "error":
                 f"读取超时（>{timeout_s:.0f}s）：AEDT 会话未在期限内返回；"
-                "后台线程仍会释放会话并清理临时副本"}
+                "后台线程仍会释放会话、恢复环境变量并清理临时副本"}
     if "error" in box:
         return {"ok": False, "error": box["error"]}
     spec = dict(box.get("spec") or {})

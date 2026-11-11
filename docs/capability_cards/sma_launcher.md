@@ -65,7 +65,7 @@
 
 - 参数语义：w_msl_mm=50Ω 微带宽（HJ），r_i_mm=针半径，r_o_mm=PTFE 外径/壳内径（50Ω 闭式），shell_t_mm=外导体壁厚（r_os=r_o+t 派生），er_fill=PTFE εr（材料参数，不驱动导体几何），shell_len_mm=同轴段长（port1 面→板边），pin_lay_mm=针搭焊外伸长，line_len_mm=微带体带长，port_len_mm=集总桥 y 向厚，tan_d_fill=PTFE tanδ（材料参数→kappa，名义 0 无耗）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；同轴三半径 x/z 向柱面界 + 桥盒边 + 板边/针端/带端 y 面精确入网；port1 面距 y-min 边界 12 cells（越过 PML_8）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

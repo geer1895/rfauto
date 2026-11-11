@@ -51,5 +51,5 @@
 ## 参考
 
 - 契约与骨架长版：`docs/tutorials/extending-rfauto.md`
-- 远程接入与资源约束：内部证据档（服务器接入与仿真资源说明）
+- 远程接入与资源约束：项目运营规范文档（内部档；公开面以本文与远程服务 docstring 为准）
 - 官方口径集中页：`docs/rf_template_references.md`

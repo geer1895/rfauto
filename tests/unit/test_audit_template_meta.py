@@ -2,7 +2,7 @@
 
 覆盖面：5 维审计逐维合成好/坏样本抓出（schema/nominal/placeholder/teaching/
 link）+ 豁免清单消费 + rc 语义（0 绿/1 红/2 SKIP）+ 现树 GREEN 证据
-（registered=75/edb=5 实测口径（K12 电容族 ×2 后），唯一实违例 ms_ring_patch 死链
+（registered=76/edb=5 实测口径（Q-X6 批 2 layered_stack 后），唯一实违例 ms_ring_patch 死链
 修复后零违例零证据缺失）。
 
 脚本经 sys.path 装载（scripts 非包，test_audit_anchor_freshness 同款口径）。
@@ -312,11 +312,17 @@ class TestTreeAndMain:
         # 不入注册表、无 teaching（#122 如实；历史缺清单 bend/ifa/
         # patch_eep_*/pifa/via/wstep 已由中间批次闭合）。
         # dirs/registered 72→75（aurora_k K12：mim_cap+interdigital_cap
-        # 注册+teaching 块同批；edb 不变）
-        assert rep["counts"] == {"dirs": 80, "edb": 5, "registered": 75,
-                                 "teaching": 75}
+        # 注册+teaching 块同批；edb 不变）；75→76（aurora_q Q-X6 批 2：
+        # layered_stack 注册+teaching 块同批，2026-11-07）
+        assert rep["counts"] == {"dirs": 81, "edb": 5, "registered": 76,
+                                 "teaching": 76}
         assert rep["violations"] == []
-        assert rep["evidence_links_missing"] == []
+        # 证据链接=报告面留痕（脚本契约"永不打红"）——证据湖满配时钉
+        # 全空；干净检出（runs/ 湖缺席）缺盘属预期态，以代表性证据路径
+        # 在盘性区分 regime，不伪造存在性。
+        if (REPO / "runs" / "review_ge8e"
+                / "r2_synthesis_templates_anchors" / "REPORT.md").is_file():
+            assert rep["evidence_links_missing"] == []
         assert mod.verdict(rep) == 0
 
     def test_main_rc0_with_json_report(self, tmp_path):

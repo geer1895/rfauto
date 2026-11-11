@@ -199,7 +199,7 @@ def extract_gate_lines(text: str) -> list[dict[str, Any]]:
 #   c3 → combline/interdigital/sir_bpf = knowledge/anchors.yaml c3.* 锚的
 #        template_family 注册值（注册表面，非臆测）；
 #   c4 → lange/cline_coupler/branchline = c4_z_substrate 门行 lange/
-#        cline_coupler 字面 + c4 批=耦合器网格收敛批（Devlog 口径）；
+#        cline_coupler 字面 + c4 批=耦合器网格收敛批（DEVLOG 口径）；
 #   marchand → marchand_balun = 族名前缀（marchand_* 战役系列）。
 FAMILY_ALIAS: dict[str, tuple[str, ...]] = {
     "marchand": ("marchand_balun",),

@@ -124,6 +124,9 @@ EXPECTED_TEMPLATES = frozenset({
     "monopole", "pifa", "ifa", "loop", "helix", "slot",
     "interdigital", "combline", "sir_bpf",
     "cps", "suspended_stripline",
+    # layered_stack 晶圆键合叠层+空腔族（2026-11-07 aurora_q Q-X6 批 2，
+    # registry.py 文内注册块；整脚本渲染器早分发，75→76）
+    "layered_stack",
     "patch_array_1x4", "patch_array_2x2", "patch_array_series",
     "cline_coupler", "branchline_2sect", "lange",
     "msl_cpw", "sma_launcher",
@@ -222,10 +225,11 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 75, (
-        "覆盖基线漂移：Devlog 记 75 个模板（aurora_k K12 MIM 叠层电容 "
-        "mim_cap+叉指电容 interdigital_cap 注册 73→75，render_mim_cap/"
-        "render_interdigital_cap 文末注册块尾部追加，2026-10-23）")
+    assert len(EXPECTED_TEMPLATES) == 76, (
+        "覆盖基线漂移：Devlog 记 76 个模板（aurora_q Q-X6 晶圆键合叠层+空腔"
+        "族 layered_stack 注册 75→76，registry.py 文内注册块追加，"
+        "2026-11-07；上基线 75=aurora_k K12 MIM 叠层电容 mim_cap+叉指电容 "
+        "interdigital_cap 注册 73→75，2026-10-23）")
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {
@@ -435,6 +439,22 @@ def test_domain_and_substrate_match_meta(template):
     scope, prims = gh.load_geometry(template)
     dom_x, dom_y = gh.domain_half_extents(scope)
     board = float(scope.get("BOARD", max(dom_x, dom_y)))
+    if template == "layered_stack":
+        # 叠层+空腔族（Q-X6 批 2）：多材料多盒介质（spec MATERIALS 表单源
+        # ——silicon/gold 族表），无单一 H_SUB/ER 全局（无 default substrate
+        # 口径）；域 x/y 界+介质属性集=模型端面由本分支正面判。
+        for axis, dom in (("x", dom_x), ("y", dom_y)):
+            lines = gh.mesh_lines(scope, axis)
+            assert lines.min() == pytest.approx(-dom, abs=1e-9), \
+                f"{template}: {axis} 域下界 {lines.min()} != -{dom}"
+            assert lines.max() == pytest.approx(dom, abs=1e-9), \
+                f"{template}: {axis} 域上界 {lines.max()} != {dom}"
+        dielectric = [p for p in prims if p.kind == "Material"]
+        assert dielectric, f"{template}: 无介质原语"
+        props = {p.prop for p in dielectric}
+        assert props == {"silicon"}, \
+            f"{template}: 介质属性集漂移 {props}（spec MATERIALS 族表）"
+        return
     h_sub = float(scope["H_SUB"])
     if template in gh.RECT_DOMAIN_TEMPLATES:
         # 槽线族：矩形域 + 模板参数基板（设计点 h=1.524，闭式域要求，见 helpers）

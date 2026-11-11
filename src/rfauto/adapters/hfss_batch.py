@@ -91,7 +91,7 @@ _TOUCHSTONE_RE = re.compile(r"\.s(\d{1,2})p$", re.IGNORECASE)
 _RESULT_EXTS = (".prof", ".csv", ".mesh", ".sol")
 
 #: ``-designs`` 设计限定在 AEDT 2025 R1 (v251) ``-BatchSolve`` **不受支持**
-#: （2026-10-13 sim_server 真机核实 verdict=FAIL，runs/aurora_c/designs_verify/
+#: （2026-10-13 lab_server 真机核实 verdict=FAIL，runs/aurora_c/designs_verify/
 #: ：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态旗标被静默吞掉，
 #: 值按 ``Unexpected command line argument 'DesignB' ignored.`` 丢弃并
 #: **退化为全设计求解（rc=0）**；desktop.dll 命令行选项表无 -designs）。
@@ -1007,7 +1007,7 @@ def solve_project_batch(
         return _fail_result(
             errors=["未找到 ansysedt.exe：RFAUTO_AEDT_PATH 未设置且自动"
                     "探测未发现安装（可设 RFAUTO_AEDT_PATH=<AEDT 版本目录>，"
-                    "如 E:\\ANSYSINC\\ANSYS Inc\\v251，或显式传 ansysedt_"
+                    "如 C:\\Program Files\\ANSYS Inc\\v251，或显式传 ansysedt_"
                     "exe=<...>/ansysedt.exe）"],
             project=str(project), project_kind=kind,
             elapsed=_elapsed(started))

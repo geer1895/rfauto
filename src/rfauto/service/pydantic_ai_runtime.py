@@ -1,6 +1,6 @@
 """pydantic-ai Runtime：AgentRuntime 协议的 pydantic-ai 实现（WP3.1）。
 
-方案行（docs/continuation-plan_20260907.md「第 3 期」WP3.1 + TODO 〇-c）：
+方案行（docs/continuation_plan_20260907.md「第 3 期」WP3.1 + TODO 〇-c）：
 实现协议注册 ``runtime: pydantic_ai``，与 builtin A/B token 效率后再决定是否
 切默认。选择入口已有：configs/chat_settings.yaml 的 ``runtime:`` 键
 （r3_services._llm_turn 读 raw.get("runtime", "builtin") → RuntimeRegistry.create，
@@ -72,6 +72,7 @@ from rfauto.service.agent_runtime import (
     ToolExecutor,
     ToolSpec,
 )
+from rfauto.service.llm_error_service import LlmCallError, classify_llm_error
 
 # 工具执行器：名字+参数 → 结果 dict（异常由运行时兜底回传模型）
 # PaiRunner：整轮 pydantic-ai 运行的注入缝（默认实现 default_pydantic_ai_runner）
@@ -496,6 +497,32 @@ class PydanticAIRuntime(AgentRuntime):
         except RuntimeBudgetExceeded as exc:
             # ② 无损续跑：默认 runner 挂回截至当前的现场与 usage；未带时兜底进入时现场
             recovered = exc.usage or {}
+            usage.llm_calls = max(1, int(recovered.get("requests") or 0))
+            usage.llm_elapsed_s = time.perf_counter() - t0
+            usage.prompt_tokens = int(recovered.get("prompt_tokens") or 0)
+            usage.completion_tokens = int(recovered.get("completion_tokens") or 0)
+            usage.cached_tokens = int(recovered.get("cached_tokens") or 0)
+            summary = "、".join(dict.fromkeys(tools_used)) or "无"
+            return RuntimeResult(
+                text=f"本轮已完成 {len(tools_used)} 次工具调用（{summary}），达到单轮上限。"
+                     f"回复『继续』将从已有进度接着分析（不重复探索）。",
+                finish_reason="budget_exhausted",
+                messages=exc.messages or inp.messages,
+                tools_used=tools_used,
+                action=tools_used[-1] if tools_used else None,
+                usage=usage)
+        except PydanticAINotInstalled:
+            # 依赖/配置缺失已是明确中文报错，且单测钉透传契约
+            # （test_missing_lib_propagates_from_submit）——非 HTTP 错误，
+            # 原样上抛不进 LLM 归一层。
+            raise
+        except Exception as exc:
+            # T-Q15 错误归一层（R8 落点）：HTTP 4xx/5xx（openai SDK
+            # APIStatusError 族 / httpx HTTPStatusError）按响应体
+            # error.code > 异常类型 > 状态码分诊（额度/限速/认证/网关），
+            # 转 LlmCallError 上抛；chat 回退层消费 .llm 透传
+            # code/message/advice，不再只显通用文案。
+            raise LlmCallError(classify_llm_error(exc)) from exc
             usage.llm_calls = max(1, int(recovered.get("requests") or 0))
             usage.llm_elapsed_s = time.perf_counter() - t0
             usage.prompt_tokens = int(recovered.get("prompt_tokens") or 0)

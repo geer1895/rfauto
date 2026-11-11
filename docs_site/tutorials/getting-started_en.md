@@ -28,7 +28,7 @@ your first result with one command.
 ## 1. Install (about 5 minutes)
 
 ```bash
-git clone https://github.com/geer1895/rfauto && cd rfauto
+git clone <repo-url> rfauto && cd rfauto
 python -m venv .venv
 .venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
 pip install -e ".[ui]"               # core + browser workbench
@@ -67,9 +67,9 @@ rfauto doctor
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
 │ Python   │ ok   │ 3.12.14                                                │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
-│ AEDT     │ ok   │ <AEDT install dir>（版本 2025.1，best_effort）         │
+│ AEDT     │ ok   │ C:\Program Files\ANSYS Inc\v251（版本 2025.1，best_effort）         │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
-│ ADS      │ ok   │ <ADS install dir>（版本 2027，verified）               │
+│ ADS      │ ok   │ C:\Program Files\Keysight\ADS2027（版本 2027，verified）               │
 ├──────────┼──────┼────────────────────────────────────────────────────────┤
 │ 缓存模式 │ ok   │ readwrite                                              │
 └──────────┴──────┴────────────────────────────────────────────────────────┘
@@ -168,14 +168,14 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 deterministic):
 
 ```text
-✓ 仿真完成  run_id: 20261026_132409_ff7c0bde
-  run 目录: <workspace>\runs\20261026_132409_ff7c0bde
-  cost: 2.5674588717393334
+✓ 仿真完成  run_id: 20261024_133154_a8b244f6
+  run 目录: E:\rfauto_workspace\runs\20261024_133154_a8b244f6
+  cost: 7.424965102246688
   指标:
-    s11_db_max_in_band: -12.4325
-    s11_db_min_in_band: -16.2978
-    s21_db_mean_in_band: -3.5887
-    iso_s23_db_min_in_band: 27.3788
+    s11_db_max_in_band: -8.0835
+    s11_db_min_in_band: -10.2581
+    s21_db_mean_in_band: -4.1084
+    iso_s23_db_min_in_band: 25.4717
 ```
 
 The metric names carry their band suffix (`*_in_band`): return loss,
@@ -222,7 +222,7 @@ Every run lands in `runs/<run_id>/`:
 Read the run through the built-in health gate:
 
 ```bash
-rfauto runs health 20261026_132409_ff7c0bde
+rfauto runs health 20261024_133154_a8b244f6
 ```
 
 **What you see** (excerpt):
@@ -250,8 +250,8 @@ Freshness check — the manifest closing fingerprint vs the files on
 disk:
 
 ```bash
-rfauto runs verify 20261026_132409_ff7c0bde
-# → run 产物新鲜度校验  20261026_132409_ff7c0bde  status: fresh
+rfauto runs verify 20261024_133154_a8b244f6
+# → run 产物新鲜度校验  20261024_133154_a8b244f6  status: fresh
 ```
 
 **Detour** (README troubleshooting table): on-disk Touchstone doesn't
@@ -322,8 +322,8 @@ rfauto doctor --janitor --min-free-gb 8
 
 ```text
 进程清点（通道: psutil）：ansysedt 族共 0 个，疑似孤儿 0 个，合计内存 0.00 GB
-AEDT 工程锁（扫描根: <workspace>\runs）：共 8 处
-  - …\design.aedt.lock（文件，工程伴生=False）
+AEDT 工程锁（扫描根: E:\rfauto_workspace\runs）：共 8 处
+  - E:\rfauto_workspace\runs\_rt_test.aedt.lock（文件，工程伴生=False）
 清理姿势：复核上表后加 --janitor-clean 执行（只动疑似孤儿与上列锁）。
 内存闸：可用内存 19.14 GB ≥ 阈值 8.00 GB，闸放行
 ```
@@ -379,6 +379,10 @@ an English version where a `*_en.md` sibling exists):
 - Data and lake: datasets_and_health_gates, data_factory, data_lake
 - Platform and extension: extending-rfauto, mcp_in_practice,
   compose_and_league, dag_orchestration, ui_workbench_tour
+- Runnable notebook examples: examples/notebooks/ (three zero-license
+  deterministic-kernel demos — microstrip synthesis, polarization
+  metrics, RA.769 interference-threshold chain; runnability pinned by
+  tests/unit/test_notebook_examples.py)
 
 Topic manuals (docs/how-to/):
 

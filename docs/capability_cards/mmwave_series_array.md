@@ -66,8 +66,8 @@
 
 - 参数语义：n_elem=单元数（≥2），elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 c/(2f0√εeff)−2ΔL，fake 谷位为其精确逆），elem_w_mm=单元宽 W （c/(2f0)√(2/(εr+1))），link_len_mm=互联线长 s（行波渐进相位自由度： u0=(π+βg·s−2π)/(k0·d)，d=L+s；s=λg/2 退化为 C2 同相侧射），feed_w_mm=50Ω 馈线/互联宽（HJ 0.3259mm @78GHz），feed_margin_mm=板边到链首元馈段长 （MSLPort 自画，MeasPlaneShift=margin/3），h_mm=基板厚（毫米波板 0.127）； er/tan_d 走 substrate/nominal（RO3003 类）
 - 网格：辐射器件：上方空气隙 λ0/4+、侧向至域界（MUR）；贴片/互联/stub/负载盒缘 精确入网（#198）；渲染守卫：NEAR≤feed_w/3（#266 族，线宽分辨）、 |MeasPlaneShift−FeedShift|≥3.9·NEAR（#347）；全轴 1µm 近重合去重（#152）； 端口面贴 PML_8 域边（#154 前节）
-- 冒烟现状：未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面= 预算预声明 内部证据档 §d（0.1mm 格 ~3.6e7 cells、 dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准）， 本批零发射
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 冒烟现状：未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面= 预算预声明 runs/df7_c10d/criteria.md §d（0.1mm 格 ~3.6e7 cells、 dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准）， 本批零发射
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

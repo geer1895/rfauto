@@ -10,7 +10,7 @@ params:
   b_mm: 1.016
   line_len_mm: 40.0
 status: ok
-script_sha256: cf0b130a2cbb88323d9d52f2ceb9ec39ba9a304e14215a2b3802988858b2ffa7
+script_sha256: 3d6195c7d6538b5f37b998c92522d343116056a1314a26f92d206daed9f78fa5
 csx:
   n_primitives: 22
   props:
@@ -114,7 +114,7 @@ csx:
     n: 1
     types:
       '1': 1
-  primitives_sha256: 9824c5f73af6ffdd53d8f2fe9b59208a46e7b4505a82c752dddc9e4facb958d8
+  primitives_sha256: c6f72bb88029768c7f3225abb84cc7f1e7e12bc2a9dcf731647479320cc80de1
   bbox_m:
   - -0.06
   - -0.06
@@ -128,12 +128,12 @@ mesh:
       n: 113
       min_gap_m: 0.000226
     y:
-      n: 219
-      min_gap_m: 0.000285
+      n: 221
+      min_gap_m: 0.00025
     z:
       n: 9
       min_gap_m: 0.000127
-  lines_sha256: c076e745982426b7e80eff4f39efb204421be49b1e4a5382d0a90e7e351dca49
+  lines_sha256: 5ec7ecb5d320341d799397ba5f74cb02b42db47fd3da68320536134d19cfc376
 ports:
 - 1
 - 2

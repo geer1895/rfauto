@@ -42,7 +42,7 @@ hfss_session 工具层口径），能力声明见 em_solver_base 尾部 "edb" �
 - v1 信号层不支持自定义材料定义（material_props 仅限介质层）——给出即
   fail-fast 报错（不虚报）；
 - wave_port（发射族端口）阻抗在 pyedb ``CfgEdgePort``
-  set_parameters_to_edb 里**硬编码 50Ω**（0.83 实测，docs/pyedb_distilled.md
+  set_parameters_to_edb 里**硬编码 50Ω**（0.83 实测，pyedb 精炼笔记内部档
   §3.3/§7-A2——configuration 通道无法给 wave_port 设其他阻抗）→ spec 给出
   非 50 阻抗即 fail-fast（不静默错配）；
 - ``resistors`` 落地走 pyedb 0.83.0 自家纯电阻处方（SourceType.Rlc 分支，
@@ -154,7 +154,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              permeability/mass_density/poisson_ratio/
                              specific_heat/thermal_conductivity/
                              youngs_modulus/thermal_expansion_coefficient
-                             （docs/pyedb_distilled.md §2）；未知键 fail-fast；
+                             （pyedb 精炼笔记（内部档）§2）；未知键 fail-fast；
                              与层 material_props 派生材料同名冲突 fail-fast]
         "layers": [          必填，≥1；spec 层序自底向上（index0=物理底层）；
                              config 落库翻转一次为自顶向下——pyedb 0.83
@@ -163,7 +163,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              configuration.py:863-868 + dotnet/database/
                              stackup.py:97-130 源码实证；官方示例
                              TOP,DE,BOTTOM 首项=顶层同口径；
-                             docs/pyedb_distilled.md §3.1/§6-2 处方
+                             pyedb 精炼笔记（内部档）§3.1/§6-2 处方
                              「adapter 翻转一次」；真机冒烟
                              runs/edblane85/w1_smoke 以 GND=elevation0
                              验证的物理序=信号层在上）
@@ -186,7 +186,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
          "role" 等发射侧声明键：容忍透传忽略}
         config 面统一 cap=flat / corner=sharp（发射器契约假设 4：wave_port
         与电阻端子落走线端点，要求足迹=精确矩形、端点=矩形边缘；pyedb
-        缺省 round 圆头会在端点短 r/2，docs/pyedb_distilled.md §3.2）],
+        缺省 round 圆头会在端点短 r/2，pyedb 精炼笔记（内部档）§3.2）],
       "vias": [              可选
         {"name": str         可选（缺省 "via_{i}"，全表唯一），
          "diameter_mm": number 必填，>0（同孔径共享 padstack 定义），
@@ -320,7 +320,7 @@ _LAYER_TYPES = ("signal", "dielectric")
 _PORT_TYPES = ("circuit", "coax")
 
 #: wave_port extent 因子合理域（闭区间；R1 #7 守卫——extent_factor 是"线宽
-#: 倍数"口径（docs/pyedb_distilled.md §3.3）：下界 <2 孔径圈不住导体横向
+#: 倍数"口径（pyedb 精炼笔记（内部档）§3.3）：下界 <2 孔径圈不住导体横向
 #: 场域、上界 >10 过宽把邻导体/介质边沿圈进端口；缺省 5/3 在域内）
 _EXTENT_FACTOR_MIN = 2
 _EXTENT_FACTOR_MAX = 10
@@ -364,7 +364,7 @@ _SPEC_KEYS = ("name", "template", "schema_version", "units", "params",
 #: tests/unit/test_edb_adapter.py 钉住；未知版本 fail-fast 不静默消费）
 _SUPPORTED_SCHEMA_VERSION = 1
 
-#: 显式材料属性键白名单（pyedb CfgMaterial 标量键，docs/pyedb_distilled.md
+#: 显式材料属性键白名单（pyedb CfgMaterial 标量键，docs/pyedb 精炼笔记（内部档）
 #: §2 逐键核验口径；频变/列表型键不在 v1 面内——未知键 fail-fast）
 _MATERIAL_KEYS = (
     "conductivity", "permittivity", "dielectric_loss_tangent",
@@ -646,7 +646,7 @@ def _translate_traces(
             # 统一契约（edb_templates.schema 假设 4）：cap=flat（足迹=精确
             # 矩形、端点=矩形边缘——wave_port/电阻端子落走线端点的前提）、
             # corner=sharp；pyedb 缺省 round 圆头会在端点短 r/2
-            # （docs/pyedb_distilled.md §3.2，与发射器 assemble_config 同款）
+            # （pyedb 精炼笔记（内部档）§3.2，与发射器 assemble_config 同款）
             "start_cap_style": "flat",
             "end_cap_style": "flat",
             "corner_style": "sharp",
@@ -667,7 +667,7 @@ def _translate_vias(
     v1 边界（2026-10-08 审查批 P1，fail-fast）：只支持**整叠通孔**——
     start/stop 两层须恰为最顶+最底信号层。pyedb CfgPadstackDefinition 的
     ``hole_range`` 本层未透传（缺省 through 语义，cfg_padstacks.py:196 可选
-    字段，docs/pyedb_distilled.md §3.2），盲埋孔 spec 会静默按整叠通孔落库
+    字段，pyedb 精炼笔记（内部档）§3.2），盲埋孔 spec 会静默按整叠通孔落库
     （几何错且无报错）——诚实边界同 signal material_props 先例：给出即
     fail-fast 不虚报。``signal_layers_topdown``：config 层列表（已翻转自顶
     向下）中的信号层名序，[0]=物理顶层、[-1]=物理底层。
@@ -792,7 +792,7 @@ def _translate_board(
     坐标 mm→米（EDB 数据库单位，同 trace path 口径）。层序翻转已按 pyedb
     0.83 源码实证落地（AddLayerBottom 首项落物理顶层，见
     _translate_stackup docstring）；真机首跑仍以 ``edb.stackup.layers`` 落位
-    顺序复核存证（单位纪律"port 落点复核"同窗口，docs/pyedb_distilled.md
+    顺序复核存证（单位纪律"port 落点复核"同窗口，docs/pyedb 精炼笔记（内部档）
     §3.1/§6-2）。
 
     Returns:

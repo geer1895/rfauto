@@ -156,7 +156,7 @@ def test_mesh_resolution_matches_docs(template):
 #: campaign_unlock_criteria 三键（与 docs/templates/hairpin_alt/meta.yaml 同构）。
 #: 入选判据=真机/闭式证据证明参数空间无自洽设计点（hairpin：同向相邻臂开路端对齐
 #: →电/磁耦合反号相消，k_EM 非单调且上限 0.0155≪k_KJ 0.0515，FBW5% 名义无自洽点，
-#: Devlog（二百零三））。维护规则：新受限模板→meta 补三键+进本名单；解锁须先过其
+#: DEVLOG（二百零三））。维护规则：新受限模板→meta 补三键+进本名单；解锁须先过其
 #: campaign_unlock_criteria 并同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake
 #: 派发口径，campaign_capable 翻 true 后从本名单移除（下方 sweep/名单双向钉会强制）。
 CAMPAIGN_RESTRICTED_TEMPLATES = ("hairpin", "hairpin_alt")

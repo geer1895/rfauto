@@ -1,6 +1,6 @@
 """stage-2 精修环：TR-ARS 式信任域 + Bandler 输出空间映射（WP3.2 步骤 b）。
 
-方案口径（docs/continuation-plan_20260907.md §10.9 薄弱项 1b / §10.18 表#5，
+方案口径（docs/continuation_plan_20260907.md §10.9 薄弱项 1b / §10.18 表#5，
 cjors.2025184 综述锚）：
 - Bandler ASM：粗模型（代理/解析快档，毫秒级）× 细模型（真跑）分层；
   最简输出空间映射 `Rs ≈ Rc + Δ(x)`——细跑残差修正粗模型 bias；

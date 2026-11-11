@@ -47,7 +47,7 @@ from rfauto.service.runs_verify_service import (
 
 _HFSS_HEADER = (
     "! Touchstone file exported from HFSS 2025.1.0\n"
-    "!        File:           E:/rfauto-workspace/runs/fake_run/hfss/design.aedt\n"
+    "!        File:           E:/rfauto_workspace/runs/fake_run/hfss/design.aedt\n"
     "!        Generated:      07:29:41 PM Oct 22, 2026\n"
     "!        Design:         RFADesign\n"
     "# Hz S RI R 50\n"

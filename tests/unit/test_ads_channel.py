@@ -16,7 +16,7 @@ from rfauto.linkage.ads_channel import (
 def ads27_dir(tmp_path: Path) -> Path:
     """模拟真机 ADS 2027 安装（bin 下有 mcp server + hpeesofsim）。
 
-    目录名取现役安装 E:/ADS/ADS27 的短年形态（2026-09-18 实测），同时钉住
+    目录名取现役安装 C:/Program Files/Keysight/ADS2027 的短年形态（2026-09-18 实测），同时钉住
     version_probe 短年 → "2027" 归一（rm-ads-wp43 治理）。
     """
     bin_dir = tmp_path / "ADS27" / "bin"

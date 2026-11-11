@@ -164,6 +164,26 @@
       "snapshot_from_dict",
       "write_dims_from_hfss"
     ],
+    "adapters/kicad_sch_gen.py": [
+      "FONT_SIZE_MM",
+      "GENERATOR_NAME",
+      "GENERATOR_VERSION",
+      "GenComponent",
+      "GenNet",
+      "NetReadback",
+      "PIN_LENGTH_MM",
+      "PROJECT_NAME",
+      "SCH_VERSION",
+      "SchGridLayout",
+      "derive_pin_map",
+      "parse_erc_report",
+      "parse_sexpr",
+      "pin_local_offset",
+      "pin_world_pos",
+      "readback_nets",
+      "render_schematic",
+      "symbol_slot_xy"
+    ],
     "adapters/layout_ports.py": [
       "COMPOSE_PIN_KEYS",
       "DIR_DOT_MIN",
@@ -507,6 +527,25 @@
       "CISPR16_SOURCE",
       "band_params",
       "cispr_detect"
+    ],
+    "core/citi_parser.py": [
+      "CITI_FORMAT_WIDTHS",
+      "CitiDecodeError",
+      "CitiPackage",
+      "CitiParseError",
+      "CitiSegment",
+      "CitiVar",
+      "DependentVar",
+      "IndependentVar",
+      "KNOWN_HEADER_KEYS",
+      "SUPPORTED_FORMAT_LETTERS",
+      "decode_citi_field",
+      "decode_hex_double",
+      "decode_hex_float",
+      "package_to_dict",
+      "parse_citi_file",
+      "parse_citi_text",
+      "segment_to_dict"
     ],
     "core/clock_noise.py": [
       "DEFAULT_ROLLOFF_DB_PER_DEC",
@@ -1781,6 +1820,32 @@
       "skin_depth_m",
       "source_wave_impedance_ohm"
     ],
+    "core/neural_surrogate.py": [
+      "ACTIVATIONS",
+      "CNNSpec",
+      "MLPSpec",
+      "NORMALIZATION_KINDS",
+      "NormalizationSpec",
+      "OUTPUT_HEAD",
+      "TORCH_INSTALL_HINT",
+      "aggregate_loo_metrics",
+      "apply_normalization",
+      "build_cnn_surrogate",
+      "build_sparam_dataset",
+      "derive_mlp_spec",
+      "fit_neural_surrogate",
+      "fit_normalization",
+      "loo_evaluate_mlp",
+      "loo_folds",
+      "mlp_forward_numpy",
+      "mlp_spec_from_dict",
+      "mlp_spec_to_dict",
+      "predict_mlp",
+      "split_train_val",
+      "torch_available",
+      "undo_normalization",
+      "validate_mlp_spec"
+    ],
     "core/nf_focusing_oam.py": [
       "C0_M_S",
       "NF_WP_SOURCE",
@@ -2298,6 +2363,32 @@
       "sir_zin",
       "sir_zin_abcd"
     ],
+    "core/skill_template_engine.py": [
+      "CALC_SKILL_FUNCTIONS",
+      "CORE_SKILL_FUNCTIONS",
+      "EDA_SKILL_FUNCTIONS",
+      "KNOWLEDGE_FILTERS",
+      "KNOWN_SKILL_FUNCTIONS",
+      "SkillTemplateError",
+      "list_template_var_info",
+      "list_template_vars",
+      "render_template",
+      "skill_call",
+      "skill_foreach",
+      "skill_if",
+      "skill_let",
+      "skill_lint_issues",
+      "skill_literal"
+    ],
+    "core/skill_templates/__init__.py": [
+      "SKILL_TEMPLATES",
+      "SKILL_TEMPLATE_CATEGORIES",
+      "SkillTemplateSpec",
+      "get_skill_template",
+      "list_skill_template_names",
+      "list_skill_template_specs",
+      "register_skill_template"
+    ],
     "core/sla_print.py": [
       "DEFAULT_PROFILE",
       "SLAPrinterProfile",
@@ -2344,6 +2435,19 @@
       "ishigami_sobol_analytic",
       "sample_canonical",
       "sparse_pce_sobol"
+    ],
+    "core/spice_netlist_parser.py": [
+      "FLAVOR_AUTO",
+      "FLAVOR_HSPICE",
+      "FLAVOR_NGSPICE",
+      "FLAVOR_SPECTRE",
+      "GROUND_ALIASES",
+      "PARSER_SCHEMA_VERSION",
+      "SPICE_LETTER_KINDS",
+      "detect_flavor",
+      "normalize_flavor",
+      "parse_spice_netlist_text",
+      "parse_spice_number"
     ],
     "core/sprt.py": [
       "ASNWald",
@@ -2752,6 +2856,32 @@
       "resolve_machine",
       "ssh_strict_enabled"
     ],
+    "infra/request_receipt.py": [
+      "DEFAULT_LANE",
+      "DEFAULT_MAX_BYTES",
+      "DEFAULT_MAX_ENTRIES",
+      "DEFAULT_TTL_S",
+      "NotSentError",
+      "OUTCOME_COMPLETED",
+      "OUTCOME_FAILED",
+      "OUTCOME_NOT_STARTED",
+      "OUTCOME_REJECTED",
+      "OUTCOME_UNKNOWN",
+      "ReceiptDecision",
+      "RequestReceiptLedger",
+      "STATE_COMPLETED",
+      "STATE_EXPIRED",
+      "STATE_FAILED",
+      "STATE_PENDING",
+      "STATE_SENT",
+      "UncertainOutcomeError",
+      "execute_with_receipt",
+      "get_default_ledger",
+      "new_receipt_id",
+      "payload_fingerprint",
+      "reset_default_ledger",
+      "resolve_ledger"
+    ],
     "infra/runs_paths.py": [
       "resolve_runs_dir",
       "runs_root"
@@ -2761,6 +2891,66 @@
       "ADS_OPT_METRIC_NAMES",
       "AdsOptAdapter",
       "register_ads_channel"
+    ],
+    "mcp_tools/aedt_migrate.py": [
+      "aedt_migrate_report",
+      "aedt_migrate_run"
+    ],
+    "mcp_tools/anim.py": [
+      "anim_render"
+    ],
+    "mcp_tools/cad_formats.py": [
+      "gdsii_parse",
+      "gerber_excellon_pair_check",
+      "ipc356_report",
+      "lef_def_parse",
+      "sdf_parse",
+      "sdf_report",
+      "spef_parse",
+      "spef_report",
+      "touchstone_info",
+      "vcd_parse"
+    ],
+    "mcp_tools/format_overview.py": [
+      "format_overview"
+    ],
+    "mcp_tools/packaging_test.py": [
+      "bsdl_boundary_detail",
+      "bsdl_report",
+      "odbpp_report"
+    ],
+    "mcp_tools/parser_ext.py": [
+      "drc_design_validate",
+      "netlist_overlay_file",
+      "netlist_overlay_text",
+      "skill_call_graph",
+      "spectre_overlay_file",
+      "veriloga_module_detail"
+    ],
+    "mcp_tools/parser_formats.py": [
+      "citi_info",
+      "drc_rules_parse",
+      "ibis_parse",
+      "liberty_parse",
+      "lvs_compare_files",
+      "sdc_parse",
+      "spice_netlist_parse",
+      "verilog_netlist_parse"
+    ],
+    "mcp_tools/parser_queries.py": [
+      "gdsii_hierarchy",
+      "gdsii_layers",
+      "ipc356_fab_pair_check",
+      "lef_def_check",
+      "sdf_cell_detail",
+      "spef_net_detail",
+      "stil_pattern_detail",
+      "vcd_report"
+    ],
+    "mcp_tools/vendor_docs.py": [
+      "vendor_docs_audit",
+      "vendor_docs_build",
+      "vendor_docs_search"
     ],
     "models/template_specs.py": [
       "TEMPLATE_SPECS",
@@ -3076,6 +3266,20 @@
       "require_payload_dict",
       "safe_run_id"
     ],
+    "service/adjoint_optimizer_link.py": [
+      "ADJOINT_LINK_SCHEMA_VERSION",
+      "gradient_descent_consume",
+      "make_grad_callable",
+      "optimizer_preflight",
+      "rosenbrock_demo",
+      "rosenbrock_gradient",
+      "rosenbrock_objective"
+    ],
+    "service/adjoint_surrogate_bridge.py": [
+      "ADJOINT_BRIDGE_SCHEMA_VERSION",
+      "gradient_informed_sampling",
+      "gradient_norm_priorities"
+    ],
     "service/agent_trace.py": [
       "ARGS_SUMMARY_MAX_CHARS",
       "AgentTracer",
@@ -3087,6 +3291,217 @@
     "service/al_service.py": [
       "al_propose",
       "load_al_samples"
+    ],
+    "service/anim_render_service.py": [
+      "anim_render"
+    ],
+    "service/animation/__init__.py": [
+      "ANIM_RENDERER_REGISTRY",
+      "AnimRenderer",
+      "AnimationDataError",
+      "AnimationError",
+      "AnimationResult",
+      "AnimationSelfCheckReport",
+      "AnimationSelfCheckedResult",
+      "AnimationSpec",
+      "AnimationSpecError",
+      "AnimationTiming",
+      "BudgetDoc",
+      "BudgetStage",
+      "CanvasSpec",
+      "CascadeDoc",
+      "CascadeStage",
+      "ChainDoc",
+      "ChainEdge",
+      "ChainNode",
+      "FieldFrame",
+      "FieldFrames",
+      "LayoutDoc",
+      "LayoutLayer",
+      "PatternCut",
+      "PatternCutSeries",
+      "Primitive",
+      "RenderPlan",
+      "SelfCheckIssue",
+      "SourceSpec",
+      "SparamsTable",
+      "StyleSpec",
+      "SymbolFrame",
+      "SymbolsDoc",
+      "TrialRecord",
+      "available_chart_types",
+      "detect_frame_order",
+      "detect_text_overlap",
+      "get_anim_renderer",
+      "load_anchor_json",
+      "load_budget_json",
+      "load_cascade_json",
+      "load_chain_json",
+      "load_field_frames",
+      "load_layout_json",
+      "load_nf2ff_cut",
+      "load_snip",
+      "load_sparams_csv",
+      "load_symbols_json",
+      "load_trials",
+      "parse_animation_spec",
+      "register_anim_renderer",
+      "render_animation",
+      "run_animation_self_check",
+      "verify_svg_structure"
+    ],
+    "service/animation/loaders.py": [
+      "AnimationDataError",
+      "BudgetDoc",
+      "BudgetStage",
+      "CascadeDoc",
+      "CascadeStage",
+      "ChainDoc",
+      "ChainEdge",
+      "ChainNode",
+      "FieldFrame",
+      "FieldFrames",
+      "LayoutDoc",
+      "LayoutLayer",
+      "PatternCut",
+      "PatternCutSeries",
+      "Primitive",
+      "SparamsTable",
+      "SymbolFrame",
+      "SymbolsDoc",
+      "TrialRecord",
+      "load_anchor_json",
+      "load_budget_json",
+      "load_cascade_json",
+      "load_chain_json",
+      "load_field_frames",
+      "load_layout_json",
+      "load_nf2ff_cut",
+      "load_snip",
+      "load_sparams_csv",
+      "load_symbols_json",
+      "load_trials"
+    ],
+    "service/animation/renderers/__init__.py": [
+      "base",
+      "before_after",
+      "budget_funnel",
+      "constellation_eye",
+      "field_heatmap",
+      "filter_morphing",
+      "fit_compare",
+      "nf_cascade",
+      "param_race",
+      "pattern_scan",
+      "signal_flow",
+      "smith_trajectory",
+      "sparam_evolution",
+      "stackup_growth",
+      "structure_explode",
+      "tuning_replay",
+      "vswr_history"
+    ],
+    "service/animation/renderers/base.py": [
+      "ANIM_RENDERER_REGISTRY",
+      "AnimRenderer",
+      "AnimationResult",
+      "AnimationSelfCheckReport",
+      "AnimationSelfCheckedResult",
+      "RenderPlan",
+      "SelfCheckIssue",
+      "available_chart_types",
+      "cartesian_axes",
+      "clip_edges_midpoints",
+      "detect_frame_order",
+      "detect_text_overlap",
+      "discrete_clip_reveal",
+      "esc",
+      "fmt_num",
+      "frame_edges",
+      "get_anim_renderer",
+      "legend_row",
+      "magnitude_to_y",
+      "nice_ticks",
+      "polyline",
+      "register_anim_renderer",
+      "render_animation",
+      "require_common_grid",
+      "run_animation_self_check",
+      "steps_reveal",
+      "svg_text",
+      "verify_svg_structure"
+    ],
+    "service/animation/renderers/before_after.py": [
+      "BeforeAfterRenderer"
+    ],
+    "service/animation/renderers/budget_funnel.py": [
+      "BudgetFunnelRenderer",
+      "cumulative_margin_db"
+    ],
+    "service/animation/renderers/constellation_eye.py": [
+      "ConstellationEyeRenderer",
+      "DEFAULT_EYE_WINDOW",
+      "eye_windows"
+    ],
+    "service/animation/renderers/field_heatmap.py": [
+      "Colormaps",
+      "FieldHeatmapRenderer",
+      "ramp_color"
+    ],
+    "service/animation/renderers/filter_morphing.py": [
+      "FilterMorphingRenderer"
+    ],
+    "service/animation/renderers/fit_compare.py": [
+      "FitCompareRenderer"
+    ],
+    "service/animation/renderers/nf_cascade.py": [
+      "CascadeNfRenderer",
+      "cumulative_gain_db",
+      "friis_cumulative_nf_db"
+    ],
+    "service/animation/renderers/param_race.py": [
+      "ParamRaceRenderer"
+    ],
+    "service/animation/renderers/pattern_scan.py": [
+      "PatternScanRenderer",
+      "cut_label",
+      "is_closed_loop",
+      "radial_norm"
+    ],
+    "service/animation/renderers/signal_flow.py": [
+      "SignalFlowRenderer",
+      "layer_depths"
+    ],
+    "service/animation/renderers/smith_trajectory.py": [
+      "SmithTrajectoryRenderer"
+    ],
+    "service/animation/renderers/sparam_evolution.py": [
+      "SparamEvolutionRenderer"
+    ],
+    "service/animation/renderers/stackup_growth.py": [
+      "StackupGrowthRenderer",
+      "growth_schedule",
+      "stackup_layout_px"
+    ],
+    "service/animation/renderers/structure_explode.py": [
+      "StructureExplodeRenderer"
+    ],
+    "service/animation/renderers/tuning_replay.py": [
+      "TuningReplayRenderer",
+      "background_x_values"
+    ],
+    "service/animation/renderers/vswr_history.py": [
+      "VswrHistoryRenderer",
+      "vswr_of_gamma"
+    ],
+    "service/animation/spec.py": [
+      "AnimationError",
+      "AnimationSpec",
+      "AnimationSpecError",
+      "AnimationTiming",
+      "CanvasSpec",
+      "SourceSpec",
+      "StyleSpec"
     ],
     "service/array_coupling_service.py": [
       "coupling_sweep",
@@ -3153,6 +3568,17 @@
       "scan_queue",
       "validate_depends_on"
     ],
+    "service/capture_service.py": [
+      "ACTION_KINDS",
+      "CAPTURE_SCHEMA",
+      "CAPTURE_SESSIONS_DIR",
+      "MAX_PAYLOAD_CHARS",
+      "UNINFERRED_SECTIONS",
+      "compile_capture",
+      "record_action",
+      "start_capture",
+      "stop_capture"
+    ],
     "service/cascade_service.py": [
       "PASSIVE_TYPES",
       "cascade_budget_report",
@@ -3168,6 +3594,11 @@
       "annotate_circuit_diagram",
       "circuit_sim_run",
       "generate_circuit_diagram"
+    ],
+    "service/citi_service.py": [
+      "citi_info",
+      "citi_network_probe",
+      "citi_read_segments"
     ],
     "service/cloud_sandbox_service.py": [
       "SANDBOX_SCHEMA",
@@ -3281,6 +3712,33 @@
     "service/drawio_svg_service.py": [
       "render_drawio_svg"
     ],
+    "service/em_bench_service.py": [
+      "BENCH_FAMILIES",
+      "BENCH_SCHEMA_VERSION",
+      "BenchCriterion",
+      "BenchGraderNotes",
+      "BenchNegativeVariant",
+      "BenchRunContext",
+      "BenchTask",
+      "CRITERIA_NAMES",
+      "EnvelopeBound",
+      "NOOP_PROBE_MEASURES",
+      "THRESHOLD_REQUIRED",
+      "admit_bench_task",
+      "admit_bench_tasks",
+      "bench_envelope_point",
+      "check_negative_variants",
+      "criterion_fn",
+      "default_bench_tasks",
+      "evaluate_bench_envelope",
+      "register_criterion",
+      "register_runner",
+      "registered_criteria",
+      "registered_families",
+      "run_bench_task",
+      "score_bench",
+      "spec_score_from_scores"
+    ],
     "service/em_sweep_service.py": [
       "plan_sweep",
       "run_sweep",
@@ -3323,9 +3781,20 @@
       "write_failure_context"
     ],
     "service/field_audit_service.py": [
+      "audit_artifact",
       "build_field_audit_request",
       "dispatch_field_audit",
-      "png_precheck"
+      "jpeg_precheck",
+      "png_precheck",
+      "svg_precheck"
+    ],
+    "service/format_overview_service.py": [
+      "FORMAT_OVERVIEW_VERSION",
+      "SCHEMA_VERSIONS",
+      "SUPPORTED_KINDS",
+      "detect_format_kind",
+      "overview_format",
+      "overview_format_json"
     ],
     "service/gallery_service.py": [
       "FAMILY_LABELS",
@@ -3336,6 +3805,10 @@
       "recommend_templates",
       "resolve_preview_params",
       "template_family"
+    ],
+    "service/gerber_overview_service.py": [
+      "GERBER_OVERVIEW_SCHEMA_VERSION",
+      "gerber_overview"
     ],
     "service/goal_domain.py": [
       "CRITERIA_KINDS",
@@ -3352,6 +3825,15 @@
       "set_goal",
       "update_goal"
     ],
+    "service/gradient_consistency_service.py": [
+      "DEFAULT_COSINE_THRESHOLD",
+      "DEFAULT_REL_ERR_THRESHOLD",
+      "GRAD_PROVIDER_SCHEMA_VERSION",
+      "cosine_similarity",
+      "finite_difference_gradient",
+      "gate_with_finite_difference",
+      "gradient_consistency_gate"
+    ],
     "service/guidelines_service.py": [
       "get_guidelines_for",
       "repo_root"
@@ -3364,6 +3846,19 @@
       "corpus_gate",
       "evaluate_corpus",
       "render_corpus_report"
+    ],
+    "service/kicad_sch_service.py": [
+      "ERC_EXIT_LOAD_FAILED",
+      "ERC_EXIT_VIOLATIONS",
+      "SCH_SPEC_SCHEMA",
+      "SchComponent",
+      "SchNet",
+      "SchPinRef",
+      "SchSpec",
+      "generate_schematic",
+      "round_trip_certificate",
+      "run_erc",
+      "spec_to_gen"
     ],
     "service/koh_service.py": [
       "DELTA_CONVENTION",
@@ -3453,6 +3948,23 @@
       "export_step",
       "kicad_cli_info",
       "resolve_kicad_cli"
+    ],
+    "service/llm_error_service.py": [
+      "LlmCallError",
+      "LlmError",
+      "classify_llm_error",
+      "llm_error_envelope",
+      "llm_error_fields",
+      "test_llm_connection"
+    ],
+    "service/lvs_compare_service.py": [
+      "DEFAULT_TOLERANCE",
+      "LVS_COMPARE_SCHEMA",
+      "LVS_FORMATS",
+      "LVS_VERDICTS",
+      "compare_netlist_files",
+      "compare_netlist_texts",
+      "detect_netlist_format"
     ],
     "service/meta_retrieval_service.py": [
       "SUPPORTED_METRICS",
@@ -3649,12 +4161,27 @@
       "lock_owner_verdict",
       "memory_gate"
     ],
+    "service/roundtrip_certificate.py": [
+      "DiffNaming",
+      "NEUTRAL_NAMING",
+      "RoundtripCertificate",
+      "build_certificate",
+      "digest_text",
+      "fold_diff",
+      "is_pass"
+    ],
     "service/runtime_monitor_service.py": [
       "monitor_cycle",
       "monitor_run_dir"
     ],
     "service/schematic_diagram_service.py": [
       "generate_schematic_diagram"
+    ],
+    "service/schematic_read_service.py": [
+      "BOM_OVERVIEW_SCHEMA_VERSION",
+      "SCHEMATIC_OVERVIEW_SCHEMA_VERSION",
+      "bom_overview",
+      "schematic_overview"
     ],
     "service/session_audit_service.py": [
       "AuditVerdict",
@@ -3664,6 +4191,12 @@
       "audit_visible_messages",
       "content_digest",
       "logged_tool_digests"
+    ],
+    "service/skill_template_service.py": [
+      "lint_skill_code",
+      "list_skill_templates",
+      "render_skill_template",
+      "save_skill_file"
     ],
     "service/sop_executor_service.py": [
       "DANGEROUS_TOKENS",
@@ -3687,6 +4220,12 @@
       "resolve_watch_cache_root",
       "wait_decision",
       "watch_loop"
+    ],
+    "service/spice_netlist_service.py": [
+      "PARSER_SCHEMA_VERSION",
+      "SPICE_FLAVORS",
+      "parse_netlist_file",
+      "parse_netlist_text"
     ],
     "service/spice_param_export_service.py": [
       "spice_param_export"
@@ -3792,6 +4331,12 @@
       "read_mlflow_run",
       "read_mlflow_store",
       "read_wandb_history"
+    ],
+    "service/vendor_doc_service.py": [
+      "SUPPORTED_SUFFIXES",
+      "build_vendor_index",
+      "search_vendor_docs",
+      "zero_ingest_audit"
     ],
     "service/vendor_passives_service.py": [
       "list_vendor_parts",

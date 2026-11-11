@@ -49,7 +49,10 @@ SCHEMA = "rfauto-domain-survey-v1"
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 #: mcp_tools/ 豁免模块（无注册装饰器属正常：包 init 与 mcp 实例承载面）
-_MCP_TOOLS_EXEMPT_MODULES = {"__init__", "_core"}
+# _annotations（VB-1 注解装配）/_ratelimit（VB-7 限流表）为守卫/
+# 装配面非工具组（aurora_r M-10 2026-11-10 扩充；channel_policy
+# _RAISE_EXEMPT_FILES 同款语义）
+_MCP_TOOLS_EXEMPT_MODULES = {"__init__", "_core", "_annotations", "_ratelimit"}
 
 #: cli/domains/ 豁免模块（无域语义属正常：包 init 与共享核心面）——
 #: 孤儿判定与模块计数共用单源（W6-P3-5③：曾两处口径，计数处硬编码 −2，

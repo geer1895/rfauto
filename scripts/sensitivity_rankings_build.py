@@ -265,6 +265,25 @@ def _t_suspended_stripline(p: dict[str, Any]) -> float:
         p["w_mm"], p["b_mm"], h, er)[1])
 
 
+@_target("layered_stack")
+def _t_layered_stack(p: dict[str, Any]) -> float:
+    """y=Z0（晶圆键合空腔线设计恒等式：_suspended_stripline_ri 悬置闭式，
+    b=腔高、h=膜厚/εr=11.9 取 spec 族常量单源，design_params 反解同源）。
+    符号：dw→Z0 降（负，dZ0/dw≈−58Ω/mm 名义点）；dcavity_h→b 升→Z0 升
+    （正，弱通道）；line_len/wafer_w/cavity_w 不进 Z0 恒等式（0）。"""
+    from rfauto.adapters.layered_stack_spec import (
+        MATERIALS,
+        LayeredStackSpec,
+    )
+    from rfauto.core.calc_families.rf_line import _suspended_stripline_ri
+
+    spec = LayeredStackSpec()
+    h = float(spec.layers[spec.conductor_index()][1])
+    er = float(MATERIALS[spec.layers[spec.conductor_index()][0]].er)
+    return float(_suspended_stripline_ri(
+        float(p["strip_w_mm"]), float(p["cavity_h_mm"]), h, er)[1])
+
+
 @_target("wstep")
 def _t_wstep(p: dict[str, Any]) -> float:
     """y=阶跃反射 |Γ|=|Z2−Z1|/(Z2+Z1)（synthesize_wstep_model 同式）。
@@ -1275,7 +1294,9 @@ def _t_interdigital_cap(p: dict[str, Any]) -> float:
 
 # 可算集（字母序）：首批 18 + aurora72 A3-D 扩批 22 + R8-KN 扩批 4
 # + SENS-ANC 复核扩批 2 + W4-S19 全覆盖批 24 + aurora_g W6-S4 sir_bpf
-# 名义重注册解锁 1 = 71/72（模块 docstring 判定；
+# 名义重注册解锁 1 + aurora_k 三族（octagonal_spiral/mim_cap/
+# interdigital_cap）+ aurora_q Q-X6 layered_stack（2026-11-07，
+# design_params 反解恒等式同源）= 75/76（模块 docstring 判定；
 # W4-S19 起 teaching 集合不再排除入表、注册=全部 _TARGETS；
 # 留缺 1 族=ms_array_NxN，缘由见 docstring「W4-S19 全覆盖批」节⑤）
 COMPUTABLE_TEMPLATES: tuple[str, ...] = tuple(sorted(_TARGETS))

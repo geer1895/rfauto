@@ -113,7 +113,7 @@ def normalize_league_rows(rows: list[dict[str, Any]], runs_root: Path) -> list[d
     分隔符随运行平台（Windows ``\\`` / POSIX ``/``）——冻结帧在 Windows 采集，
     CI Linux 材料化回放的行集分隔符不同即哈希漂移（aurora_p H4 CI 实证
     test_league_service::TestRealRunsReplay 红）。归一发生在剥离之后，
-    与平台解耦，帧内存储值不动。
+    与平台解耦，帧内存储值不动。公开仓 CI 修复批（bcfd3a0）同款回冲。
     """
     prefix = str(runs_root)
     out: list[dict] = []

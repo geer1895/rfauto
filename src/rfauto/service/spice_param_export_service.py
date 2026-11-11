@@ -327,11 +327,32 @@ def _topology_signature(text: str) -> str:
     return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()[:16]
 
 
-def _pole_counts(poles_rad_s: list[list[float]]) -> dict[str, int]:
-    """极点类型计数（skrf 共轭对只存一个：存储复极点数=复共轭对数）。"""
-    n_real = sum(1 for _re, im in poles_rad_s if float(im) == 0.0)
-    n_stored = len(poles_rad_s)
-    n_pairs = n_stored - n_real
+def _pole_counts(summary: dict[str, Any]) -> dict[str, int]:
+    """极点类型计数——**单源消费** core/macromodel ``poles_summary``（Q-R3R）。
+
+    历史形态（Q-W8-2 前与本函数并列的双实现）：本函数从 ``poles_rad_s``
+    独立重算 ``n_pairs = n_stored - n_real``，与 core/macromodel
+    ``_poles_residues`` 的 ``poles_summary`` 同式同值——#122 家法"同键双
+    实现=未来漂移面"，本席单源化：计数式只在 core 一处（skrf 存储口径
+    共轭对只存一个，``n_complex_pairs = n_poles_stored - n_real``，#286
+    同源），本函数降为**键名映射**（core ``n_poles`` → 交付面
+    ``n_poles_stored``）+ ``effective_order`` 派生（= ``n_real +
+    2·n_complex_pairs``，#286 口径 ``get_model_order=N_real+2·N_complex``
+    的显示派生，非独立计数）。
+
+    Raises:
+        ValueError: summary 缺必备键（n_poles/n_real_poles/n_complex_pairs）
+            ——内核契约键缺失显式报错不静默（旧实现缺源时静默全零计数，
+            单源化后不再兜底假数据）。
+    """
+    try:
+        n_stored = int(summary["n_poles"])
+        n_real = int(summary["n_real_poles"])
+        n_pairs = int(summary["n_complex_pairs"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"poles_summary 残缺（单源=core/macromodel._poles_residues 契约键 "
+            f"n_poles/n_real_poles/n_complex_pairs）：{exc}") from exc
     return {"n_poles_stored": n_stored, "n_real_poles": n_real,
             "n_complex_pairs": n_pairs,
             "effective_order": n_real + 2 * n_pairs}
@@ -605,7 +626,15 @@ def spice_param_export(payload: dict[str, Any]) -> dict[str, Any]:
             return _fail("vector_fit", f"VF/SPICE 综合失败: "
                                        f"{type(exc).__name__}: {exc}", **diag)
         fit_warnings = _warning_lines(caught)
-        counts = _pole_counts(fit.get("poles_rad_s") or [])
+        # 单源化（Q-R3R）：极点计数只消费 core/macromodel._poles_residues
+        # 产出的 poles_summary（fit_macromodel 契约键，随 fit 同笔返回）——
+        # 本面不再从 poles_rad_s 独立重算（#122 同键双实现防漂移）。
+        kernel_summary = fit.get("poles_summary")
+        if not isinstance(kernel_summary, dict):
+            return _fail("vector_fit",
+                         "内核 poles_summary 缺失（fit_macromodel 契约键，"
+                         "单源计数无从消费）", **diag)
+        counts = _pole_counts(kernel_summary)
         pas = fit.get("passivity") or {}
         before = pas.get("before") or {}
         after = pas.get("after") or {}

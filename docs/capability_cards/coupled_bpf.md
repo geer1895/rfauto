@@ -57,8 +57,8 @@
 
 - 参数语义：order=谐振器阶数 N（决定 widths_mm/gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=50Ω 馈线宽（skrf HJ 精算 live 值，仅进几何）；widths_mm[j]/gaps_mm[j]=第 j 个耦合段线宽/边到边缝（j=0 输入馈-腔 … j=N 腔-输出馈，fake/openEMS 两通道同索引同语义，#154）；res_len_mm=谐振器 1 物理长（λg/2 − Δl(w0) − Δl(w1)），其余谐振器按各自端宽逐端 Δl 修正（段长逐段由 _coupled_bpf_section_lengths_mm 同源派生，res2 修量 −6.465µm/−182ppm）；feed_len_mm=输入 50Ω 馈线长（阵列 y 居中 ⇒ 两馈等长）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部盒缘（馈/耦合段/谐振器台阶）精确入网（#198 精确入网）
-- 冒烟现状：冒烟归档（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读，如实 PARTIAL
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
+- 冒烟现状：真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读（DEVLOG（一百一十）），如实 PARTIAL
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 DEVLOG 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

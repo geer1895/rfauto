@@ -413,7 +413,7 @@ class TestRegistration:
         # ge8b WA 席1 inverted_ms+hmsiw+fgcpw 67、WB 席B9 69、ge8d WD 席D2
         # embedded_ms+xcheb_bpf4 71、TA-13 ms_mushroom 72 由单源承载，
         # 字面计数退役）
-        assert len(EXPECTED_TEMPLATES) == 75  # 72→73 K11 octagonal_spiral→75 K12 mim_cap+interdigital_cap（aurora_k）
+        assert len(EXPECTED_TEMPLATES) == 76  # 72→73 K11 octagonal_spiral→75 K12 mim_cap+interdigital_cap→76 Q-X6 layered_stack（2026-11-07）
         assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == len(EXPECTED_TEMPLATES)
 
     def test_tail_order_contract(self):

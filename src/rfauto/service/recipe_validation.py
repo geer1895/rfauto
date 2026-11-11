@@ -22,7 +22,10 @@ ops 枚举单源=``core/objectives.MetricOp``（4 值）；指标名清单单源
   **在场但为空**硬错（无目标=必然无意义，UI recipe_save 同严）。
 - 参数面动态解析自模型插件 ``params_model.model_fields``（4 内置模型 +
   entry-point 第三方插件同口径）；模型未注册/非标准 params_model 时跳过
-  参数名校验（模型未知已另有 error，不重复报）。
+  参数名校验（模型未知已另有 error，不重复报）。T-Q14 增补 template:
+  双形态：``template`` 键（模板直跑族）参数面走 TEMPLATE_META/TEMPLATE_
+  NOMINAL 注册表并集面（:func:`template_family_surface`），model/template
+  同时在场=显式 error（两形态互斥）。
 """
 
 from __future__ import annotations
@@ -33,7 +36,11 @@ from typing import Any
 # ─── 顶层键白名单（单源；键 → 一句话语义） ────────────────────────────────────
 
 RECIPE_TOP_LEVEL_KEYS: dict[str, str] = {
-    "model": "目标模型（models 注册表键；必需）",
+    "model": "目标模型（models 注册表键；model/template 二选一，T-Q14 模板"
+             "直跑形态用 template 键）",
+    "template": "模板直跑族名（TEMPLATE_META 76 族键，T-Q14：openEMS 模板族"
+                "无优化模型时用；与 model 二选一，导出面 "
+                "rfauto templates export-recipe；可选）",
     "params": "设计参数（键=该模型 params_model 字段名；必需）",
     "setup": "仿真设置（name/sweep_name/freq_range_ghz/points/convergence_delta/"
              "max_passes/minimum_passes/solver/radiation_box；可选）",
@@ -92,6 +99,41 @@ def template_param_surface(model_name: str) -> set[str] | None:
     if not fields:
         return None
     return {str(k) for k in fields}
+
+
+def template_family_surface(family: str) -> set[str] | None:
+    """模板族合法参数名集合（T-Q14 模板直跑形态参数面）。
+
+    面 = TEMPLATE_META[family].params 表 ∪ TEMPLATE_NOMINAL[family] 键集
+    （meta params 是权威参数表；NOMINAL 个别键（ratrace r_ring_mm 先例，
+    P2-7 审查批补 nominal）不在 meta params 里但真实可配——并集口径防
+    守卫误伤合法键）。未知族返回 None（validate_recipe 的"未知模板族"
+    error 已覆盖，不重复报）。
+    """
+    from rfauto.adapters.oe_templates.registry import (  # lazy: adapters 注册表面
+        TEMPLATE_META,
+        TEMPLATE_NOMINAL,
+    )
+    if family not in TEMPLATE_META:
+        return None
+    meta = TEMPLATE_META[family]
+    nominal = TEMPLATE_NOMINAL.get(family, {})
+    return {str(k) for k in list(meta.get("params") or []) + list(nominal)}
+
+
+def _recipe_param_surface(data: dict[str, Any]) -> set[str] | None:
+    """配方参数面解析（T-Q14 双形态）：
+
+    - template: 形态 → 模板族注册表面（:func:`template_family_surface`）；
+    - model: 形态 → 模型插件 params_model 面（:func:`template_param_surface`）；
+    - 两者皆缺/未知 → None（跳过参数名校验，形态错误另有 error 覆盖）。
+    """
+    family = data.get("template")
+    if isinstance(family, str) and family:
+        return template_family_surface(family)
+    if data.get("model"):
+        return template_param_surface(str(data["model"]))
+    return None
 
 
 # ─── 键级白名单校验（纯函数；validate_recipe 消费） ───────────────────────────
@@ -163,8 +205,16 @@ def recipe_schema_errors(data: dict[str, Any]) -> list[str]:
                 f"未知顶层键: {key}{did_you_mean(key, RECIPE_TOP_LEVEL_KEYS)}"
                 f"（合法键与语义见 docs/reference.md「配方 schema」节）")
 
-    # 参数面一次解析（模型已注册时才有 surface；未注册 → 各参数名校验跳过）
-    surface = template_param_surface(str(data["model"])) if data.get("model") else None
+    # ⓪ T-Q14 双形态互斥（model: 优化链形态 / template: 模板直跑形态）——
+    # 同时在场语义歧义（run 链只会走其一），显式报错不放行。
+    if "model" in data and "template" in data:
+        errors.append(
+            "model 与 template 同时存在——两形态二选一：优化链用 model 键，"
+            "模板直跑（openEMS 族）删 model 键只留 template")
+
+    # 参数面一次解析（template 形态走模板注册表面；model 形态走插件面；
+    # 均未注册/未知 → 各参数名校验跳过）
+    surface = _recipe_param_surface(data)
 
     # ② params 参数名
     errors.extend(_param_name_errors("params", data.get("params"), surface))

@@ -342,6 +342,9 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         # 服务层组装，解析走既有链，证据零改写）
         Route("/api/credibility/curves", data_routes.api_credibility_curves),
         Route("/api/gallery", tools_routes.api_gallery),
+        # T-Q14（aurora_q Q-W1-1）：模板→配方导出（画廊/锚点页"导出配方"入口，
+        #   CLI templates export-recipe 同源 service/template_recipe_service）
+        Route("/api/template-recipe/export", tools_routes.api_template_recipe_export, methods=["POST"]),
         Route("/api/runs/{run_id}/dashboard", api_campaign_dashboard),
         # PR-9 调度队列页（ge8b Wave B 席B3）：战役队列+G13 决策日志（只读）
         Route("/api/campaign_queue", api_campaign_queue),

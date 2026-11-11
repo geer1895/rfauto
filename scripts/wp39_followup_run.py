@@ -16,7 +16,7 @@ wall≤1/2 被算术锁死（#224）——本脚本补测 §10.0 两档基线与
                 Search，MaxNumIteration=预算锚点，无法硬帽评估数——
                 实际评估数按提取梯次如实记录）；
 - patch_calib   ④ openEMS patch 单点扫频谷位标定（f_dip·L 常数，
-                对照归档 HFSS 99.8 与 Devlog 76.8，漂移比值定标）；
+                对照归档 HFSS 99.8 与 DEVLOG 76.8，漂移比值定标）；
 - optislang_probe  ② optiSLang MOP 超额线可用性探测（license/链路）；
 - judge         汇总 outdir 全部 followup JSON → summary。
 
@@ -91,7 +91,7 @@ MLINE_STACKUP = "rogers4350b_h0.508"
 PROBE_EPS_MESHES = [1.2, 2.0, 3.0]
 PROBE_W_LIST = [0.85, 1.113, 1.4]
 # ④ 标定参考常数（GHz·mm）：HFSS=归档 probe.s1p 离线复核值；
-# openEMS=Devlog（三十二）#190 23 点战役定标值。
+# openEMS=DEVLOG（三十二）#190 23 点战役定标值。
 # DP-3 第二批改道（df7 锚消费接线）：单源=knowledge/anchors.yaml
 # （patch.f_dip_l.hfss-v1 / .openems-v1），消费点经 _resolve_patch_constant
 # 按引擎对选锚解析；下列字面值降级为解析失败时的回退值（锚值与字面值
@@ -773,7 +773,7 @@ def run_patch_calib_tier(outdir: Path,
                          hfss_probe_path: Path) -> Path:
     """④ 标定：openEMS patch 名义尺寸单点扫频 → f_dip·L 常数。
 
-    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与 Devlog #190
+    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与 DEVLOG #190
     23 点战役定标值（76.8）；漂移比值 = 常数(HFSS)/常数(openEMS)——
     问题定义（f0/尺寸）必须按本引擎常数定标，否则目标落空（wp39
     首轮 patch 2.0GHz 目标盒内无谷的根因）。
@@ -847,7 +847,7 @@ def run_patch_calib_tier(outdir: Path,
         "hfss": hfss_entry,
         "references": {
             "openems_doc_constant": doc_const,
-            "openems_doc_source": "Devlog（三十二）#190 23 点战役定标",
+            "openems_doc_source": "DEVLOG（三十二）#190 23 点战役定标",
             "hfss_ref_constant": hfss_ref_const},
         "drift": {
             "hfss_over_openems": (
@@ -882,7 +882,7 @@ def probe_optislang(scan_roots: list[str] | None = None) -> dict[str, Any]:
     MOP 对照档如实记 NOT_RUN（不占冒名数字）。
     """
     roots = scan_roots or [
-        r"E:\ANSYSINC", r"C:\Program Files\ANSYS Inc",
+        r"C:\Program Files\ANSYS Inc", r"C:\Program Files\ANSYS Inc",
         r"E:\Program Files\ANSYS Inc",
     ]
     checks: dict[str, Any] = {}

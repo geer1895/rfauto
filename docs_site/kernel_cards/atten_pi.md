@@ -97,6 +97,7 @@ src/rfauto/core/calc_families/rf_match.py 公开符号 **6** 个（AST 机读）
 
 - service：`src/rfauto/service/anchor_family_service.py`
 - service：`src/rfauto/service/diagram_stackup_service.py`
+- service：`src/rfauto/service/em_bench_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -141,7 +142,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `atten_pi.r_series_mid_ohm.closedform-v1` | atten_pi_r_series_mid_ohm |
 | `atten_t.r_series_arm_ohm.closedform-v1` | atten_t_r_series_arm_ohm |
 
-测试面（tests/unit 引用扫描，机读；合计 **1770** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1823** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -195,6 +196,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_qw10_qw11.py` | 14 |
 | `tests/unit/test_ratrace_template.py` | 19 |
 | `tests/unit/test_rest_api.py` | 106 |
+| `tests/unit/test_rf_matrix_branchline.py` | 53 |
 | `tests/unit/test_ring_resonator_template.py` | 25 |
 | `tests/unit/test_rp1_myj_sec4_05_prototype.py` | 6 |
 | `tests/unit/test_rp1_pozar_patch_example.py` | 3 |

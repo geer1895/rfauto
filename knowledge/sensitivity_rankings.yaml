@@ -532,6 +532,25 @@ templates:
       score: 0.001555
     - param: w_feed_mm
       score: 0.0
+  layered_stack:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-19'
+    target_quantity: y=Z0（晶圆键合空腔线设计恒等式：_suspended_stripline_ri 悬置闭式， b=腔高、h=膜厚/εr=11.9 取 spec 族常量单源，design_params
+      反解同源）。
+    ranking:
+    - param: cavity_h_mm
+      score: 0.73949
+    - param: strip_w_mm
+      score: 0.604546
+    - param: cavity_w_mm
+      score: 0.0
+    - param: line_len_mm
+      score: 0.0
+    - param: wafer_width_mm
+      score: 0.0
   loop:
     method: central_finite_difference_elasticity
     n_samples: 7

@@ -1,0 +1,37 @@
+# Monopole 单极子天线 — 模板直跑配方（T-Q14 模板→配方通路预置件，aurora_q Q-W1-1）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增（T-Q18 部分提前）：接地 λ/4 单极子，天线族 II 第二例
+# （template: 形态，与 pifa_v1 同通路）。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe monopole --out recipes/monopole_v1.yaml --force
+# · run 通道: fake（解析近似零 license，单极子 L=λ0/4 精确逆 f0）或 openems（真引擎）。
+# · tune 调参面暂不支持 template 形态（同 pifa_v1 边界注）。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；
+#   通路全程实录：docs/tutorials/from-template-to-first-sim.md。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+template: monopole
+# template：openEMS 模板族名（TEMPLATE_META 75 族键；与 model 二选一且互斥）。
+recipe_version: 1
+# recipe_version：配方 schema 版本（与插件 schema_version 语义不同，#106）。
+notes: "2.4 GHz 接地 λ/4 单极子，Rogers 4350B 0.508mm"
+# notes：人类备注（自由文本，不进校验/缓存键）。
+params:
+  # params：设计参数段（键名=monopole 族参数面；名义值出处=注册表归档）。
+  mon_len_mm: 31.2284
+  # mon_len_mm：单极子臂长 L（设计式 L=λ0/4，精确逆 f0=c/(4L)）。
+  mon_w_mm: 1.0
+  # mon_w_mm：臂宽 W。
+  feed_gap_mm: 2.0
+  # feed_gap_mm：馈电间隙（底馈探针口径）。
+setup:
+  # setup：仿真设置段（频带/点数=export-recipe 从 meta f0 确定性派生口径）。
+  solver: openEMS
+  freq_range_ghz: [2.304, 2.5]
+  points: 401
+objectives:
+  # objectives：判读带取设计频率 ±2%（pifa_v1 同款口径）。
+  - metric: s11_db_min
+    band: [2.35, 2.45]
+    op: max_below
+    value: -10

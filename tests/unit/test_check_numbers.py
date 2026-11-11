@@ -138,7 +138,7 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # 落 runs/campaign_digest/，全叶带 --json）→ 274
     # aurora_p 同步席（2026-11-02）：280→297（aurora_n/o/p 新 CLI 叶，
     # 口径不变=check_numbers.count_cli()；README 数字带同笔 297）。
-    assert check_numbers.count_cli() == 297
+    assert check_numbers.count_cli() == 357  # v0.14.0 移除笔：loop run 摘除（专利冻结面，-1）
 
 
 def test_cli_bench_subapp_breakdown():
@@ -247,7 +247,7 @@ def test_mcp_resources_dual_source_consistent():
     # 薄资源，W2-S2 留账跨锚补齐）→ 10。
     n, src = check_numbers.count_mcp_resources()
     n_rx = check_numbers.count_mcp_resources_regex()
-    assert n == n_rx == 10
+    assert n == n_rx == 17
     assert src.startswith("list_resources()")  # 注册面主口径可达（非回退态）
 
 
@@ -442,7 +442,8 @@ def test_v2_segment_rc_guard_red_when_no_parseable_red(
 
     seg_state = {"broken": True}
 
-    def fake_run_seg(chunk, log_path, xml_path):
+    def fake_run_seg(chunk, log_path, xml_path, *args, **kwargs):
+        # *args/**kwargs：v2 段进程恒传 durations_top/env_extra（W1-3）
         if seg_state["broken"] and chunk[0].endswith("a.py"):
             # seg1 硬杀：rc 负巨值 + 零汇总行 + 零 FAILED（probe 同款形态）
             log_path.write_text("killed without summary\n", encoding="utf-8")

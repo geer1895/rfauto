@@ -30,7 +30,6 @@ def explain_run(run_dir: str, playbook_path: str | None = None) -> dict[str, Any
 def list_composable_templates() -> dict[str, Any]:
     """列出已注册组合契约模板与 pin schema（DP-8 opt-in 台账）。
 
-    只读台账零副作用；空注册如实 n_templates=0，不用于模板渲染执行。
     读取失败 → ok=False。只读无时序约束。
 
     Args:

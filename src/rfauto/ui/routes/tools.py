@@ -4,6 +4,7 @@
 - GET       /api/calculators           api_calculators（计算器清单，参数自描述）
 - POST      /api/calculators/run       api_calculators_run（执行计算器）
 - GET       /api/gallery               api_gallery（模板卡+闭式预览通道映射）
+- POST      /api/template-recipe/export api_template_recipe_export（T-Q14 模板→配方导出）
 - GET       /api/playground/runs       api_playground_runs（有校准产物的 run）
 - POST      /api/playground/predict    api_playground_predict（滑条→代理预测）
 - POST      /api/playground/explore    api_playground_explore（扫描切片后验曲线）
@@ -42,6 +43,22 @@ async def api_gallery(request: Request) -> JSONResponse:
     """
     from rfauto.service.gallery_service import gallery_cards
     return JSONResponse(gallery_cards())
+
+
+async def api_template_recipe_export(request: Request) -> JSONResponse:
+    """T-Q14 模板→配方导出（画廊/锚点页"导出配方"入口；CLI
+    ``templates export-recipe`` 同源 service/template_recipe_service）。
+
+    body={"family": 族名, "path"?: 写出路径（缺省只回 YAML 文本不落盘——
+    前端预览；写面经 recipe_guard explicit 档）, "overwrite"?: 覆盖既有}。
+    """
+    from rfauto.service.template_recipe_service import export_template_recipe
+    body: dict[str, Any] = await _json_body(request)
+    return JSONResponse(export_template_recipe(
+        str(body.get("family", "")),
+        body.get("path") or None,
+        overwrite=bool(body.get("overwrite", False)),
+    ))
 
 
 async def api_playground_runs(request: Request) -> JSONResponse:

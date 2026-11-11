@@ -1,7 +1,7 @@
 """remote_oe_service —— openEMS 远程执行通道（多机协同 v1，ge5 Wave2）。
 
 ``fd_oe_campaign --remote`` 的执行通道（此前「license 预检+如实 SKIP」的
-未接线分支由此接上）。调用权威=docs/rfauto_openEMS_服务器安装与调用说明.md
+未接线分支由此接上）。调用权威=项目 openEMS 服务器安装手册（内部档）
 §五（姿势 B：任务书+任务目录九步 SOP）/§六红线——本模块不发明新发射形态。
 
 执行模型取舍（playbook G7 连坐/G8 缺省 shell/G5 零双引号，2026-09-30 定案）：
@@ -36,7 +36,7 @@ poll 档 rc 判读用）。判据/健康门/nrts 门全在回拉后本地消费�
 零改动直读。
 
 服务器侧约束（说明书 §六红线/AGENTS 0b）：工作根=注册表
-``hfss.project_root``（E:\\rfauto_remote 语义，禁 D:\\CloudDrive）；任务
+``hfss.project_root``（远程工作根语义，禁生产云盘直写）；任务
 目录 ``tasks\\oe_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 服务器侧进程指纹直查=权威判据 + §5.4 第 3 步 run_server_probe.ps1
 mutex 行=旁证；非零命中=候跑 SKIP，rc≠0=验不了不发射 fail-closed，
@@ -72,7 +72,13 @@ from rfauto.infra.remote_machines import (
     probe_machine,
     resolve_machine,
 )
-from rfauto.service.envelope import skipped_envelope
+from rfauto.infra.request_receipt import (
+    STATE_PENDING,
+    STATE_SENT,
+    payload_fingerprint,
+    resolve_ledger,
+)
+from rfauto.service.envelope import error_envelope, ok_envelope, skipped_envelope
 from rfauto.service.remote_service import (
     REMOTE_SMOKE_ENV,
     remote_mutex_command,
@@ -504,6 +510,49 @@ def _cleanup_remote_taskdir(
 # ─── 主编排（JSON 信封进出，fail-closed） ─────────────────────────────────
 
 
+def _settle_sync_receipt(
+    ledger: Any, key: str, lane: str, envelope: dict[str, Any],
+) -> None:
+    """同步档收尾结算（VB-2，``finally`` 内调用；只补信封诊断键不翻面）。
+
+    分类依据=发射边界（``mark_sent``）后的条目状态 + ``exec_rc``：
+
+    - 条目已发射（sent）且 ``exec_rc`` 非负确定值 → ``completed``（请求
+      确定走完；引擎 rc≠0 的 PARTIAL/FAIL 判读照旧在快照里，回执只记
+      "请求有确定结局"）；
+    - 条目已发射但 ``exec_rc`` 缺失/负值（transport 死亡语义/通道异常）
+      → ``unknown``（归属不可证：命令可能已上服务器执行）+ **毒化车道**
+      ——同键永不自动重放，须凭回执对账；
+    - 条目仍 pending（发射前任何早退：互斥候跑/上传失败/链路裸抛）
+      → 回收条目（``not_started``，确定未发送，允许重试）。
+
+    信封诊断键 ``receipt_outcome``/``receipt_id`` 只在传了 receipt_key 的
+    调用上出现（缺省路径零变化铁律）。
+    """
+    peeked = ledger.peek(key)
+    if peeked is None:
+        return
+    if peeked["state"] == STATE_SENT:
+        rc = envelope.get("exec_rc")
+        if rc is not None and rc >= 0:
+            ledger.mark_completed(key, dict(envelope))
+            envelope["receipt_outcome"] = "completed"
+        else:
+            decision = ledger.mark_unknown(
+                key, lane=lane,
+                reason="sync 通道异常（exec_rc 缺失/负值=发射后归属不可证）",
+            )
+            envelope["receipt_outcome"] = "unknown"
+            envelope["receipt_id"] = decision.receipt_id
+            if not envelope.get("ok"):
+                envelope.setdefault("errors", []).append(
+                    "receipt_outcome=unknown: 发送后归属不可证"
+                    "（同键重提前必须凭回执对账）")
+    elif peeked["state"] == STATE_PENDING:
+        ledger.rollback_pending(key)
+        envelope["receipt_outcome"] = "not_started"
+
+
 def _validate_seat_spec(seat_spec: dict[str, Any]) -> tuple[str, str, str]:
     """座位内容物校验（纯本地）→ (template, campaign, timeout_s 文本)。"""
     if not isinstance(seat_spec, dict):
@@ -549,6 +598,9 @@ def remote_oe_run(
     keep_remote: bool = False,
     sleep_fn: Callable[[float], None] = time.sleep,
     now_fn: Callable[[], float] = time.monotonic,
+    receipt_key: str | None = None,
+    receipt_ledger: Any = None,
+    receipt_deadline_mono: float | None = None,
 ) -> dict[str, Any]:
     """openEMS 远程执行通道五步编排（**真机 opt-in**：``RFAUTO_REMOTE_SMOKE=1``）。
 
@@ -581,6 +633,20 @@ def remote_oe_run(
         等待注入点（单测零真睡）。
     now_fn :
         时钟注入点（轮询超时判定的单测可 advancing 假钟）。
+    receipt_key :
+        VB-2 请求回执幂等键（None=缺省原路径，信封键集零变化）。仅支持
+        sync 档（poll 档自带批次 uuid+launch_rc.txt 对账面）；传键即启用
+        不确定结局协议：发射前 claim 闸门（同键同载荷终态=快照重放信封、
+        异载荷/时间窗外/车道毒化=拒绝信封、在飞=unknown 拒绝重放），
+        发射边界 ``mark_sent`` 于 sync ``run_command`` 之前，finally 按条
+        目状态+exec_rc 结算（见 ``_settle_sync_receipt``）——发射后通道
+        异常=unknown+毒化车道（同键永不自动重放），发射前早退=回收条目
+        可重试。车道名 ``remote_oe:<machine>``；毒化解除=探针重同步成功
+        （本函数内 probe reachable 即自动 ``resync_lane``，跨调用生效）。
+    receipt_ledger :
+        显式回执账本（None=进程级缺省单例，与 run_once_async 共用）。
+    receipt_deadline_mono :
+        单调时钟请求预算 deadline（claim 前耗尽即 not_started，观察位 5）。
 
     Returns
     -------
@@ -593,6 +659,9 @@ def remote_oe_run(
         fetch/cleanup}}``。ok=链路走通（发射+回拉≥1 文件+清理过）——rc≠0
         但产物在=ok 且 verdict=PARTIAL（判读交回拉后本地判读面，rc 随信封
         落账）；skipped=True=前置不满足未发射（互斥候跑/凭据缺/env 门）。
+        传 receipt_key 时另有 ``receipt_outcome``（/``receipt_id``）诊断键；
+        通道死亡 rc=-1 的 PARTIAL 信封会带 ``receipt_outcome="unknown"``
+        ——同键重提前必须先对账，判读面消费时先看此键。
     """
     # ── env 门（真机 opt-in） ──
     if os.environ.get(REMOTE_OE_ENV) != "1":
@@ -610,6 +679,15 @@ def remote_oe_run(
         return {"ok": False, "verdict": "FAIL", "skipped": False,
                 "launched": False, "reason": f"wait_mode 非法: {wait_mode}",
                 "criteria": {}, "steps": {}}
+    if receipt_key is not None and wait_mode != "sync":
+        # VB-2 fail-closed：回执闸门仅覆盖 sync 档（poll 档自带批次
+        # uuid+launch_rc.txt 对账面）——静默忽略会造出无对账的重复发射面
+        return error_envelope(
+            ["receipt_key 仅支持 sync 档"
+             "（poll 档请用批次 uuid+launch_rc.txt 对账）"],
+            verdict="FAIL", skipped=False, launched=False,
+            receipt_outcome="rejected", receipt_id=None,
+        )
 
     machines = load_remote_machines()
     if machine is None and not machines:
@@ -637,17 +715,17 @@ def remote_oe_run(
     if not cfg.hfss_project_root:
         return skipped_envelope(
             "机器未登记 hfss.project_root（服务器侧工作根，"
-            "禁 D:\\CloudDrive 语义靠此钉）",
+            "禁生产云盘直写语义靠此钉）",
             ok=False, steps=steps,
         )
     try:
         work_root = _check_remote_safe("hfss.project_root", cfg.hfss_project_root)
         # 纵深防御（ge5 审查 F5）：登记正确性之外显式拒绝生产云盘前缀
-        # （AGENTS 规则 0b：中间文件只落服务器本机盘，禁写 D:\CloudDrive；
+        # （AGENTS 规则 0b：中间文件只落服务器本机盘，禁写生产云盘；
         # 显式 .lower()——normcase 在 POSIX 恒等，#304）
         if work_root.replace("/", "\\").lower().startswith("d:\\clouddrive"):
             raise RemoteOeError(
-                "hfss.project_root 禁写生产云盘 D:\\CloudDrive"
+                "hfss.project_root 禁写生产云盘 生产云盘"
                 "（中间文件只落服务器本机工作根，AGENTS 规则 0b）",
                 details={"work_root": work_root[:80]},
             )
@@ -658,6 +736,51 @@ def remote_oe_run(
         return {"ok": False, "verdict": "FAIL", "skipped": False,
                 "launched": False, "reason": str(exc)[:240],
                 "criteria": {}, "steps": steps}
+
+    # ── VB-2 请求回执闸门（可选；不传键零变化）────────────────────────
+    # 放在探针之后：毒化车道的解除=探针重同步成功（probe reachable 即
+    # resync，跨调用生效）；同键 unknown 条目不因车道解除而放行（须对账）。
+    receipt: tuple[Any, str, str] | None = None
+    if receipt_key is not None:
+        _rl = resolve_ledger(receipt_ledger)
+        _lane = f"remote_oe:{cfg.name}"
+        _lane_st = _rl.lane_state(_lane)
+        if _lane_st.get("poisoned"):
+            if steps.get("probe", {}).get("reachable"):
+                _rl.resync_lane(_lane)  # 探针重同步成功 → 解除毒化（VB-2）
+            else:
+                return error_envelope(
+                    ["车道毒化中（此前有 unknown 请求归属未落定），"
+                     "且探针不可达无法重同步——请检修通道或人工对账"],
+                    verdict="FAIL", skipped=False, launched=False,
+                    receipt_outcome="rejected", receipt_id=None,
+                    diagnostics={"lane": _lane, "probe_reachable": False},
+                )
+        _fp = payload_fingerprint({"kind": "remote_oe_run",
+                                   "seat_spec": seat_spec})
+        _decision = _rl.claim(str(receipt_key), _fp, lane=_lane,
+                              deadline_mono=receipt_deadline_mono)
+        if not _decision.proceed:
+            if _decision.outcome in ("completed", "failed"):
+                _snap = _decision.snapshot or {}
+                return ok_envelope(
+                    verdict=_snap.get("verdict"), machine=_snap.get("machine"),
+                    launched=True, idempotent_replay=True,
+                    receipt_outcome=_decision.outcome,
+                    receipt_id=_decision.receipt_id,
+                    exec_rc=_snap.get("exec_rc"),
+                    out_dir_local=_snap.get("out_dir_local"),
+                    reason=_snap.get("reason"),
+                    replayed_envelope=_snap,
+                )
+            return error_envelope(
+                [_decision.reason or f"请求回执判定 {_decision.outcome}"],
+                verdict="FAIL", skipped=False, launched=False,
+                receipt_outcome=_decision.outcome,
+                receipt_id=_decision.receipt_id,
+                diagnostics=dict(_decision.diagnostics),
+            )
+        receipt = (_rl, str(receipt_key), _lane)
 
     batch = f"oe_{uuid.uuid4().hex[:8]}"
     task_dir = f"{work_root}\\tasks\\{batch}"
@@ -751,6 +874,10 @@ def remote_oe_run(
         # ③ 发射+等待（sync=阻塞直指 / poll=分离+存活复核+轮询）
         if wait_mode == "sync":
             launch_cmd = f"cmd /c {task_dir}\\run_task.bat"
+            if receipt is not None:
+                # 发射边界（VB-2）：阻塞直指前=确定已交给通道；此后到
+                # finally 结算前，同键 claim 一律 unknown（永不自动重放）
+                receipt[0].mark_sent(receipt[1])
             t0 = time.monotonic()
             lrc, out, err = transport.run_command(
                 launch_cmd, timeout_s=exec_timeout)
@@ -918,6 +1045,10 @@ def remote_oe_run(
             envelope["reason"] = (
                 "服务器侧任务目录清理未通过（任务毕必须清理，AGENTS 0b）"
             )
+        if receipt is not None:
+            # VB-2 同步档收尾结算（发射边界后按条目状态+exec_rc 分类；
+            # 发射前早退=回收可重试，发射后通道异常=unknown+毒化车道）
+            _settle_sync_receipt(receipt[0], receipt[1], receipt[2], envelope)
         envelope["criteria"]["c3_workdir_cleaned"] = bool(
             cleanup.get("skipped") or cleanup.get("verified_gone")
         )

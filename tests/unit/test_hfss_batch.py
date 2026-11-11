@@ -143,7 +143,7 @@ def test_build_batch_command_logfile_project_last():
 
 
 def test_build_batch_command_design_qualifier_rejected():
-    # -designs 设计限定不受 v251 支持（2026-10-13 sim_server 真机核实
+    # -designs 设计限定不受 v251 支持（2026-10-13 lab_server 真机核实
     # verdict=FAIL：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态
     # 旗标被静默吞、值按 "Unexpected command line argument ... ignored"
     # 丢弃、退化全设计求解 rc=0——runs/aurora_c/designs_verify/）。

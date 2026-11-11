@@ -1,4 +1,4 @@
-"""E7a DRC/DFM gate (plan-extension_v2 section E7a).
+"""E7a DRC/DFM gate (Plan_Extension_v2 section E7a).
 
 DRC/DFM minimum gate:
 - Reuse KiCad official DRC (IPC API)

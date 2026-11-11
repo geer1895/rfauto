@@ -57,7 +57,10 @@ def test_registry_exists_and_matches_computable_set():
 
     reg = _load()
     assert set(reg) == set(srb.COMPUTABLE_TEMPLATES)
-    assert len(reg) == 74  # 71→74 aurora_k：octagonal_spiral/mim_cap/interdigital_cap 三族入表
+    # 71→74 aurora_k：octagonal_spiral/mim_cap/interdigital_cap 三族入表
+    # → 75 aurora_q Q-X6：layered_stack 入表（2026-11-07，design_params
+    # 反解恒等式同源；留缺仍 1 族 ms_array_NxN）
+    assert len(reg) == 75
     # sir_bpf 已解锁入表（W6-S4 名义重注册）；留缺 1 族如实不在表
     # （builder docstring「W4-S19 全覆盖批」节⑤）
     assert "sir_bpf" in reg and "ms_array_NxN" not in reg

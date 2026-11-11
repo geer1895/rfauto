@@ -191,7 +191,7 @@ FACTOR_RECIPROCITY = "reciprocity"
 FACTOR_F0_OFFSET = "f0_offset"
 FACTOR_RESULT_FRESHNESS = "result_freshness"
 
-# 教训编号（Devlog）——写进每条判据，保证报告可回溯到踩坑原文
+# 教训编号（DEVLOG）——写进每条判据，保证报告可回溯到踩坑原文
 LESSON_SOLVE_STATUS = "#157（watchdog 整树击杀，击杀后残留产物不可信）"
 LESSON_TOUCHSTONE = "#316（证据损坏多报方向）+ 2026-10-08 -BatchSolve 不产网络参数断链"
 LESSON_PORT_COUNT = "#248/#309（Touchstone 端口数契约：skrf 按扩展名推 rank/多模改名）"
@@ -263,7 +263,7 @@ _PASSIVITY_LINEAR_EPS = 1e-9
 DEFAULT_S11_DIP_DB = -10.0
 
 #: 模板作用域门登记表（#274 家法：键=spec.template 名；值=S11@f0 谷深门
-#: dB 或 None）。登记须带出处（Devlog 坑号/官方口径）；值 None=该族显式
+#: dB 或 None）。登记须带出处（DEVLOG 坑号/官方口径）；值 None=该族显式
 #: 不设谷深门（如实 UNKNOWN，不硬套通用缺省门）。未登记的模板名回退
 #: :data:`DEFAULT_S11_DIP_DB`。
 S11_DIP_DB_BY_TEMPLATE: dict[str, float | None] = {}

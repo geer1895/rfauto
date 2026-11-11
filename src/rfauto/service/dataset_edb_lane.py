@@ -209,22 +209,28 @@ def _resolve_touchstone(
 
 
 def _read_touchstone_meta(path: Path) -> dict[str, Any]:
-    """skrf 复读 Touchstone → 文件自述元数据（n_ports/n_freqs/频率轴端点
-    GHz）。解析失败抛异常由调用方转候选级跳过；skrf 缺失 RuntimeError
-    显式报错（openems extra 惯例，不静默降级）。"""
-    try:
-        import skrf
-    except ImportError as exc:
-        raise RuntimeError(
-            "EDB 道收集需要 skrf 复读 Touchstone：pip install rfauto[openems]"
-            "（或 pip install scikit-rf）") from exc
-    net = skrf.Network(str(path))
-    n_ports = int(net.s.shape[1])
-    n_freqs = int(net.s.shape[0])
-    f_hz = net.frequency.f
+    """Touchstone 单源复读 → 文件自述元数据（n_ports/n_freqs/频率轴端点
+    GHz）。
+
+    R-27 单源迁移（2026-11-10）：skrf.Network 直读 → core/touchstone_parser
+    单源解析（#248 rank 三规则判定取代扩展名推断；解析器为纯文本内核，
+    不再依赖 skrf——skrf 缺失的 RuntimeError 通道随之消亡，解析失败
+    （含 rank 判不出）抛 ValueError 族由调用方转候选级跳过，语义不变）。
+    """
+    from rfauto.core.touchstone_parser import parse_touchstone
+
+    parsed = parse_touchstone(path)
+    n_ports = parsed["n_ports"]
+    if n_ports is None or parsed["s_matrix"] is None:
+        raise ValueError(
+            f"Touchstone 端口数/矩阵无法判定（rank 冲突，宁 UNKNOWN 不误判）: "
+            f"{path}")
+    f_hz = parsed["freqs_hz"]
+    if not f_hz:
+        raise ValueError(f"Touchstone 无数据行: {path}")
     return {
-        "n_ports": n_ports,
-        "n_freqs": n_freqs,
+        "n_ports": int(n_ports),
+        "n_freqs": int(parsed["n_freqs"]),
         "f_min_ghz": float(f_hz[0]) / 1e9,
         "f_max_ghz": float(f_hz[-1]) / 1e9,
     }

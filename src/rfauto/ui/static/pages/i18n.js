@@ -235,6 +235,55 @@ export const LOCALES = {
   },
   "gallery.compute": { zh: "计算", en: "Compute" },
   "gallery.result_hint": { zh: "拖动滑块后点「计算」", en: "Drag sliders, then click Compute" },
+  /* T-Q14（aurora_q Q-W1-1）：抽屉"导出配方"入口（模板→配方通路，参数表页） */
+  "gallery.export_btn": { zh: "导出配方", en: "Export recipe" },
+  "gallery.export_aria_tpl": {
+    zh: "导出 {name} 模板的配方 YAML",
+    en: "Export recipe YAML for template {name}",
+  },
+  "gallery.export_busy": { zh: "生成中…", en: "Generating…" },
+  "gallery.export_form_tpl": {
+    zh: "形态：{form}（{next}）",
+    en: "Form: {form} ({next})",
+  },
+  "gallery.export_next_model": {
+    zh: "rfauto validate 配方 → rfauto run 配方（优化链全可用）",
+    en: "rfauto validate recipe → rfauto run recipe (full chain)",
+  },
+  "gallery.export_next_template": {
+    zh: "rfauto validate 配方 → rfauto run 配方 --adapter fake（零 license 冒烟）或 --adapter openems（真引擎）",
+    en: "rfauto validate recipe → rfauto run recipe --adapter fake (smoke) or --adapter openems (engine)",
+  },
+  "gallery.export_copy_hint": {
+    zh: "复制以下 YAML 存为 .yaml 文件即得可跑配方（或 CLI：rfauto templates export-recipe）",
+    en: "Copy the YAML below into a .yaml file (or CLI: rfauto templates export-recipe)",
+  },
+  /* T-Q18（aurora_q Q-W9-1R）：卡片级导出入口 + 导出后三步提示条（已导出→
+     validate→run 引导；卡/抽屉共用步序文案；refresh 行=件3 清单收录语义） */
+  "gallery.card_export_aria_tpl": {
+    zh: "导出配方：{name}（卡片级入口）",
+    en: "Export recipe: {name} (card entry)",
+  },
+  "gallery.export_steps_title": {
+    zh: "已导出——接下来三步：",
+    en: "Exported — three steps next:",
+  },
+  "gallery.export_step1_done": {
+    zh: "① 已导出：复制下方 YAML 存为 .yaml 文件（或 CLI --out 直接落盘）",
+    en: "1. Exported: copy the YAML below into a .yaml file (or CLI --out)",
+  },
+  "gallery.export_step2_validate": {
+    zh: "② 校验：rfauto validate 配方文件",
+    en: "2. Validate: rfauto validate the recipe file",
+  },
+  "gallery.export_step3_run": {
+    zh: "③ 试跑：rfauto run 配方文件 --adapter fake（零 license 冒烟；真引擎按配方形态走 openems 或 hfss）",
+    en: "3. Run: rfauto run the recipe file --adapter fake (zero-license smoke; the real engine runs openems or hfss depending on recipe form)",
+  },
+  "gallery.export_steps_refresh": {
+    zh: "存入 recipes/ 后，「配方编辑」页目录与命令面板自动收录（目录每次进页重扫 recipes/；面板缓存 60 秒）",
+    en: "Saved under recipes/, the Recipe editor catalog and command palette pick it up automatically (catalog rescans recipes/ on each page visit; palette caches for 60s)",
+  },
   /* 三态收敛（aurora_f W2-S5，R1 #8 批1）：过滤零命中空态（kitEmptyState 消费） */
   "gallery.empty_filter": {
     zh: "无匹配模板——调整过滤词再试",
@@ -1114,6 +1163,15 @@ export const LOCALES = {
   "anchors.aria_detail_tpl": { zh: "查看锚详情：{name}", en: "View anchor detail: {name}" },
   "anchors.detail_lead": { zh: "锚详情 — ", en: "Anchor detail — " },
   "anchors.detail_unreadable": { zh: "详情不可读", en: "detail unreadable" },
+  /* T-Q14（aurora_q Q-W1-1）：锚详情"导出配方"入口（关联模板族 → 配方 YAML） */
+  "anchors.export_btn_tpl": {
+    zh: "导出配方：{name}",
+    en: "Export recipe: {name}",
+  },
+  "anchors.export_result_title_tpl": {
+    zh: "{name} 导出配方（复制存为 .yaml 即可 validate/run）",
+    en: "{name} recipe (save as .yaml to validate/run)",
+  },
 
   /* ── uq.*（UQ 不确定度页：代理蒙特卡洛良率 + 敏感性）── */
   "uq.help_1": {
@@ -2227,6 +2285,10 @@ export const LOCALES = {
   "gallery.desc_isl_shielded": {
     zh: "屏蔽悬置线：悬置带线再加过孔屏蔽墙，接近全屏蔽的基准传输线。",
     en: "Shielded suspended line: a suspended stripline with via-fence walls, close to a fully shielded reference line.",
+  },
+  "gallery.desc_layered_stack": {
+    zh: "晶圆键合叠层空腔线：多层叠片挖腔后膜片悬置于金属化腔内，载带悬空跨腔，两端腔截面即波端口。",
+    en: "Wafer-bonded cavity line: a membrane suspended inside a metalized cavity etched through a multilayer stack, strip crossing the cavity, wave ports on the cavity end faces.",
   },
   "gallery.desc_lange": {
     zh: "Lange 电桥：四条指状线交指耦合，宽带 3dB 正交功分。",

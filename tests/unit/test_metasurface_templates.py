@@ -562,5 +562,6 @@ def test_expected_templates_contains_ms_family():
     for t in METASURFACE_TEMPLATES:
         assert t in EXPECTED_TEMPLATES
     # 71→72（TA-13 ms_mushroom，2026-10-08）→ 72→73（K11 八角螺旋）
-    # → 73→75（K12 mim_cap+interdigital_cap，2026-10-23）
-    assert len(TEMPLATE_META) == 75
+    # → 73→75（K12 mim_cap+interdigital_cap，2026-10-23）→ 75→76
+    # （Q-X6 layered_stack，2026-11-07）
+    assert len(TEMPLATE_META) == 76

@@ -297,7 +297,7 @@ def test_b2a_window_constants_bit_exact_vs_verdict() -> None:
     for aid, (rel, metric, params) in _B2A_CONSTANTS.items():
         verdict = _load_b2a_verdict(rel)
         assert verdict["verdict"] in ("AGREE_OPENEMS", "AGREE_JUDGE")
-        assert verdict["machine"] == "sim_server"
+        assert verdict["machine"]  # 机器字段结构性非空（具体机器名=本机档证据语义，不随公开树漂移）
         row = next(m for m in verdict["per_metric"] if m["metric"] == metric)
         assert row["in_gate"] is True  # 门内才定锚（DISAGREE 席改 pointer）
         got = anchor_set.resolve_anchor(aid, params)
@@ -316,7 +316,7 @@ def test_b2a_window_pointers_dual_values_bit_exact_vs_verdict() -> None:
         verdict = _load_b2a_verdict(
             f"runs/hfss_window_b2a/{seat}/hfss_side/verdict.json")
         assert verdict["verdict"] == "DISAGREE"
-        assert verdict["machine"] == "sim_server"
+        assert verdict["machine"]  # 机器字段结构性非空（具体机器名=本机档证据语义，不随公开树漂移）
         rec = anchor_set.get(aid)
         assert rec is not None, aid
         assert rec.kind == "pointer" and rec.status == "experimental"

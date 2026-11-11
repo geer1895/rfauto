@@ -209,8 +209,8 @@ _SCOPE_ALL = frozenset({"counts", "docs_drift", "contracts"})
 #: 根数字带文件（check_numbers 校验对象，#97 计数链载体）
 _BAND_FILES = frozenset({
     "README.md",
-    "AGENTS",
-    "agent handoff_CURRENT.md",
+    "AGENTS.md",
+    "AGENT_HANDOFF_CURRENT.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "mkdocs.yml",

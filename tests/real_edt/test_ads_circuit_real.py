@@ -28,7 +28,7 @@ from rfauto.service.circuit_sim_service import (
 
 pytestmark = [pytest.mark.real_edt, pytest.mark.solo]
 
-_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"E:/ADS/ADS27"))
+_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"C:/Program Files/Keysight/ADS2027"))
 
 
 @pytest.mark.skipif(not (_ADS / "bin" / "hpeesofsim.exe").exists(),

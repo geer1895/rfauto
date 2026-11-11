@@ -1,6 +1,6 @@
 """Q3D 寄生提取通道适配器 —— WP4.4b（PCB 无源/互连 RLC，AEDT/pyaedt）。
 
-定位（docs/continuation-plan_20260907.md §4 WP4.4b）：Q3D/SIwave 寄生提取
+定位（docs/continuation_plan_20260907.md §4 WP4.4b）：Q3D/SIwave 寄生提取
 首案例——**直条微带走线 RLC 提取 + 闭式锚对照**；本项落地 Q3D 主路，
 SIwave EDB 全板链路为后续项（如实不虚报）。
 

@@ -104,26 +104,19 @@ class TestSubprocessPath:
         payload = {"footprints": ROWS, "board_bbox_mm": [0.0, 0.0, 6.0, 3.0],
                    "errors": ["C1 fields: mock"], "kicad_version": "10.0"}
         calls = {}
-        # KiCad Python 用平台原生 tmp 路径（而非写死 E:\KiCad\bin\python.exe 字面）：
-        # 被测语义=argv[0] 是解析到的解释器 + PATH 前置其所在 bin 目录；字面
-        # Windows 路径在 POSIX 下 Path.parent 解析为 "."（反斜杠非分隔符），
-        # PATH 前置断言只在 Windows 偶然成立（aurora_p H4 Linux CI 实证）。
-        kicad_py = tmp_path / "KiCad" / "bin" / "python.exe"
-        kicad_py.parent.mkdir(parents=True)
-        kicad_py.write_bytes(b"")
 
         def fake_run(argv, **kwargs):
             calls["argv"] = argv
             calls["kwargs"] = kwargs
             script_path = argv[1]
             # 脚本文件形态（非 -c 内联）：#142 家族可审计口径
-            assert argv[0] == str(kicad_py)
+            assert argv[0] == r"E:\KiCad\bin\python.exe"
             assert script_path.endswith("_rfauto_assembly_export.py")
             stdout = (f"{ASSEMBLY_JSON_START}\n{json.dumps(payload)}\n{ASSEMBLY_JSON_END}")
             return SimpleNamespace(returncode=0, stdout=stdout, stderr="")
 
         monkeypatch.setattr(asm.subprocess, "run", fake_run)
-        monkeypatch.setenv("RFAUTO_KICAD_PYTHON", str(kicad_py))
+        monkeypatch.setenv("RFAUTO_KICAD_PYTHON", r"E:\KiCad\bin\python.exe")
         r = assembly_payload(pcb, out)
         assert r["ok"], r
         assert r["n_placed"] == 3
@@ -135,7 +128,7 @@ class TestSubprocessPath:
         assert (out / "_rfauto_assembly_export.py").is_file(), "脚本落盘留证据链"
         assert [g["refs"] for g in r["bom"]] == [["C1"], ["R1", "R2"]]
         # env 前置 KiCad bin 且继承完整环境（不裸替换）
-        assert calls["kwargs"]["env"]["PATH"].startswith(str(kicad_py.parent))
+        assert calls["kwargs"]["env"]["PATH"].startswith(r"E:\KiCad\bin")
 
     def test_nonzero_rc_is_error_with_stderr_tail(self, tmp_path, monkeypatch):
         pcb = tmp_path / "demo.kicad_pcb"

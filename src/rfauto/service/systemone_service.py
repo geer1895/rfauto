@@ -325,7 +325,7 @@ _REDACTED_FMT = "<redacted:{rule}>"
 _PATH_STOP = r"[^\s\"'<>|()\[\]{}，。；、（）【】《》「」]"
 
 _SANITIZE_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
-    # Windows 盘符绝对路径：E:\rfauto-workspace\runs\xxx、C:/Users/pc/...
+    # Windows 盘符绝对路径：E:\rfauto_workspace\runs\xxx、C:/Users/pc/...
     ("win_drive_path",
      re.compile(r"(?i)\b[a-z]:[\\/]" + _PATH_STOP + r"{0,200}")),
     # POSIX 用户/系统绝对路径：/home/u、/Users/u、/root、/mnt、/srv、/opt
@@ -344,7 +344,7 @@ _SANITIZE_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("private_ip",
      re.compile(r"\b(?:10\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])|192\.168)"
                 r"\.\d{1,3}\.\d{1,3}\b")),
-    # 主机名:端口（sim_server:88、api.typesafe.ai:443；首段须字母/下划线起，
+    # 主机名:端口（lab_server:88、api.typesafe.ai:443；首段须字母/下划线起，
     # 不误伤 "12:30" 类时间样态）
     ("host_port",
      re.compile(r"(?i)\b[a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*:\d{2,5}\b")),

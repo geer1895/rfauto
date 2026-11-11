@@ -64,7 +64,8 @@ def require_pypo(environ: Mapping[str, str] | None = None) -> None:
     if not pypo_importable():
         raise RuntimeError(
             f"pypo 通道需要 {PYPO_MODULE} 包（GPL-3，可选依赖）："
-            "pip install rfauto[pypo] 或 pip install pypopy；许可门"
+            "pip install pypopy（rfauto[pypo] extra 已随 PyPI 404 勘误移除，"
+            "aurora_q T-Q12——上游源码安装）；许可门"
             "（RFAUTO_ALLOW_PYPO=1 或 RFAUTO_ALLOW_GPL_TOOLS=1）与依赖"
             "二者缺一不可")
 

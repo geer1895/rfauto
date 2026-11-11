@@ -135,7 +135,7 @@ def _coupled_bpf_sparams(
     - w_feed_mm 只进几何（50Ω 线宽由 HJ 综合定），不进电气模型——同
       atten_pi/atten_t 的 w_mm 口径，如实标注。
     已知口径限制同裁判：宽度台阶不连续性、开路端边缘导纳残差、KJ 色散
-    不进模型（EM 冒烟实测其总量，Devlog 平行耦合 BPF 段）。
+    不进模型（EM 冒烟实测其总量，DEVLOG 平行耦合 BPF 段）。
     """
     from rfauto.adapters.openems_templates import (
         _coupled_bpf_section_lengths_mm,

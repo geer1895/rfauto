@@ -1,12 +1,20 @@
 """devtest：按变更面选择受影响测试并并行执行（aurora_m W2-1 成品）。
 
-    python scripts/devtest.py --changed [--dry-run] [--workers N] [--scope direct|closed]
-                              [--lf | --ff] [--staged | --base REF] [-- devtest 透传参数]
+    python scripts/devtest.py --changed|--changed-src [--dry-run] [--workers N]
+                              [--scope direct|closed] [--lf | --ff]
+                              [--staged | --base REF] [-- devtest 透传参数]
 
 流程：git diff 取变更 src 文件（默认 HEAD=工作树+暂存合并视图；--staged 只看暂存；
 --base REF 对比指定基线）→ 查 runs/aurora_m/impact_map.yaml 受影响测试清单 →
 xdist -n <workers> 并行执行。--dry-run 只打印清单与统计不执行 pytest；`--` 之后的
 参数原样透传给 pytest（如 -- -k fast）。
+
+--changed-src（Q-X17 补注册，aurora_q Q-X8 遗留）：与 --changed 同一选择面的
+显式 src-only 旗标——只映射 src/ 变更文件的测试面，tests 面自身变更永不进
+选择面（映射源本就只收 src/rfauto），并打印被排除的 tests 变更清单使排除面
+可见。背景：Q-X8 实测该旗标名未注册时被 parse_known_args 漏进 pytest extra，
+pytest 当用法错 exit 4——现注册为正式旗标（未注册旗标漏进 extra 的形态对
+任何新旗标名都成立，新旗标必须先在此注册）。
 
 scope 口径：
   direct（缺省）= import 直连 + grep 命中，不做 src 传递闭包——开发循环粒度
@@ -27,7 +35,7 @@ scope 口径：
   也不影响全量门——门脚本自带 -p no:cacheprovider，读写都不经过本缓存。
   --no-cache 关闭隔离注入（沿用 pytest 缺省缓存位置）；--cache-dir 自定目录。
 
-并行纪律（AGENTS / aurora_m PLAN §6）：worker 探底不探顶（挂死前科：
+并行纪律（AGENTS.md / aurora_m PLAN §6）：worker 探底不探顶（挂死前科：
 8w→20 进程 10.4GB 零计算），缺省 4，硬顶 8；禁与全量终门、重型构建并行真跑。
 真跑前打印将跑的文件清单与 worker 数；>150 个测试自动走 pytest @argsfile 通道
 （Windows 命令行上限：cmd.exe 8191 字符 / CreateProcess 32767 字符）。
@@ -85,6 +93,20 @@ def _changed_src(staged: bool, base: str | None) -> list[str]:
             p.replace("\\", "/")
             for p in out.split("\0")
             if p and p.replace("\\", "/").startswith("src/rfauto/") and p.endswith(".py")
+        }
+    )
+
+
+def _changed_tests(staged: bool, base: str | None) -> list[str]:
+    """git diff 变更 tests 面下 .py 清单（--changed-src 排除面报告用；
+    与 _changed_src 同一 diff 视图，仅前缀过滤不同）。"""
+    spec = ["--cached"] if staged else ([base] if base else ["HEAD"])
+    out = _git(["diff", "--name-only", "-z", *spec])
+    return sorted(
+        {
+            p.replace("\\", "/")
+            for p in out.split("\0")
+            if p and p.replace("\\", "/").startswith("tests/") and p.endswith(".py")
         }
     )
 
@@ -264,6 +286,15 @@ def main(argv: list[str] | None = None) -> int:
         epilog="exit code：0=无事可做/全绿；1=测试红；2=用法错；3=运行异常。详见模块 docstring。",
     )
     parser.add_argument("--changed", action="store_true", help="按 git diff 变更 src 文件选择受影响测试")
+    parser.add_argument(
+        "--changed-src",
+        action="store_true",
+        help=(
+            "显式 src-only 口径（与 --changed 同选择面）：只映射 src/ 变更文件的测试面，"
+            "tests 面自身变更不进选择面并打印排除清单（Q-X8 遗留补注册：旗标名未注册"
+            "会被 parse_known_args 漏进 pytest extra 致 pytest exit 4）"
+        ),
+    )
     parser.add_argument("--staged", action="store_true", help="只看暂存区变更（git diff --cached）")
     parser.add_argument("--base", default=None, help="对比指定 git 基线（默认 HEAD，工作树+暂存合并视图）")
     parser.add_argument(
@@ -306,21 +337,31 @@ def main(argv: list[str] | None = None) -> int:
     if args.workers > MAX_WORKERS:
         print(
             f"[devtest] --workers {args.workers} 超硬顶 {MAX_WORKERS}"
-            "（并行纪律：xdist 挂死前科 8w→20 进程 10.4GB，AGENTS 探底不探顶）→ 收敛"
+            "（并行纪律：xdist 挂死前科 8w→20 进程 10.4GB，AGENTS.md 探底不探顶）→ 收敛"
         )
         args.workers = MAX_WORKERS
     if args.staged and args.base:
         parser.error("--staged 与 --base 互斥（二选一）")
     if args.lf and args.ff:
         parser.error("--lf 与 --ff 互斥（只重跑 vs 失败优先，二选一）")
-    if not args.changed:
-        parser.error("缺 --changed（当前唯一选择模式；--help 看用法）")
+    if not (args.changed or args.changed_src):
+        parser.error("缺 --changed/--changed-src（选择模式；--help 看用法）")
 
     t0 = time.perf_counter()
     changed = _changed_src(args.staged, args.base)
     if not changed:
         print("[devtest] git diff 无 src/rfauto 变更，无事可做")
         return 0
+    if args.changed_src:
+        # src-only 口径的排除面报告：tests 面自身变更列出不选（选择逻辑本就
+        # 只收 src/rfauto——此处使"排除了什么"可见，防误以为 tests 改动丢了）。
+        excluded_tests = _changed_tests(args.staged, args.base)
+        print(
+            f"[devtest] src-only 口径：排除 tests 面自身变更 {len(excluded_tests)} 个"
+            "（不进选择面，映射只收 src/rfauto）"
+        )
+        for t in excluded_tests:
+            print(f"  [excluded] {t}")
     stale_reason = _ensure_map(map_path, args.scope)
     tests, not_in_map, per_file = _get_selection(map_path, args.scope, changed)
     overhead = time.perf_counter() - t0

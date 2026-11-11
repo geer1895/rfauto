@@ -1,6 +1,6 @@
 """多 Agent 编排服务（WP3.8 三层栈·组装层）——评审/调优/验证分工端到端。
 
-方案口径（continuation-plan §4 WP3.8 + 扩充提案 F1）：2025-26 收敛三层栈——
+方案口径（continuation_plan §4 WP3.8 + 扩充提案 F1）：2025-26 收敛三层栈——
 **LangGraph 式工作流状态机**（agent_graph，propose→verify→fix 自愈环的图
 实现）+ **MCP 工具层**（agent_mcp_layer，同 mcp_server 生态标准工具协议的
 进程内桥）+ **A2A 协议**（a2a_protocol，Agent 间互操作）——评审（reviewer）/

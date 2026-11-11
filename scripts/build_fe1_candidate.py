@@ -9,7 +9,7 @@
   第 3 层（已裁定保留项）：D1（#NNN 坑号）按保留实现，D8 厂商路径 WARN 豁免
     逐条记因。
 
-脱敏方案=SI 席（内部证据档 §2.2）：
+脱敏方案=SI 席（runs/research_seats_20261004/si_content/REPORT.md §2.2）：
   锚 YAML 键型策略 50 公开/10 映射/1 删（键路径级分类，未知键 fail-closed）；
   证据面=锚 arbitration_runs 引用的 sparams csv/Touchstone（原样）+判读
   JSON（剥离主机/路径键+runs 引用映射）；md 叙事面不入包（SI §2.3 分层）。
@@ -95,12 +95,12 @@ _SCAN_FAIL = [
     re.compile(r"Bearer\s+[A-Za-z0-9_\-\.]{20,}"),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"hf_[A-Za-z0-9]{20,}"),
-    re.compile(r"DEV" "LOG"),
-    re.compile(r"AGENTS" r"\.md|AGENT_" r"HANDOFF"),
+    re.compile(r"DEVLOG"),
+    re.compile(r"AGENTS\.md|AGENT_HANDOFF"),
     re.compile(r"TODO\.md"),
-    re.compile(r"handoff_" "prompt|HAND" "OFF_|continuation_" "plan"),
-    re.compile(r"Plan_" "Extension|Plan_" "Final"),
-    re.compile(r"HFSS_" r"Connect|C:\\\\?Users\\\\?PC"),
+    re.compile(r"handoff_prompt|HANDOFF_|continuation_plan"),
+    re.compile(r"Plan_Extension|Plan_Final"),
+    re.compile(r"rfauto_workspace|C:\\\\?Users\\\\?PC"),
     re.compile("\uFFFD"),
 ]
 _SCAN_WARN = re.compile(r"E:\\\\?(openEMS|ADS|KiCad)|F:\\\\?")
@@ -123,18 +123,18 @@ def run_to_id(run_ref: str) -> str:
 def strip_ledger_tokens(text: str) -> str:
     """账本指针中性重写（机械变换，不改写技术内容；#NNN 按 D1 保留）。
 
-    剥离账本指针字面（DEV「LOG」（…）/DEV「LOG」+CJK 数字序号/wf:xx/TODO/handoff
+    剥离账本指针字面（DEVLOG（…）/DEVLOG+CJK 数字序号/wf:xx/TODO/handoff
     文件名），余文原样保留——预备批不做人工转写，语义转写留 FE-1 正式关口。
     """
-    out = re.sub(r"DEV" r"LOG（[^）]*）", "", text)
-    out = re.sub(r"DEV" r"LOG\s*[一二三四五六七八九十百千零〇\d]+，?", "", out)
-    out = re.sub(r"\b" r"DEV" r"LOG\b", "", out)
+    out = re.sub(r"DEVLOG（[^）]*）", "", text)
+    out = re.sub(r"DEVLOG\s*[一二三四五六七八九十百千零〇\d]+，?", "", out)
+    out = re.sub(r"\bDEVLOG\b", "", out)
     out = re.sub(r"\bwf:[A-Za-z0-9_\-]+", "", out)
     out = re.sub(r"\bTODO\.md\b", "", out)
     out = re.sub(r"\bTODO\b[A-Za-z0-9_.]*", "", out)
     out = re.sub(r"docs/handoff[A-Za-z0-9_.]*", "", out)
-    out = re.sub(r"\bAGENT_" r"HANDOFF[A-Za-z0-9_.]*", "", out)
-    out = re.sub(r"HAND" r"OFF_CURRENT[A-Za-z0-9_.]*", "", out)
+    out = re.sub(r"\bAGENT_HANDOFF[A-Za-z0-9_.]*", "", out)
+    out = re.sub(r"HANDOFF_CURRENT[A-Za-z0-9_.]*", "", out)
     out = re.sub(r"[ \t]{2,}", " ", out)
     out = re.sub(r"([：:；;，,、])\1+", r"\1", out)
     out = out.replace("，）", "）").replace("、）", "）").replace("（）", "")
@@ -161,6 +161,21 @@ def asset_tokens() -> tuple[str, ...]:
     if _ASSET_TOKENS is None:
         import importlib.util
 
+        if not SCANNER.is_file():
+            # 干净检出（发布席扫描器 release/scan_release.py 不随公开仓
+            # 分发）：资产清单降级为本机远程机器档（gitignored）在册
+            # 名录；机器档缺席则空清单——机械脱敏降级为路径/账本层，
+            # fail-closed 隔离照常兜底。
+            try:
+                from rfauto.infra.remote_machines import load_remote_machines
+
+                machines = load_remote_machines()
+                names = {c.name for c in machines.values()}
+                names |= {c.host for c in machines.values()}
+                _ASSET_TOKENS = tuple(sorted(names, key=len, reverse=True))
+            except Exception:
+                _ASSET_TOKENS = ()
+            return _ASSET_TOKENS
         spec = importlib.util.spec_from_file_location(
             "rfauto_scan_release", SCANNER)
         mod = importlib.util.module_from_spec(spec)
@@ -171,7 +186,7 @@ def asset_tokens() -> tuple[str, ...]:
     return _ASSET_TOKENS
 
 
-_REPO_PREFIX = re.compile(r"[A-Za-z]:[\\/]+HFSS_" + r"Connect[\\/]+")
+_REPO_PREFIX = re.compile(r"[A-Za-z]:[\\/]+rfauto_workspace[\\/]+")
 
 
 def scrub_text(text: str) -> str:

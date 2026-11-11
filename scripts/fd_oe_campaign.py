@@ -277,7 +277,7 @@ _SALVAGE_COVERAGE_MIN = 0.90    # S1 阈值（criteria_salvage.md §三）
 _SALVAGE_CRITERIA_REL = "runs/ms_array_nxn_rerun/salvage/criteria_salvage.md"
 _V2_DMAX_DBI_RANGE = (0.0, 40.0)     # S3b-v2 预声明：ms 族 Dmax 物理带
 _V2_EVIDENCE_FILENAME = "farfield_v2.json"   # run 目录内联 v2 证据约定名
-# 空场熔断地板（7×7 教训，Devlog 六百九十三）：E_norm 全局 max=6.6e-9
+# 空场熔断地板（7×7 教训，DEVLOG 六百九十三）：E_norm 全局 max=6.6e-9
 # （−163.7dB）/P_up=2.17e-22W 时 argmax 仍给 25° 与 Dmax=35.19dBi（零/零
 # 比值伪象）——低于地板=空远场，判读熔断 UNKNOWN 不产 Dmax 假值。
 _V2_P_UP_ABS_FLOOR_W = 10.0 ** (-140.0 / 10.0)    # −140 dBW = 1e-14 W

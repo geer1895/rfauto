@@ -1,0 +1,141 @@
+| IBIS sample fixture for rfauto (tests/unit/fixtures/ibis/sample.ibs)
+| Seat Q-X46 (aurora_q, 2026-11-07). Synthetic shape data -- NOT a real
+| buffer. Covers: header keywords, component/manufacturer, package
+| typ-min-max triples, pin table (GND/VDD/NC rows + R_pin/L_pin/C_pin),
+| model selector, three models (Input with GND clamp only; Output with
+| 3 IV tables + ramp + rising/falling waveforms; Output with pulldown
+| and rising waveform only), and one unknown keyword ([OEM]) for the
+| warning path. All numbers are fixture demonstration values.
+
+[IBIS Ver]  3.2
+[File Name] sample.ibs
+[File Rev]  1.1
+[Date]      2026-11-07
+[Source]    rfauto fixture
+[OEM]       synthetic-fixture
+
+[Component] SAMPLE_SOC
+[Manufacturer] rfauto
+[Package]
+R_pkg     4.50     3.80     5.20
+L_pkg     2.10nH   1.80nH   2.40nH
+C_pkg     1.10pF   0.90pF   1.30pF
+[Pin]
+| signal_name  model_name  R_pin  L_pin   C_pin
+1            GND
+2            VDD
+3            IO_A0       PD_MODEL   0.30   1.10nH   0.60pF
+4            IO_A1       IO_SEL     0.35   1.20nH   0.65pF
+5            IO_A2       IO_FAST    0.40   1.30nH   0.70pF
+6            NC
+
+[Model Selector] IO_SEL
+IO_FAST   Fast corner output model
+IO_SLOW   Slow corner output model
+
+[Model] PD_MODEL
+Model_type  Input
+Vinl = 0.8V
+Vinh = 2.0V
+C_comp   1.80pF   1.50pF   2.10pF
+GND_clamp_reference 0V
+[GND Clamp]
+| Voltage  I(typ)   I(min)   I(max)
+-1.50V    -60.0mA   -50.0mA   -72.0mA
+-0.70V    -12.0mA   -10.0mA   -15.0mA
+0.00V     0.0mA     0.0mA     0.0mA
+0.35V     0.9uA     0.7uA     1.2uA
+0.70V     6.5uA     5.0uA     8.0uA
+3.30V     8.5uA     7.0uA     10.0uA
+
+[Model] IO_FAST
+Model_type  Output
+Polarity    Non-Inverting
+Enable      Active-High
+Vinl = 0.8V
+Vinh = 2.0V
+Vmeas = 1.65V
+C_comp   2.20pF   1.90pF   2.50pF
+Voltage_range   3.30V   3.00V   3.60V
+GND_clamp_reference 0V
+POWER_clamp_reference 3.3V
+[Pulldown]
+| Voltage  I(typ)   I(min)   I(max)
+-1.50V    -105.0mA  -95.0mA  -115.0mA
+-0.50V    -38.0mA   -33.0mA  -43.0mA
+0.00V     0.0mA     0.0mA    0.0mA
+0.50V     39.0mA    34.0mA   44.0mA
+1.65V     61.5mA    55.0mA   68.0mA
+3.30V     74.5mA    66.0mA   83.0mA
+3.60V     78.0mA    69.0mA   87.0mA
+[Pullup]
+| Voltage  I(typ)   I(min)   I(max)
+-1.50V    78.0mA    69.0mA   87.0mA
+-0.50V    71.0mA    63.0mA   79.0mA
+0.00V     65.5mA    58.0mA   73.0mA
+1.65V     34.5mA    30.0mA   39.0mA
+3.30V     0.0uA     0.0uA    0.0uA
+3.60V     -6.5uA    -5.0uA   -8.0uA
+[POWER Clamp]
+| Voltage  I(typ)   I(min)   I(max)
+-1.50V    -42.0mA   -36.0mA  -48.0mA
+-0.70V    -8.5mA    -7.2mA   -9.8mA
+0.00V     0.0mA     0.0mA    0.0mA
+1.65V     2.5uA     2.0uA    3.0uA
+3.30V     8.5uA     7.0uA    10.0uA
+[Ramp]
+Ramp_load = 50 Ohm
+Ramp_dR   2.240   2.050   2.430
+Ramp_dF   2.180   1.990   2.370
+[Rising Waveform]
+R_dut = 50.0 Ohm
+C_dut = 10.0pF
+L_dut = 1.0nH
+V_fixture = 3.30
+V_fixture_min = 3.00
+V_fixture_max = 3.60
+| time   V(typ)   V(min)   V(max)
+0.00n   0.000V   0.000V   0.000V
+0.50n   0.580V   0.520V   0.640V
+1.00n   1.940V   1.810V   2.070V
+2.00n   3.070V   2.930V   3.210V
+4.00n   3.284V   3.194V   3.374V
+8.00n   3.296V   3.205V   3.387V
+[Falling Waveform]
+R_dut = 50.0 Ohm
+C_dut = 10.0pF
+L_dut = 1.0nH
+V_fixture = 3.30
+| time   V(typ)   V(min)   V(max)
+0.00n   3.300V   3.300V   3.300V
+0.50n   2.720V   2.650V   2.790V
+1.00n   1.360V   1.290V   1.430V
+2.00n   0.230V   0.190V   0.270V
+4.00n   0.016V   0.012V   0.020V
+8.00n   0.004V   0.003V   0.005V
+
+[Model] IO_SLOW
+Model_type  Output
+Polarity    Non-Inverting
+Enable      Active-High
+Vinl = 0.8V
+Vinh = 2.0V
+C_comp   2.20pF   1.90pF   2.50pF
+[Pulldown]
+| Voltage  I(typ)   I(min)   I(max)
+-1.50V    -92.0mA   -84.0mA  -100.0mA
+0.00V     0.0mA     0.0mA    0.0mA
+1.65V     52.0mA    47.0mA   57.0mA
+3.30V     65.5mA    59.0mA   72.0mA
+[Rising Waveform]
+R_dut = 50.0 Ohm
+C_dut = 10.0pF
+L_dut = 1.0nH
+V_fixture = 3.30
+| time   V(typ)   V(min)   V(max)
+0.00n   0.000V   0.000V   0.000V
+1.00n   0.980V   0.910V   1.050V
+3.00n   2.890V   2.760V   3.020V
+8.00n   3.270V   3.180V   3.360V
+
+[End]

@@ -218,14 +218,14 @@ class TestLocalLaunch:
 # ─── ssh 发射形态（钉字面）───────────────────────────────────────────────────
 
 _EXPECTED_REMOTE_CMD = (
-    "$env:HPEESOF_DIR='E:\\ADS\\ADS27'; "
-    "$env:PATH='E:\\ADS\\ADS27\\bin;E:\\ADS\\ADS27\\adsptolemy\\lib.win32_64;"
-    "E:\\ADS\\ADS27\\tools\\python;' + $env:PATH; "
+    "$env:HPEESOF_DIR='D:\\ADS\\ADS2027'; "
+    "$env:PATH='D:\\ADS\\ADS2027\\bin;D:\\ADS\\ADS2027\\adsptolemy\\lib.win32_64;"
+    "D:\\ADS\\ADS2027\\tools\\python;' + $env:PATH; "
     "Set-Location -LiteralPath 'E:\\rfauto_remote\\ads_abcd1234'; "
     "if (-not (Test-Path -LiteralPath "
-    "'E:\\ADS\\ADS27\\bin\\hpeesofsim.exe')) "
+    "'D:\\ADS\\ADS2027\\bin\\hpeesofsim.exe')) "
     "{ Write-Output 'HPEESOFSIM_NOT_FOUND'; exit 3 }; "
-    "& 'E:\\ADS\\ADS27\\bin\\hpeesofsim.exe' 'demo.net'; "
+    "& 'D:\\ADS\\ADS2027\\bin\\hpeesofsim.exe' 'demo.net'; "
     "$rc = $LASTEXITCODE; if ($null -eq $rc) { exit 1 }; exit $rc"
 )
 
@@ -235,7 +235,7 @@ class TestSshLaunch:
         """远端命令串钉字面（#272 env 形态 / G5 零双引号 / G8 ; 链 / rc 透传；
         正斜杠入参归一为反斜杠）。"""
         cmd = build_remote_hpeesofsim_command(
-            "E:/ADS/ADS27", "E:/rfauto_remote/ads_abcd1234", "demo.net")
+            "D:/ADS/ADS2027", "E:/rfauto_remote/ads_abcd1234", "demo.net")
         assert cmd == _EXPECTED_REMOTE_CMD
         assert '"' not in cmd  # G5 零双引号纪律
         assert cmd.count("'") % 2 == 0  # 单引号成对包裹
@@ -246,16 +246,16 @@ class TestSshLaunch:
         """ssh argv 钉字面：BatchMode 缺省 / -p 端口 / host / 末位命令串
         （单个 argv 元素=一整条远端命令）。"""
         argv = build_ssh_command(
-            "ssh", "user@198.51.100.20", _EXPECTED_REMOTE_CMD, port=2222)
+            "ssh", "user@192.0.2.10", _EXPECTED_REMOTE_CMD, port=2222)
         assert argv == [
             "ssh", "-o", "BatchMode=yes", "-p", "2222",
-            "user@198.51.100.20", _EXPECTED_REMOTE_CMD,
+            "user@192.0.2.10", _EXPECTED_REMOTE_CMD,
         ]
         assert argv[-1] == _EXPECTED_REMOTE_CMD  # 命令串恒为末位单元素
 
     def test_ssh_argv_no_port_with_extra_options(self):
         argv = build_ssh_command(
-            "C:\\Windows\\System32\\OpenSSH\\ssh.exe", "sim_server", "dir",
+            "C:\\Windows\\System32\\OpenSSH\\ssh.exe", "lab_server", "dir",
             extra_options=["-o", "StrictHostKeyChecking=accept-new"])
         assert argv[0].endswith("ssh.exe")
         assert argv[1:4] == ["-o", "BatchMode=yes",
@@ -269,14 +269,14 @@ class TestSshLaunch:
         monkeypatch.setattr(ab.subprocess, "Popen", recorder)
         nl = _write_netlist(tmp_path)
         res = ads_batch_solve(
-            nl, launcher="ssh", ssh_host="user@198.51.100.20",
-            remote_hpeesof_dir="E:\\ADS\\ADS27",
+            nl, launcher="ssh", ssh_host="user@192.0.2.10",
+            remote_hpeesof_dir="D:\\ADS\\ADS2027",
             remote_work_dir="E:\\rfauto_remote\\ads_abcd1234",
             ssh_port=2222, timeout_s=120)
         assert res["ok"] and res["rc"] == 0, res
         assert recorder.calls[0]["cmd"] == [
             "ssh", "-o", "BatchMode=yes", "-p", "2222",
-            "user@198.51.100.20", _EXPECTED_REMOTE_CMD.replace(
+            "user@192.0.2.10", _EXPECTED_REMOTE_CMD.replace(
                 "'demo.net'", f"'{nl.name}'"),
         ]
         assert res["launcher"] == "ssh"
@@ -285,7 +285,7 @@ class TestSshLaunch:
         # 远端数据集命名 = 网表全名 + .ds（remote_ads 通道实证口径）
         assert res["remote_dataset"] == (
             "E:\\rfauto_remote\\ads_abcd1234\\demo.net.ds")
-        assert res["ads_dir"] == "E:\\ADS\\ADS27"
+        assert res["ads_dir"] == "D:\\ADS\\ADS2027"
         assert res["artifacts"] == []  # 远端枚举/回拉归 service.remote_ads_run
 
     def test_quote_guard_rejects_space_and_quote(self):
@@ -371,7 +371,7 @@ class TestSelfContainment:
         nl = _write_netlist(tmp_path, snp_ref="E:\\local\\dep.s2p")
         res = ads_batch_solve(
             nl, launcher="ssh", ssh_host="h",
-            remote_hpeesof_dir="E:\\ADS\\ADS27",
+            remote_hpeesof_dir="D:\\ADS\\ADS2027",
             remote_work_dir="E:\\rfauto_remote\\b1")
         assert res["ok"] is False and res["rc"] is None
         assert "#276" in res["errors"][0]
@@ -529,7 +529,7 @@ class TestTimeout:
         nl = _write_netlist(tmp_path)
         res = ads_batch_solve(
             nl, launcher="ssh", ssh_host="h",
-            remote_hpeesof_dir="E:\\ADS\\ADS27",
+            remote_hpeesof_dir="D:\\ADS\\ADS2027",
             remote_work_dir="E:\\rfauto_remote\\b1", timeout_s=0.05)
         assert res["timed_out"] is True and killed == [55]
         assert "本地 ssh 客户端" in res["errors"][0]

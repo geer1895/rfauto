@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.core.state import generate_job_id
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 from .run_core import run_once
 
@@ -184,7 +184,43 @@ def start_tune_multi(
 
 
 
-def run_once_async(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str, Any]:
+def _receipt_decision_envelope(decision: Any) -> dict[str, Any]:
+    """VB-2 回执判定 → 信封（全走构造器；unknown/rejected 随信封带
+    ``receipt_id`` 与 ``diagnostics``，供上层计划或人工凭回执对账）。
+
+    终态（completed/failed）= 快照重放信封（``idempotent_replay=True``，
+    执行器未重复执行）；not_started（预算耗尽）/unknown/rejected =
+    error 信封（``errors`` 恒 list[str]，契约 §4）。
+    """
+    if decision.outcome in ("completed", "failed"):
+        snap = decision.snapshot or {}
+        return ok_envelope(
+            receipt_outcome=decision.outcome,
+            receipt_id=decision.receipt_id,
+            idempotent_replay=True,
+            job_id=snap.get("job_id"),
+            run_id=snap.get("run_id"),
+            state="done" if decision.outcome == "completed" else "failed",
+            replayed_result=snap.get("result"),
+            message="同幂等键请求已有回执（快照重放，执行器未重复执行）",
+        )
+    return error_envelope(
+        [decision.reason or f"请求回执判定 {decision.outcome}，未执行"],
+        receipt_outcome=decision.outcome,
+        receipt_id=decision.receipt_id,
+        diagnostics=dict(decision.diagnostics),
+    )
+
+
+def run_once_async(
+    recipe_path: str | Path,
+    *,
+    adapter_name: str = "fake",
+    idempotency_key: str | None = None,
+    idempotency_payload: Any = None,
+    receipt_deadline_mono: float | None = None,
+    receipt_ledger: Any = None,
+) -> dict[str, Any]:
     """异步单次仿真——立即返回 job_id，后台执行。
 
     与 run_once 相同逻辑，后台线程执行；适用于 HFSS 等长时间仿真。
@@ -194,16 +230,53 @@ def run_once_async(recipe_path: str | Path, *, adapter_name: str = "fake") -> di
     线程为非 daemon：进程退出前会等待当前 run 结束，避免带着 AEDT 会话
     被强杀（代价是异常卡死的 run 会阻塞进程退出，可接受）。
 
+    VB-2 不确定结局协议（可选，aurora_r R-11）：传 ``idempotency_key``
+    即启用请求回执——同键同载荷终态重放快照（后台执行器不重复执行）、
+    同键异载荷/时间窗外/车道毒化拒绝、在飞或归属未落定返回 unknown
+    信封（带 receipt_id+diagnostics，**永不自动重放**，须凭回执对账）。
+    缺省路径（不传键）行为逐字节零变化——信封键集与既有面完全一致。
+    幂等键语义=调用方承诺"此键在本进程内此前未用于发射"；跨进程重启
+    的对账走 infra.request_receipt 的 resume/reconcile（缓存丢失如实
+    unknown，绝不返回 not_started）。
+
+    挂账处方（无 CLI/MCP 叶）：MCP create_run_async（mcp_tools/jobs.py）
+    暂未透传本参数面；如需 MCP/CLI 叶接线，由合流批按"信封构造器+
+    （MCP 侧无 --json 义务）"家法接入，本 docstring 即挂账凭据。
+
     Args:
         recipe_path: 配方文件路径
         adapter_name: "fake" 或 "hfss"
+        idempotency_key: 幂等键（None=缺省原路径，零变化）
+        idempotency_payload: 参与载荷指纹的附加载荷（None 安全；
+            recipe_path+adapter_name 恒在指纹内）
+        receipt_deadline_mono: 单调时钟请求预算 deadline（耗尽即
+            not_started，观察位 5；None=无预算）
+        receipt_ledger: 显式回执账本（None=进程级缺省单例）
 
     Returns:
-        dict with keys: ok, job_id, state
+        dict with keys: ok, job_id, state（缺省路径键集不变；回执路径
+        另带 receipt_outcome/receipt_id/idempotent_replay 等）
     """
     import threading
 
     from rfauto.service.job_registry import get_job_registry, get_write_lock
+
+    # ── VB-2 请求回执预检（可选；不传键走原路径，零变化）─────────────
+    receipt: tuple[Any, str] | None = None
+    if idempotency_key is not None:
+        from rfauto.infra.request_receipt import payload_fingerprint, resolve_ledger
+        _ledger = resolve_ledger(receipt_ledger)
+        _fp = payload_fingerprint({
+            "kind": "run_once_async",
+            "recipe_path": str(recipe_path),
+            "adapter_name": adapter_name,
+            "payload": idempotency_payload,
+        })
+        _decision = _ledger.claim(
+            str(idempotency_key), _fp, deadline_mono=receipt_deadline_mono)
+        if not _decision.proceed:
+            return _receipt_decision_envelope(_decision)
+        receipt = (_ledger, str(idempotency_key))
 
     registry = get_job_registry()
     write_lock = get_write_lock()
@@ -216,11 +289,17 @@ def run_once_async(recipe_path: str | Path, *, adapter_name: str = "fake") -> di
             # AEDT 会话抢 license。无限等待（求解本身可达小时级）。
             if not write_lock.acquire(job_id):
                 registry.fail(job_id, error="未获得执行锁（单写互斥）")
+                if receipt is not None:
+                    receipt[0].mark_failed(receipt[1], {
+                        "job_id": job_id, "state": "lock_denied"})
                 return
             try:
                 # jobs cancel 语义：获锁后（真正开始执行前）检查取消——
                 # 排队中的 job 在 cancel() 时已置 cancelled 终态，这里直接跳过
                 if not registry.mark_started(job_id):
+                    if receipt is not None:
+                        receipt[0].mark_failed(receipt[1], {
+                            "job_id": job_id, "state": "cancelled_before_start"})
                     return
                 # SN-10：run_once 阶段播报直写注册表（poll_job 消费）
                 result = run_once(
@@ -233,19 +312,42 @@ def run_once_async(recipe_path: str | Path, *, adapter_name: str = "fake") -> di
             if registry.is_cancelled(job_id):
                 # 执行中收到取消：AEDT 求解不可安全中断，跑完后按取消丢弃结果
                 registry.mark_cancelled(job_id, run_id=run_id)
+                if receipt is not None:
+                    receipt[0].mark_failed(receipt[1], {
+                        "job_id": job_id, "run_id": run_id,
+                        "state": "cancelled"})
                 return
+            receipt_snapshot = {"job_id": job_id, "run_id": run_id,
+                                "result": result}
             if result.get("ok"):
                 registry.finish(job_id, run_id=run_id, result=result)
+                if receipt is not None:
+                    receipt[0].mark_completed(receipt[1], receipt_snapshot)
             else:
                 registry.fail(job_id, run_id=run_id, result=result)
+                if receipt is not None:
+                    receipt[0].mark_failed(receipt[1], receipt_snapshot)
         except Exception as e:
             # 后台线程的异常无处抛出，必须带堆栈完整落进注册表供排查
             write_lock.release(job_id)
             registry.fail(job_id, error=f"{e}\n{traceback.format_exc()}")
+            if receipt is not None:
+                receipt[0].mark_failed(receipt[1], {
+                    "job_id": job_id, "error": str(e)[:400]})
 
     thread = threading.Thread(target=_run_in_background, daemon=False, name=f"rfauto-job-{job_id}")
     registry.create(job_id, thread=thread)
-    thread.start()
+    try:
+        # 发射边界（VB-2）：交给后台线程=确定已发送；此后结局未落定前
+        # 同键 claim 一律 unknown（永不自动重放）。
+        if receipt is not None:
+            receipt[0].mark_sent(receipt[1])
+        thread.start()
+    except Exception:
+        if receipt is not None:
+            # 发射未真正发生（线程未起来）——执行器侧权威断言回收
+            receipt[0].rollback_not_sent(receipt[1])
+        raise
 
     return ok_envelope(
         job_id=job_id,

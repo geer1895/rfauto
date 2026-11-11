@@ -219,7 +219,7 @@ def remote_queue_cmd(
 # 状态+异常降级行 rich 渲染。单叶双形态（watchdog watch 先例）：缺省=
 # 一次性快照零循环零写；--refresh N 显式开启循环（Ctrl+C 优雅停，interval
 # 下限单源 speculative MIN_INTERVAL_S）；--json-out 用户显式路径导出。
-# 零逻辑转发 remote_board_service（对齐用户 directive：sim_server 并行
+# 零逻辑转发 remote_board_service（对齐用户 directive：lab_server 并行
 # 求解可见性；凭据/主机名不落信封——机器只以注册表键名出现）。
 
 #: --refresh 无界轮数上限（range 惰性非线程——watchdog 家法；实际由

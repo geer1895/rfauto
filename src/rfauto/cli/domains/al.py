@@ -76,8 +76,19 @@ def al_propose_cmd(
     确定性：同 seed 同输入两次运行逐位一致；数值全部来自确定性内核
     （active_learning，#7），本叶零数值逻辑（薄壳转发 service/al_service）。
     """
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
     from rfauto.service.al_service import al_propose
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝。
+    # --k 帮助契约声明 "≥0"（预算 0=合法空提议），逐名下限覆盖为 0。
+    errs = validate_count_args(
+        {"--k": k, "--n-candidates": n_candidates, "--max-rows": max_rows},
+        minimums={"--k": 0})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     result = al_propose(
         samples, dataset, run, k=k, kind=kind, acquisition=acquisition,
         source=source, beta=beta, xi=xi, n_candidates=n_candidates,

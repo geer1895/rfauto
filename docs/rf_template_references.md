@@ -1,7 +1,7 @@
 # 射频模板建模·官方例对照表（开发前必读）
 
 > 2026-09-02 多模态审计批次沉淀。给 openEMS 模板/新结构建模时的**权威对照来源**
-> 与已验证口径。修改模板前先对照本表，避免重复踩坑（详证见  多模态审计节）。
+> 与已验证口径。修改模板前先对照本表，避免重复踩坑（详证见 DEVLOG 多模态审计节）。
 > **2026-09-04 增补（阶段 0.1 根因闭环）**：网格/边界方法学升级为官方
 > MSL_NotchFilter 基线（见 §0），旧 λ/20@空气粗网格口径作废。
 
@@ -28,6 +28,28 @@
   谷深 -26/-29dB，S21/S31@谷 -3.4/-2.9dB 教科书功分；旧口径同点 1.53GHz
   且每档漂 -8% 发散。
 
+### 0.1 HFSS 建模铁律两要点（2026-11-06 晶圆键合实测反馈转正，AGENTS 同笔；openEMS 对应端口铁律见 §3）
+
+- **vacuum 体包裹约定**：`material="vacuum"`（SolveInside=true/
+  Transparency=1）普通 Box **完全包住**实体叠层（整包、不布尔差直接重叠）
+  合法可解——参考工程惯例：SICL 空气腔=真空 Box 整包三层叠层；但真空盒与
+  实心体**部分相交**（实体穿出真空盒边界）validate 即报
+  `Parts Vacuum and W2_Membrane intersect.`，求解失败。判定=**完全包含
+  放行/部分相交 ERROR，两情形结论相反不可互推**——建模期几何门
+  geometry_lint 检查④ partial_intersection 同口径（两两 AABB 相交且非
+  包含才报，完全包含豁免；src/rfauto/service/geometry_lint_service.py）。
+- **波端口三静默失败形态——solve 正常跑完结果是垃圾**（判据不能依赖引擎
+  报错）：①端口面与实体端面**共面**（一侧无 solve-inside 体——真空是
+  背景未被显式建体）→ `Port refinement error: Port P1 does not have a
+  solved inside material on either side`；②端口面**跨多个不连通空气区**
+  → 解正常但 |S11|≈0dB、|S21|≈−90dB 全反射（模式求解器把每个区当独立
+  波导，mode 1 非传输线模）；③端口面**周长被薄膜金属/介质切分** → 解
+  正常但 |S11|²+|S21|²>1（非无源）或假谐振（端口截面材料分布与线上不一致、
+  模式失配）。三形态 solve 阶段均零报错——**须建模期几何断言**（端口落
+  外边界/邻接 solve-inside 体/截面连通，即 geometry_lint 检查①②③）；
+  HFSS 端口异常先查官方文档（#191），激励体积为零的 openEMS 同族坑见
+  §2/#174。
+
 ## 1. Wilkinson 功分器（Ansys 官方 FDTD 例，Pozar 例 7.2）
 
 来源：Ansys Optics「Wilkinson power divider」（FDTD/RF，含 .fsp/.lsf 工程文件）。
@@ -35,7 +57,7 @@
 | 项目 | 官方口径 |
 |---|---|
 | 拓扑 | 输入 Z0 → 双 √2·Z0 λ/4 **环形臂** → 双 Z0 输出（Port1 左入，Port2/3 右侧上下出） |
-| 阻抗/线宽 | h=1.59mm εr=2.2 上：50Ω=4.90mm、70.7Ω=2.804mm（由微带综合公式算，**不拍脑袋**。勘误 2026-10-04 审查批 R7-5/F1：原载"50Ω=3.195mm"系 Pozar 式号 3.195 误作线宽的转写残留——本仓双源复算 HJ `inverse_width(50Ω)`=4.907mm、skrf MLine 交叉一致，3.195mm 回代 z0=65.6Ω≠50Ω；70.7Ω=2.804mm 复算 70.7Ω 吻合保留。官方正文口径见 §5 "50Ω=4.9mm"） |
+| 阻抗/线宽 | h=1.59mm εr=2.2 上：50Ω=4.90mm、70.7Ω=2.804mm（由微带综合公式算，**不拍脑袋**。勘误 2026-10-04 review_ge8e R7-5/F1：原载"50Ω=3.195mm"系 Pozar 式号 3.195 误作线宽的转写残留——本仓双源复算 HJ `inverse_width(50Ω)`=4.907mm、skrf MLine 交叉一致，3.195mm 回代 z0=65.6Ω≠50Ω；70.7Ω=2.804mm 复算 70.7Ω 吻合保留。官方正文口径见 §5 "50Ω=4.9mm"） |
 | 臂长 | 环周长 = λ/4 = 55.5mm @1GHz |
 | 隔离电阻 | 2Z0=100Ω，2D 片状材料，跨接在**输出侧双臂末端之间** |
 | 网格 | 走线区 mesh override；弯曲/斜走线区 dx=dy；直走线对齐坐标轴即可 |
@@ -135,7 +157,7 @@
 `web-search-prime` + 用户截图互证；图像复核 → `zai-mcp-server` 系列读图；
 参考仓库 → 先 `zread`，未索引则 clone 到工作区再本地读。
 
-## 6. 校准前验模型（项目规则 硬限 1b）的审计工具链
+## 6. 校准前验模型（AGENTS 硬限 1b）的审计工具链
 
 1. 文本：逐行读 render_script 生成的 simulation.py；
 2. 视觉：`scripts/gen_three_view_audit.py` 出三视图 PNG（归档 docs/audit/）；
@@ -292,7 +314,7 @@ suspended_stripline_synthesis）。铁律 1c：所有常数出处如下，无拍
 **独立数值裁判（#118）统一为 `core/quasistatic_fd.py`**（张量网格变分 FD Laplace，
 网格线精确落导体缘/介质面，能量法 C=2W/V²，一阶 Richardson 外推；CLI
 `scripts/fd_laplace_tline_referee.py`）——裁判自身先过已知基准才有资格裁判闭式
-（项目规则 1b）：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
+（AGENTS 1b）：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
 CPS 半空间极限 (1+εr)/2 −0.1%、零厚度带状线空气 Z0 vs Cohn −0.1%、悬置带线
 h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此前两份未入库
 的临时 FD（侦察批 §11.1 旧表/§11.2 的 3.02；收尾批 postmortem 的 1.68/2.36）均
@@ -428,10 +450,14 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   对称居中、q 式 50Ω → **w=0.731mm，q 式 εeff=2.641（裁判真值 2.092/56.1Ω，
   见上）**。扰动域：审计 ×1.37 扰动 b→1.392 仍 >H_SUB ✔（对称填充守卫为
   H_SUB<b，非单侧的 h<b/2；任务书 "b≥2.8h" 系单侧口径，本项不适用）。
+- **aurora_q 三席整合（2026-11-07）**：FD 收敛真值锚（w=0.52/b=0.5/h=0.05/
+  εr=11.9 → εeff 1.58537/Z0 50.482Ω）、MeasPlaneShift 近场修复实证（G1
+  FAIL→PASS）、G5 over_unity=306 归因修正（50Ω 参考失配提取偏置，非带缘
+  盲区）、跨引擎四方对照——见文末「§11.2 追加 2」块。
 
 ## 12. C2 阵列族：1×4 corporate / 2×2 H-tree / 1×3 串馈贴片阵（2026-09-15 理论核验定稿）
 
-方案行：延续计划 §10.3 器件族表 "C2 阵列族"。本节为
+方案行：continuation_plan_20260907.md §10.3 器件族表 "C2 阵列族"。本节为
 openems_templates.py C2 段的权威口径出处（antenna2 §同款制度）。
 
 - **权威口径（铁律 1c/1b，先理论后几何）**：
@@ -566,7 +592,7 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   `openems_rotation.solve_smatrix_openems`（3 模板 × 4 激励轮转）；判读口径
   已写入各 meta.yaml `smoke_note`（cline 非同步 −23dB、2sect T 结/拐角偏差、
   lange 桥缝寄生 + g=0.076 提示）。lange 指缝 38.6µm 使 CFL 时间步很小，
-  NrTS=100000 可能不足 30ns（coupled_bpf 冒烟 NrTS 截断同类，），
+  NrTS=100000 可能不足 30ns（coupled_bpf 冒烟 NrTS 截断同类，DEVLOG（一百一十）），
   冒烟前先估 Δt。
 
 ## 14. SMA 边缘弹射 sma_launcher（WP2.5 Tier 2，2026-09-16 真机 FAIL 根治定版）
@@ -596,7 +622,7 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   30mil Rogers 4350B、41mil 线宽、12mil 缝下**仿真回损优于 22dB 至 20GHz**。
 - 厂商口径（Cinch/Amphenol RF 132413/L-com/SV Microwave end-launch 系列，
   web_search 2026-09-16）：PTFE 介质、VSWR ≤1.2–1.3 至 18–27GHz（对应回损
-  ≥17.7–20.8dB）；方案行（延续计划 §4 WP2.5）"验收靠
+  ≥17.7–20.8dB）；方案行（docs/continuation_plan_20260907.md §4 WP2.5）"验收靠
   文献曲线"：**带内回损常规 15–20dB，保守地板 −10dB**（objectives 口径）。
 - 几何要点转译到 openEMS（全部由 `sma_launcher_layout` 单源给出，米）：
   针轴高 `Z_AX = r_os`（壳底切 z=0 PEC 夹具底板）；PCB 抬高 `Z_G = r_os − r_i − H_SUB`
@@ -655,11 +681,165 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
   （针搭焊段/焊锡台阶），厂商笔记的"launch 处线宽渐变补偿寄生"为 followUp
   （pin_lay/焊锡宽度或渐变段参数扫描，走 recipe 优化）；HFSS 仲裁可选。
 
-## §11.2 追加：SSL 闭式重定标（2026-09-19，修复批；上轮 F-R2-4 跟进）
+## §11.2 追加：SSL 闭式重定标（2026-09-19，wf:fix-w2f-rescale-batch；上轮 F-R2-4 跟进）
 
 - **softmin 修正族替换 q 式**：εeff=1+(Δ^−p+D^−p)^(−1/p)，Δ=(εr−1)·q̃，q̃=q·G(u,s)，D=D0(1+u)^d1·(4s(1−s))^d2，p=p0+p1·s（常数 SSL_Q_G1/SSL_Q_G2/SSL_D/SSL_P 共 13 个，core 内单源）。依据：FD 裁判 288 点（6u×6s×8εr）实证 q_fd 随 εr 单调降（softmin 串联饱和物理；2.2↔12.9 差 2.5×），q 式单 εr 定标在 εr=12.9 外推 +82% 不可行。精度：fit max 3.84%/rms 0.95%；独立验证族 75 点 max 1.94%/rms 0.74%；(u,s,εr) 单调 2001 点网格零违例；h→0/h→b 端点精确。复现：`scripts/fd_laplace_tline_referee.py --ssl-family/--refit-ssl-q`（逐位复现 runs/w2f_rescale_batch/refit_ssl_q_repro.json）。
 - **新 50Ω 设计点 w=0.9058**（闭式 εeff 2.0011/Z0 50.0；FD 真值 2.0250/49.67Ω=+0.67%）；旧 w=0.731 口径（q 式 +26%、FD 2.092/56.1）撤为历史锚。TEMPLATE_NOMINAL/meta.yaml/fake 缺省/render 默认已全链级联；历史 pt 复放用 --w-mm 0.731。
 - **CPS γ 定标域边界更新（R2-B-08③ 跟进，240 点角落扫描）**：单参数 γ(εr) 修正在角落不可修（增强比=(a/h,b/h) 二维曲面+εr 混叠；固定 a/h 随 b/h 非单调）——定标域写死 a/h≲1 且 b/h≲3；域外低估实测 (a/h=2,b/h=6,εr=10.2)→**−2.8%**、(a/h=3,b/h=6,εr=12.9)→**−5.7%**（比本文件旧注记 −2~−4% 更重，以本块为准）；复现 `--cps-corner`。
+
+## §11.2 追加 2：SSL FD 收敛真值锚+近场修复实证+G5 归因修正+跨引擎四方对照（aurora_q，2026-11-07，Q-X20/Q-X19/Q-X25 三席整合）
+
+### FD 收敛基准（悬置带线真值锚注册：w=0.52/b=0.5/h=0.05/εr=11.9）
+
+- **锚点与真值**：u=w/b=1.04、s=h/b=0.1、εr=11.9 → **εeff=1.58537、
+  Z0=50.482Ω**（`core/suspended_stripline_fd_judge` 六级阶梯
+  d0=12.5µm→0.39µm+三点 Richardson 外推，status=CONVERGED；
+  runs/aurora_q/qx20_fd_judge/judge_result.json）。该点 u=1.04 在 softmin
+  修正族拟合域外，FD 锚覆盖外推区真值。
+- **收敛资格三证**（裁判自身先过基准才有资格裁判，AGENTS 1b/#118）：
+  1. **Richardson <0.1%**：末级残差 εeff 9.9e-5（0.01%）、C_air 3.8e-4；
+     三点一致残差 1.2e-6/3.0e-6；观察阶 p_eps=1.10/p_cair=1.02 在窗、
+     末三级单调——8 项 gates 全 true。
+  2. **Cohn 资格锚**：空气线 Z0_air FD 63.565 vs Cohn 63.631（−0.105%，
+     收敛后 within_tolerance）；精确极限全填充 εeff=11.9 误差 0、空气
+     恒等 εeff=1.0 误差 0、薄板极限 1.1047 单调有序。
+  3. **独立裁判族交叉**：第二实现 1.58517/50.4828，对自身 rel −0.0127%。
+- **w2f 角落复核**（runs/w2f_rescale_batch/ssl_er_scan.json 只读 8 角）：
+  闭式偏 FD +0.41%~+1.26% 全正——本点 +1.14% 与角落带一致（闭式系统性
+  正偏方向，softmin 族精度口径吻合）。
+- **FD 口径边界（如实）**：静流第三方裁判（零仿真），不覆盖 FDTD 动态/
+  Yee 差异/探针链系统差——openEMS 对 FD 残余差中静态网格可仿真份额之外的
+  未归因余项见四方对照。
+- **锚注册声明（aurora_q Q-X45，2026-11-07）**：上述 G3 真值已注册
+  anchors.yaml fdref-v1——`suspended_stripline.g3_eps_eff.fdref-v1`
+  （value=1.58537）与 `suspended_stripline.g3_z0_ohm.fdref-v1`
+  （value=50.482），锚值=judge_result.json 逐位舍入；id 三段式
+  <族>.<量>.<源>-vN（量段携 G3 消歧，quantity.name=
+  suspended_stripline_g3_*）；layer=closure/status=experimental/
+  consumers=[]；uncertainty 紧档 0.1%（实测残差 9.9e-5 好于 fdref 先例族
+  地板 0.5% 百倍，Q-X29 预备方案裁决采纳）；EXPECTED_ANCHORS 单源同笔
+  87→89（core/anchors.py+计数链+gallery 再生）。
+- **六级收敛阶梯详表（Q-X56 追加，2026-11-07；数值源 judge_result.json
+  `fd` 块逐位转写）**：d0 自 12.5µm 逐级对半细化 6 级至 0.39µm：
+
+  | 级 | d0 (µm) | εeff（网格原值） | C_air（×ε0） | 空气线 Z0 对 Cohn 锚逐级偏差 |
+  |---|---|---|---|---|
+  | 1 | 12.5 | 1.578489 | 6.000294 | −1.329% |
+  | 2 | 6.25 | 1.582172 | 5.963716 | −0.724% |
+  | 3 | 3.125 | 1.583825 | 5.945440 | −0.419% |
+  | 4 | 1.5625 | 1.584650 | 5.936068 | −0.262% |
+  | 5 | 0.78125 | 1.585034 | 5.931423 | —（锚逐级列仅记 4 级） |
+  | 6 | 0.390625 | 1.585214 | 5.929124 | —（收敛后总判 −0.105%） |
+
+  读法三件：①**Richardson 三点外推**——终值 εeff=1.58537（把六级末值
+  1.585214 再推 1.6e-4）、观察收敛阶 p_eps=1.097/p_cair=1.015（一阶窗
+  内）、末级残差 εeff 9.9e-5/C_air 3.8e-4、三点一致残差 1.2e-6/3.0e-6、
+  末三级单调——8 项 gates 全 true（裁判自证收敛才有资格仲裁闭式/引擎，
+  #118）。②**Cohn 资格锚随级收紧**——空气线 Z0_air 对 Cohn 偏差随 d0
+  减半单调收敛（−1.33%→−0.11%），FD 资格与物理锚同向互证（精确极限三件
+  恒真：全填充 εeff=11.9 误差 0、空气恒等 εeff=1.0 误差 0、薄板极限
+  1.1047 单调有序）。③**独立裁判族交叉**——第二实现 1.58517/50.4828Ω
+  （对自身 rel −0.0127%，观察阶 1.156 同窗）。
+- **E1/E2/E3 静态网格仿真复现阶梯（Q-X56 追加；judge_result.json
+  `emulation` 块）**——openEMS 干净口对 FD 残余 −2.49% 的网格因子分解：
+
+  | 档 | x 轴网格 | z 轴网格 | 节点数 | FD εeff | 残差分解 |
+  |---|---|---|---|---|---|
+  | E1 | 跑档 | 跑档 | 486 | 1.55787 | 静态网格总仿真 −1.73%（占残余 70%） |
+  | E2 | 精化 | 跑档 | 846 | 1.56219 | x 精化后余 −1.46% = z 轴份额 |
+  | E3 | 跑档 | 精化 | 34614 | 1.57847 | z 精化后余 −0.44% = x 轴份额 |
+
+  z 向精化（节点 ×71）回收 1.30pp、x 向精化（节点 ×1.7）只回收
+  0.27pp——**z 轴离散（空气隙仅 2 格，run_mesh_profile 实测）是 openEMS
+  εeff 偏低的主导轴**；z 空气隙假说 share=58.8%→**PARTIAL**（预声明阈值
+  share≥0.60 CONFIRMED/≥0.25 PARTIAL/其余 REFUTED，冻结不改）；静态仿真
+  外余项 −0.75% 如实悬置（FDTD 动态/Yee/探针链系统差不入 FD 静流裁判
+  口径）。
+
+### 近场污染修复实证（G1 FAIL→PASS：MeasPlaneShift 0.983→2.0mm）
+
+- **根因链**（Q-X13 定位/Q-X19 实施）：模板惯例
+  MeasPlaneShift=(BOARD−L/2)/3=0.983mm → 测量面距激励面仅
+  0.809mm=2.83/kc1（kc1=3490.66 rad/m，衰减长 1/kc1=0.2865mm）→ 最低
+  非传播模残余 e^−2.83≈5.9%（实测污染 a=+6.5%/c=+7.2%）→ S21 分母抬高
+  → 全带平坦压缩 −0.5dB → G1 FAIL（observed −0.5765 dB vs HFSS −0.07，
+  dev −0.5065 dB 超 0.3 门）。
+- **修复**（runs/aurora_q/qx19_fix/fix_evidence.json）：shift 0.983→
+  2.0mm（网格吸附后 1.98362mm，双变体同修；oe_templates 模板源零改动，
+  patch_measplane_shift 锚各恰 1 fail-loud）→ 测量面-激励面间距
+  0.809→1.8097mm=6.317 个衰减长 ≥5 守卫，**5/kc1=1.432mm 近场死区移出**；
+  残差界请求 0.17%/吸附实测 0.18%——对照修复前污染 5.6~6.5%（理论
+  e^−2.83≈5.9%），**压低 ~33×**。测量面间距 plane_dist 9.0164→7.0328mm
+  （=2·BOARD−2·shift，与 runner 同式逐位吻合）。
+- **实证门态**（C 档重跑，runs/aurora_q/qx9_anchor/verdict.json）：
+  G1 observed −0.0021 dB（dev +0.0679 dB ≤0.3）**FAIL→PASS**，|S21|≈1.000；
+  G2 PASS 不变（−19.55 dB，dev 3.95≤6）；G4 PASS 不变（open ZL 48.784Ω，
+  rel 2.92%，HFSS 隐含带内）；G3 PARTIAL 独立面照旧（open εeff 1.554353
+  vs 闭式 3.06%）。audit 守卫 5→7 项全绿（新增 nearfield_sep_ge_5kc1、
+  measplane_in_feed）；两变体 EndCriteria −60dB 干净自停（shield 29070
+  TS@−83.59dB / open 28560 TS@−82.74dB，NrTS 上限 150000 远未触）——
+  #262 截断伪象排除。
+- **判读纪律**：近场残余属频率平坦常数偏置（修复前 δ(f)≈−6.3%/−5.7%
+  平坦，#255 驻波族同形态）——凡 S 参数提取判读前先核测量面-激励面
+  间距 ≥5/kc1，该守卫已入 audit（nearfield_sep_ge_5kc1）。
+
+### G5 归因修正（over_unity=306 = 50Ω 参考失配系统偏置，非带缘盲区）
+
+- **现象**：修复后 over_unity 0→306（shield 98+open 208，**S21 列独占**，
+  S11 全带零超一），passivity_max 0.8912→1.0142（≤1.05 门内），G5
+  PASS→FAIL、verdict=DISAGREE——**驱动门已换（G1→G5），实为净改善一门、
+  新暴露一门**。
+- **谱形态**（Q-X25，g5_spectrum_evidence.json 逐点证据）：平滑确定性
+  频率爬升漂移+峰钉 10.0GHz 高带缘——带内 400 逐点差分仅 5 次符号翻转
+  （白噪声期望 ~200）；Spearman(+0.417/+0.447) p≈1e-18/5e-21；低带缘
+  [1.0,2.5)GHz 两变体零超一；幅值 ≤1558 ppm（0.0135 dB），比 G1/G2 的
+  dB 门低 1~3 个量级，不撼动任何物理标量门。
+- **归因修正**：三重谱证据指向**固定 50Ω 参考下端口波分解的频率爬升型
+  提取系统偏置**（#250/#280/#348 家族）；战役账"线端 nm 级入网盲区/
+  网格分辨不足"归因不被支持（降级为次要嫌疑）：
+  1. 反射通道零信号：shield |S11| 0.0989→0.1053 平滑爬升，量值恰=50Ω
+     对 ZL=40.78Ω 的失配伪反射 |Γ|=|40.78−50|/(40.78+50)≈0.103，无窄带
+     散射纹波/谐振尖峰；
+  2. nm 级入网守卫全绿：strip_edges_exact_nm=True 残差逐位 0.0；线端
+     残差 2.56µm≤NEAR 17.4µm——几何均匀线固定电长度偏移频率平坦，
+     产生不了随 f 爬升的幅值偏置（audit 实测 min_gap 12.5~17.3µm，
+     "40µm 网格"表述与实测不符）；
+  3. 偏置幅值随失配缩放：shield（|Γ|≈0.10）δ 峰 +0.154% vs open
+     （|Γ|≈0.012）+0.047%——网格分辨类伪象不随端口参考失配缩放。
+- **"暴露"机制闭合**：修复前 |S21| 被近场污染压至中位 0.9358/0.9439
+  （距 1.0 有 64000/56000 ppm 余量）→ ±1500 ppm 提取漂移不可能穿越 1.0
+  → over_unity=0 是**掩蔽态**（G1 FAIL 的另一面）；修复后 |S21|≈1.000，
+  ±0.15% 漂移带绕 1.0 往返必然产生超一点——**306 点是修复生效的直接
+  副产物**。
+- **门设计注记**（供模板族级根治参考，Q-X21 面）：over_unity==0 严格
+  零容差与 ~±0.15% 提取偏置底结构不兼容（|S21|≈1.000 的健康无损线在此
+  判据下必然超点）；passivity_max≤1.05（现值 1.0142，余量 25%）已覆盖
+  同一偏置的能量面——零容差条款与提取精度底的匹配是门修订方向
+  （不改门，如实登记）。
+
+### 跨引擎四方对照表（同几何 w=0.52/b=0.5/h=0.05/εr=11.9）
+
+| 口径 | εeff | Z0 (Ω) | vs FD（εeff） | vs FD（Z0） | 出处 |
+|---|---|---|---|---|---|
+| FD 收敛真值（锚） | 1.58537 | 50.482 | — | — | suspended_stripline_fd_judge 六级+Richardson |
+| 闭式（softmin 重定标） | 1.6034 | 50.251 | +1.14% | −0.46% | `_suspended_stripline_ri` 现算 |
+| openEMS（干净口谱） | 1.5459 | 50.466 | −2.49% | −0.03% | qx9_anchor ssl_open 真跑（Q-X20 three_way 口径） |
+| HFSS implied（外部实测锚） | 1.59 | 50.2 | +0.29% | −0.56% | qx9 spec.md §1 引述 |
+
+- **偏差带读法**：四方 εeff 带宽 [1.5459, 1.6034]（对 FD −2.49%~+1.14%）、
+  Z0 带宽 [50.2, 50.482]（对 FD −0.56%~0%）——Z0 四方一致度（≤0.6%）
+  显著优于 εeff，50Ω 设计面跨引擎可比；εeff 离散主项=openEMS 静态网格
+  离散（仿真复现 −1.73%，其中 z 轴 −1.46%、占比 70%；z 空气隙假说
+  PARTIAL，share=59%，预声明阈值 share≥0.60 CONFIRMED/≥0.25 PARTIAL；
+  静态仿真外余项 −0.75% 如实悬置）。
+- **域外推声明**：本点 u=1.04 在 softmin 拟合域外——闭式 +1.14% 落角落
+  扫描带（+0.41%~+1.26%）内、方向全正，外推区偏差由 FD 锚覆盖仲裁；FD
+  为准静态口径，不覆盖 FDTD 动态/Yee/探针链系统差。修复后 verdict 口径
+  open εeff 1.554353 同带内（−3.06% vs 闭式）。
+- **G3 门锚口径**：冻结 G3 门锚=闭式（3.06% PARTIAL 不改，#122 不因结果
+  改门）；对 FD 真值 −1.96% 落 PASS 区——闭式正偏 +1.14% 与引擎负偏
+  −2.5% 近似对消是"引擎 vs 闭式 3.06%"的构成解释，不构成改门理由。
+
 ### 15. c3 耦合/馈耦合标定锚（df6 A1 R4，2026-09-24）
 
 - **k 模分裂精确式**：k=(f₂²−f₁²)/(f₂²+f₁²)（M. Makimoto, S. Yamashita,
@@ -671,7 +851,7 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
   producing desired exact amplitude-frequency characteristics", Proc. IRE,
   vol.37, no.9, pp.968-983, Sept. 1949（谐振器耦合网络测量口径）；
   群时延法外部 Q：Hong & Lancaster 同书外部 Q 测量节（τmax 法）。
-- **C 常数裁决（本仓合成回收钉死（自测产物档）；
+- **C 常数裁决（本仓合成回收钉死，runs/df6_a1_r4/selftest_result.json；
   DP-2 轨独立互证一致）**：反射单载口径 S11 τmax=4·Qe/ω0 ⇒ Qe=ω0·τmax/**4**
   （C=4；实测钉 3.9972）；"/2"口径被否决。对称双馈 S21 口径
   τmax=2·Q_L/ω0（对称时 =Qe/ω0，C=1）。群时延四参数 Lorentzian+基线拟合
@@ -865,3 +1045,1214 @@ NEAR≤min(缝)/3（#266）、全轴近重合去重（#152）、端口盒激励�
   C=174.087fF（23 缝对 × 7.569fF），对实测偏差 0.34%（用户几何未给全，
   同量级参考对拍非逐位锚）；串联寄生一阶 R_s=824mΩ/L_s=209.9pH →
   SRF≈26.3GHz（CALC 名义档输出 26.33GHz）。
+
+## 20. layered_stack 晶圆键合叠层族：真空约定+双档 INCOMPLETE 根因链+馈段四壁延续教训（aurora_q，2026-11-07；Q-X4/X6/X10/X11/X12/X14/X26/X28/X54 多席整合，Q-X56 落版）
+
+族语义：晶圆键合/SIW/SICL/空气腔悬置线——「多层叠层+挖腔+腔壁金属化+
+波端口落腔体截面」三维叠层结构（第 76 号模板，外部用户晶圆键合实测反馈
+吸收立项）；名义锚 f0=95GHz、带 85–105GHz、闭式 εeff=1.60076
+（qx10_verdict closed_form_anchor 现算）、用户 HFSS 实测 |S11|max=
+−23.5dB@50Ω。单源=adapters/layered_stack_spec.py（schema+layout+lint
+投影三件套），双引擎渲染器 oe_templates/render_layered_stack.py 与
+hfss_builder_layered.py 纯消费。
+（2026-11-08 勘误补记见 §20.6：Q-X54 判读对象勘误+RC1 结构归因闭合
+升级+RC2 正交隔离跑在跑待补。）
+
+### 20.1 真空约定与 v1 族约束（两引擎同口径建模铁律）
+
+- **真空=普通 Box 完全包住全部固体**（不布尔差、直接重叠）——HFSS
+  validate 对"完全包住"放行可解，对"部分相交"（实体穿出真空盒边界）报
+  `Parts Vacuum and W2_Membrane intersect.` 求解失败——判定=完全包含
+  放行/部分相交 ERROR，两情形结论相反不可互推（§0.1 同笔；geometry_lint
+  检查④ partial_intersection 同口径：两两 AABB 相交且非包含才报）。
+- **挖腔=分层围合**：非导体层按腔足迹分段、导体层完整横跨——零布尔运算
+  （HFSS 侧纯分段坐标可离线审计；openEMS 侧 CSXCAD 按优先级原语天然免
+  布尔）。
+- **v1 族约束（渲染守卫显式拒绝，不静默兜底）**：腔沿传播轴贯通全长（波
+  端口落腔两端截面=模型端面）；腔 z 区间完整包含导体层（膜悬置=定义性质，
+  部分重叠拒绝）；腔 z 中心=带面（openEMS StripLinePort 对称探针 ±height
+  口径，不对称腔无有效 height）；腔宽>strip 宽（带须悬置于腔内）；端口
+  截面=腔体截面（size 缺省自动=腔 w×h，显式给出必须逐位一致）；膜横跨腔
+  截面把端口空气区分为上下两腔=本族合法形态（连通域=2 口径）。
+
+### 20.2 C 档/A 档双档 INCOMPLETE 四档对照总账（Q-X26/Q-X28 comparison_four_tier.json）
+
+| 档 | 几何 | 网格 base/cells | NrTS/物理窗 | εeff_med（双口均值） | over_unity | passivity_max | verdict |
+|---|---|---|---|---|---|---|---|
+| C_qx10 前态 | pre-fix | 40µm / 4.60M | 51000 / 624.9ps | 0.6290（151/201 点 <1） | 66 | 2.791 | INCOMPLETE（原判 truncation-suspect） |
+| A_qx11 前态 | pre-fix | 16.55µm / 26.99M | 135000 / 1255.1ps | 9.014（口1 13.32/口2 4.71，146/201 点 >εr） | 201（全带） | 5.000 | INCOMPLETE（S0 版重判 port-structure-suspect） |
+| C_qx10 修复后 | post-fix | 40µm / 4.60M | 51000 / 624.9ps | 1.8317（对闭式 +14.4%） | 0 | 0.817 | INCOMPLETE（port-structure-suspect） |
+| A_qx28 修复后 | post-fix | 16.55µm / 26.99M | 135000 / 1255.1ps | 326.6 | 201 | 2.617 | INCOMPLETE（port-structure-suspect） |
+
+G0 反解自洽锚四档全 PASS（design_residual 7.1e-15Ω，#118 裁判）；A 档
+修复后重发射=lab_server 27M cells 真跑 12315s（302 Mcell/s，NrTS 135000
+走满未提前停）。INCOMPLETE/未判档原样透传不升格不凑绿（#122）。
+
+### 20.3 RC1 主根因：馈段四壁未延续（Q-X12 五假设调查，H1 CONFIRMED/H2–H5 REFUTED）
+
+- **机制链**：渲染器声称的"匹配馈延续"只兑现 1/3——馈段（|x|>±L_HALF 至
+  ±DOM_X）只有 strip（StripLinePort 自画）+膜片（渲染器补），四壁（±height
+  上下地+两侧壁）未延续。openEMS StripLinePort 契约（安装版 ports.py 实证）：
+  端口只画 strip 金属（地不在端口职责内）、Feed_R=inf 缺省分支零绘制、
+  电压探针=±height 对称对（语义 "toward the upper and lower ground
+  planes"——**地是几何的责任，端口不建**）→ 探针面（馈段内）z=±height
+  金属盒命中数=0（静态 11 盒逐点审计）→ 探针积分穿真空、i 环绕无回流单
+  导体 → u/i 非任何模式的模式一致对 → telegrapher 提取（β=√(−dEt·dHt/
+  (Ht·Et))、Z_ref=√(Et·dEt/(Ht·dHt))，成立前提=单一良定义模）前提崩塌 →
+  CalcPort 强制 ref=50Ω 分解叠加垃圾 Z_ref → S 分解破无源性 → |S|>1。
+- **三条物理不可能性铁证（任一条独立判死）**：①εeff<1（C 档 151/201 点，
+  β<k0——准 TEM/介质填充线不可能，物理界 1≤εeff≤εr）；②εeff>εr=11.9
+  （A 档口1 146/201 点——超全填充上限，任何介质波导模不可能）；③对称
+  结构双口 β 差 29.5%（C 档）/50.9%（A 档）——同一传输线两端测同模 β
+  必相等。加网格对照：base 2.42× 细化+窗 2.65× 加倍，εeff_med
+  0.629→9.01 发散不收敛——**网格精度不是根因**。
+- **RC2 截断假设证伪**：A 档按 #262 处方加倍窗（NrTS=135000=4.38× 激励
+  步数 30816，物理窗 1255.1ps≥C 档加倍窗 1249.9ps）over_unity 反而
+  66→201（全带）——加倍 NrTS 治不了端口失义。截断处方流程没错（如实
+  INCOMPLETE 不凑绿正是它触发调查席），错在归因。
+- **garbage 形态随网格变、违反物理界的本质不变**：C 档（x≈10µm 均匀档）
+  排"近截止样"低 β/亚 k0 形态，A 档（探针间距 8.9µm、shift 随 BASE 缩放）
+  排超 εr 界近常数相位形态——判读先过物理界铁证再谈收敛/截断。
+
+### 20.4 Fix1/2/3 修复与修复后残留（Q-X14 commit 620d3024；Q-RM-3/Q-X28 重跑）
+
+- **Fix1（主修，openEMS 渲染器）**：metal_sheets 六面腔壁盒 x 范围重定至
+  馈段共 12 盒（(y,z) 几何单源不动，strip 体段盒除外——馈段 strip 仍由
+  端口自画）；PEC 延伸入 PML=波导馈标准形态，网格零改动（壁面 y/z 已是
+  特征线，±DOM_X 已入 x 网格，PEC 片不增 cell）。HFSS 侧无此概念（波端口
+  落腔端截面无需馈段）——引擎不对称已在渲染器头注如实登记。
+- **Fix2（渲染端 fail-loud 守卫×2）**：每面腔壁馈段延续存在性断言+探针面
+  z=STRIP_Z±PORT_HEIGHT 平面金属覆盖断言（#212 离线审计同款零仿真；
+  Q-X14 实证 probe_hits 0→1×4）。
+- **Fix3（判读端 S0 结构哨兵三检，先判端口失义再谈截断）**：β 线性度
+  （一次拟合 r2<0.95）／ZL 合理性（Re(ZL) 中位出 [10,200]Ω）／双口一致
+  （|β1−β2|/均值 中位 >0.2）——命中⇒ verdict 记
+  `INCOMPLETE(port-structure-suspect)` 指认 RC1 方向，**不进 #262 加倍
+  NrTS 处方**（门限冻结版见 qx10_verdict.py，#122 冻结不改）。
+- **修复后质变（C 档重跑实证，四壁延续生效的直接证据）**：εeff_med
+  0.629→1.832（非物理 0.63→物理量级；对闭式 +14.4%）、over_unity 66→0、
+  passivity_max 2.791→0.817、|S21| 均值 −11.37→−1.21dB、G2 谷
+  99.2GHz/深 −27.5dB——但 S0 哨兵仍 TRIGGER（口1 β r2 0.806<0.95、口间
+  一致 0.213>0.2）⇒ INCOMPLETE(port-structure-suspect) 如实登记。
+- **修复后 A 档决定性实验（Q-X28）**：S0 仍 TRIGGER（β r2 0.0858、口间
+  一致 0.619），εeff_med=326.6、over_unity 仍 201——RC 矩阵判定
+  **RC1 仍 implicated（网格+窗联合精化不治）**、RC3 截断 C 档排除/A 档
+  co-present not attributed、RC2 网格 not_observable（现存对照=网格+窗
+  联合精化，正交归因需单因子隔离跑：同 mesh 换窗/同窗换 mesh）。
+- **遗留（如实）**：L1 体区"介质窗"二阶面（膜横穿侧壁 y=±0.45 处无 PEC，
+  场可经膜-金通道外泄——用户实测与 HFSS 模型同形态 −23.5dB 背书良好，
+  判二阶扰动不修；修复后 εeff 对闭式差 >5% 先查此面再查闭式近似）；L2
+  G2 谷位受两端过渡干涉相位支配（spec §5 预声明注记）；L3 单因子隔离跑
+  未做；族级根治（Q-X55 在飞）未收官前 verdict 保持 INCOMPLETE。
+
+### 20.5 四壁延续教训（落版五条）
+
+1. **注释≠实现**：渲染脚本注释声称"腔管截面（膜片+四壁）同步延续=匹配
+   端接"而四壁缺失——几何声明必须以静态命中审计验证（11 盒逐点探针面
+   命中检查，#212 家族：字符串存在性+compile() 抓不住画法错误）。
+2. **端口原语的地是几何的责任**：StripLinePort 族只画 strip 不画地
+   （Feed_R=inf 缺省分支零绘制），±height 对称探针预设地面存在——凡用
+   端口原语预设"±height 有 PEC"的模板，渲染端必须自证延续面存在
+   （fail-loud 断言，Fix2 模式收编为惯例）。
+3. **结构哨兵先于截断处方**：|S|>1 先查端口失义三检（β 线性度/ZL 合理性/
+   双口一致），命中即 INCOMPLETE(port-structure-suspect) 指认结构方向，
+   不盲目加倍 NrTS——RC2 实证加倍窗反而恶化（66→201）。
+4. **物理界铁证优先于任何收敛叙事**：1≤εeff≤εr、对称双口 β 一致、
+   passivity≤1——任一铁证破即测量失义，网格细化救不了测量前提崩塌
+   （base 2.42×+窗 2.65× 联合精化 εeff 反而发散）。
+5. **判据不凑**：修复后 εeff +14.4% 与 S0 仍 TRIGGER 均如实登记不升格，
+   决定性实验（修复后几何×A 档）照跑不因前态惨烈跳过——四档对照矩阵
+   （geometry×mesh 两因子）是 RC 归因的最小完备设计。
+
+### 20.6 四壁延续定谳补记与判读对象勘误（2026-11-08，Q-X66/Q-X71）
+
+> 本节为 20.2–20.5（Q-X56 落版，写于勘误前）之后的定谳补记——既有
+> 20.1–20.5 段落原文一律不改写（历史账本只加不抹），勘误链全部已定谳
+> （DEVLOG 二百八十二），本节按定谳口径落版。
+
+**勘误时间线（判读对象错挂→证据链→定谳）**：Q-X54（DEVLOG 二百七十四）
+收割判读所消费的 a_auto 目录实为 **Q-X11 代旧未修复跑**而非 Q-X28 的
+a_auto_fix 修复后跑——其数字 εeff_med=9.014453/over_unity=201/发散于
+94189 步=69.8% 帽窗与四档表 A_qx11 前态行逐位吻合，故其「修复后几何×A
+档=决定性实验待跑」结论**不成立**（该象限已由 Q-X28 于 2026-11-07 跑毕：
+12:22 发射满窗 135000 步 wall=12315.36s rc=0、15:52 收割判读）。证据链=
+Q-X66 席三方逐字节绑定实证：渲染器 oe_templates/render_layered_stack.py
+自 Fix1/2 commit 620d3024 至今零改动（git log 实测）+新鲜渲染文本 sha
+a8588231… ≡ Q-X28 发射记录 render_sha256+镜像 a_auto_fix/simulation.py
+文件 sha 349168d8… ≡ 上传记录（跨域 CRLF→LF 归一化恒等）——确定性引擎
+下重发=零信息（Q-X66 就绪态未发射，qx66_relaunch/launch_notes.md 全档
+备查）。
+
+**RC1 结构归因闭合升级（同网格同窗对照两行定谳）**：
+
+| 对照行 | 几何 | 网格/窗 | 终止形态 | 能量终态 |
+|---|---|---|---|---|
+| A_qx11 前态 | pre-fix | 16.55µm base/26,987,400 cells，NrTS=135000 | 发散终止于 94189 步=69.8% 帽窗 | energy→3.25e+27→inf |
+| A_qx28 修复后 | post-fix（Fix1/2/3 @620d3024） | 同网格同窗，NrTS=135000 | 135000/135000 满窗走满未提前停，rc=0，wall=12315.36s（302.27 MC/s） | 能量全程有限，窗末 −0.05dB（~5.18e+14） |
+
+修复几何（Fix1/2/3）×A 网格×A 窗满窗**无硬发散**，对比 pre-fix 同网格同
+窗 energy→inf 于 69.8% 帽窗终止——**发散=结构因，RC1 闭合**（四壁未延续
+是发散的充分成因，被修复消解）。20.3 机制链叙述不变，本对照升格为其
+定谳背书。
+
+**残余病理不变（如实）**：A_qx28_postfix 仍 over_unity=201/201（全带）+
+S0 TRIGGER（beta_linearity_r2=0.0858<0.95、port_agreement=0.619>0.2）+
+εeff_med=326.6（闭式 εeff=1.6007603731686557，≈1.6008）——**端口失义
+未愈**，四档 INCOMPLETE 定性维持（20.2/20.4 判读不升格不凑绿）。自此
+「发散」与「端口失义」分立为两个问题：前者 RC1 已闭合，后者的归因真缺位=
+RC2 正交隔离跑（现存对照=网格+窗联合精化，单因子未隔离，20.4 遗留 L3）。
+
+**RC2 正交隔离跑（在跑待补）**：post-fix×A 网格×C 窗（NrTS=51000，预算
+~77min@302 MC/s）由 Q-X67 席在跑，结果待收割——本节落版时如实写「在跑
+待补」，不预写任何结论，收割后另行补记。反向臂（post-fix×C 网格
+0.04mm/4,599,980 cells×A 窗 NrTS=135000，预算 ~35min）在四档表
+orthogonality_caveat 指认清单内待派。
+
+**教训六（20.5 五条的扩充第六条）——判读对象指纹绑定**：判读席收割前
+必须先核对任务目录指纹与预期镜像绑定——Q-X54 按目录名取材致旧跑冒充
+新跑（**同名目录≠同一次跑**）；三方 sha 绑定（渲染器 commit/渲染产物/
+上传镜像）是收割前置验证的家法（Q-X66 四域实证：文本域/文件域/归一化
+域/上传记录域逐位恒等）。
+
+### 20.7 RC2 正交隔离跑结果补录（2026-11-08，Q-X67）
+
+**结论：窗长主导证据（window_dominated_evidence，预声明锚内判定）**。
+post-fix 几何×A 网格×C 窗（NrTS=51000，单变量=窗长，与 Q-X28 发射件
+逐行 diff 恰 1 行；三方 sha 绑定 c1335b96…）：over_unity **201→0**、
+εeff_med **326.6→3.83**（85×，rel +139.3% vs 闭式 1.6008）、passivity
+**2.62→0.57**、末窗能量 −0.17dB（51000/51000 满窗 wall=4699.6s rc=0）。
+——A 档满窗（1255ps）的灾难性端口病理由**晚期未衰减场污染提取**驱动，
+短窗（474ps）消除该伪象层。
+
+**三态对照**（comparison_three_tier.json，冻结判读函数 verdict 全
+INCOMPLETE 如实）：本席 A×C 窗（over_unity 0/εeff 3.83/S0 TRIGGER 三检
+全败 β-R² 0.005/agreement 0.647/zl [8.52,47.21]Ω FAIL）vs C_qx10_postfix
+（0/1.83/TRIGGER 两检/agreement 0.213/zl PASS）vs A_qx28_postfix
+（201/326.6/TRIGGER 两检/agreement 0.619/zl PASS）。
+
+**残余病理分立如实**：εeff +139% 未达 C 档 +14.4%；S0 三检全触发且 β
+线性度 0.005 反劣于 A 窗 0.086——**端口结构失义（RC1 方向）在全部
+post-fix 跑恒 TRIGGER，qx12 结构嫌疑进一步坐实**；"窗长伪象层"与"结构
+失义层"分立为两层。
+
+**已知限制**：物理秒口径未隔离——A 网格 dt 细使 51000 步仅 474ps<C 档
+物理窗 625ps，"窗长主导"以步数口径对照成立；同物理窗定量分离需补对照
+跑（post-fix×C 网格×A 物理窗，待派）。C 窗参数三源交叉核对冻结于
+criteria_qx67.md §2（comparison_four_tier C_qx10_postfix 行 nrts=51000
+/qx28_config C_NRTS/criteria_qx28 §3 加倍窗输入）。
+
+**终证补录（2026-11-08，Q-X78 物理窗对照跑）**：post-fix×C 网格×A 物理窗
+（NrTS=102426=round(135000×9.297037fs/12.253783fs)，物理窗 1255.106ps，
+真跑 rc=0 满窗 wall=2260s 末窗 −48.73dB）判读=**window_dominance_terminal
+（窗长主导终证）**：五键与 C×625ps 基线几乎逐位保持（εeff 1.8340 vs
+1.8317、rel 差 0.16pp、over_unity 0/0、zl PASS/PASS）——窗长（625→1255ps）
+在 C 网格上零敏感。双层结论精化：**病理=网格细节距在长物理窗下显现，
+窗长是呈现开关（物理秒尺度）、网格是载体**；S0 四态全 TRIGGER（端口
+结构失义网格/窗两轴均不治，独立残余维持，qx12 方向）。归因链三笔合成
+终局：RC1 结构归因闭合（二百八十二勘误后）+RC2 步数口径窗长主导
+（二百九十三）+本笔物理窗口径终证。
+
+## 21. EDA 格式解析器集成指南——IBIS/Liberty/CITI/SDC/Verilog 五格式（aurora_q，2026-11-07；Q-X34/Q-X35/Q-X36/Q-X46/Q-X47 五席交付汇总+Q-X32/Q-X33 相邻面，Q-X56 落版）
+
+**共性架构（五席同款，接新格式照抄）**：core 纯函数解析内核（零 IO/零
+依赖/确定性——铁律 7：结构化数字只出自数据源文本与内核声明式公式，LLM/
+agent 永不产生物理数字）→ service 包装（规则 4：JSON 信封进出，error 信
+封构造器）→ CLI 薄壳叶（parse/list，--json 旗标）。错误=ParseError
+（ValueError 子类，带行号文本）→服务层转 error 信封→CLI exit 1。未识别
+构造**宁降级不炸**（warnings 如实回显零静默丢弃）、数值**宁 raw 不编数**、
+判定**宁不报不误报**（#122 诚实语义三分支）。不设 `__all__` 的非门面文件
+不进 tests/gold/public_api.json（零金快照漂移惯例）。
+
+### 21.1 IBIS（Q-X46：core/ibis_parser.py，CLI ibis parse/list 两叶，96 测）
+
+- **格式定位**：数字 IO buffer 行业标准（IBIS Open Forum v3.2/v4.x 经典
+  节面）——SI 信号完整性读 buffer 模型的单源入口。
+- **核心语法**：`[Keyword] args` 方括号 keyword（名大小写不敏感）+参数值；
+  `|` 起行注释（行中任何位置）；数据行按当前节 mode 分派（typ/min/max
+  三列惯例）；[End] 必须收尾（缺失/其后内容报错——ibischk 同口径）。
+- **解析面**：头部 [IBIS Ver]/[File Name]/[File Rev]/[Date]/[Source]；
+  器件 [Component]/[Package]（R_pkg/L_pkg/C_pkg 三列）/[Pin]（GND/VDD/NC
+  =无模型两列形态）；[Model Selector]/[Model]（Model_type/Polarity 等
+  子参数 `key = value` 与三列 typ-min-max 两形态）；四张 IV 表
+  [Pullup]/[Pulldown]/[GND Clamp]/[POWER Clamp]（Voltage+I 三 corner）；
+  [Ramp]（Ramp_load/Ramp_dR/Ramp_dF）；[Rising/Falling Waveform]
+  （R_dut/C_dut/L_dut/V_fixture 必填元参数+time+V 三 corner）。
+- **陷阱**：①单位词法=数字+可选后缀换算基准单位（V/A/Ohm/H/F/s/Hz 全谱
+  +裸 SI 前缀——"10.0n" 是 IBIS 时间惯例写法）与 "X/Y" 比值形态
+  （Ramp_dR "-2.228/V" 家族）并存；未知后缀报错宁红不猜；裸 "f"=femto
+  前缀（法拉恒带词根 pF/nF/uF，裸 F 形态不存在——如实记录口径）。
+  ②真实供应商文件含大量超范围 keyword（[Diff Pin]/[Die]/[Pin Mapping]
+  等）→ 未识别 keyword 进 warnings+内容忽略，宁降级不炸。
+  ③多器件文件：[Package]/[Pin] 归属当前 [Component]（IBIS 多器件惯例），
+  而 [Model]/[Model Selector] 文件级不回填器件归属（如实声明）；pins
+  扁平视图跨器件同号后者覆盖——多器件以 components[].pins 为准。
+- **插值内核**：interp_iv（Voltage→Current）/interp_waveform（time→
+  voltage）线性插值+边界夹取，x 轴要求严格递增（spec 表序），corner 列
+  缺如如实 ValueError。
+
+### 21.2 Liberty（Q-X34：core/liberty_parser.py，CLI liberty parse/list 两叶，69 测）
+
+- **格式定位**：Synopsys Liberty .lib 时序库（IEEE 1601 系自由格式）——
+  数模混合设计 timing/power 引用入口。
+- **核心语法**：组 `cell (NAME) { … }`（类型名+圆括号名表+花括号体，名表
+  可空 `timing () {…}` 惯例）；简单属性 `area : 4.5 ;`；复合属性
+  `index_1 ("0.01, 0.2") ;`；值类型=带引号字符串/数字（整型字面量→int，
+  ±inf→float）/词（true/false→bool，其余保留字符串）；`/* … */` C 风格
+  块注释（**字符串字面量内不剥离**）；行尾反斜杠=行连续（values 表多行
+  惯例）。
+- **NLDM 主面**：library（name/file_version/单位属性）/cell(area)/pin(
+  direction/function/capacitance)/timing(related_pin/timing_sense+四张表
+  cell_rise/cell_fall/rise_transition/fall_transition)/lu_table_template/
+  operating_conditions；功率面 pin 级 internal_power（rise_power/fall_power/
+  power）+cell 级 leakage_power（values/value+when）/cell_leakage_power。
+- **陷阱**：①NLDM 两维表 index_1（input transition）×index_2（output
+  load）→values 矩阵；一维表（仅 index_1）与零维表（单值）按 dims 键
+  归一。②表组可引用 lu_table_template（组名即模板名）——index_1/index_2
+  缺省时从模板继承，values 恒为本地（继承只补 index 不补数据）。
+  ③不做 Liberty 全语义（CCS/ECSM 深表、check_timing 约束建模按需扩展）
+  ——未识别组/属性 attrs 透传+groups 子组表保留，消费端可继续下钻。
+
+### 21.3 CITI（Q-X35：core/citi_parser.py，CLI citi info/segments/network 三叶，45 测）
+
+- **格式定位**：HP/Agilent/Keysight 仪器 CITIfile（.cti）文本包——仪器
+  传输中间格式（IC-CAP/ADS/PLTS 生态），RF 侧仪器 S 参数数据的入口。
+- **核心语法**：首行版本行必判（`CITIFILE A.01.01`；缺=非 CITI 文件报错；
+  `CVG VERSION` 为替代形态）；NAME/VAR/CONST(ANT)/VAR_LIST_BEGIN/END/
+  SEG_LIST_BEGIN/SEG start stop count/SEG_LIST_END/DATA name fmt
+  （RI/MAGANGLE/DBANGLE ASCII 对）+BEGIN/END 数据块；COMMENT 与 `!`
+  注释；`#DEV` 设备关键字。SEG 线性段频率合成
+  F(n)=start+(n−1)·(stop−start)/(count−1)（Ansys Circuit 文档口径）。
+- **二进制扩展**：`SEG <格式串> <记录数>`——格式字母 A=%16E（16 hex 位
+  double，**大端字节序**——HP 68000 系谱惯例）/B=%8E（binary32）/
+  C=%10F/D=%6E/E=ASCII float；BEGIN_MODE/END_MODE 块内 MODE 逐记录形态
+  （IC-CAP 模式块）。
+- **陷阱（诚实语义 #122 族——本格式最大坑位）**：①C=%10F（40 bit）/
+  D=%6E（24 bit）**没有 IEEE-754 标准位型映射、公开规范不可查**——
+  decode_status="unsupported_width" 如实保留结构（格式字母/原始 hex 串/
+  记录数），不解码出任何数值（宁 raw 不编数）；A/B/E 精确解码（struct
+  位型往返逐位相等，测试钉住）。②布局歧义（SEG 每记录字段数与声明的
+  dependent 数对不上）→ decode_status="layout_ambiguous"，values=None+
+  raw 保留不猜。③BEGIN 无 END（文件截断）→ warning+已收记录如实保留
+  （截断态），不假装完整；非记录杂行逐行 warning 零静默丢弃。
+  ④**skrf 桥不在 core**（零依赖纪律）——service/citi_service 消费结构化
+  输出组装 skrf.Network，数据段格式匹配才可桥，条件不满足走 skipped
+  信封如实声明。
+
+### 21.4 SDC（Q-X36：core/sdc_parser.py，CLI sdc parse/list 两叶，74 测）
+
+- **格式定位**：Synopsys Design Constraints——Tcl 语法子集，clock/timing/
+  IO 约束面。
+- **Tcl 词法覆盖**：命令分隔=换行或 `;`；注释 `#`（命令位/`;#` 位正式
+  规则；**词位起头也按 SDC 工具宽容惯例作注释**——严格 Tcl 会当普通词，
+  生态两形态都常见，取宽容口径并如实声明；词中 `#` 是普通字符 `net#1`
+  保真）；词形态=裸词/"引号词"（可含空白，转义+替换生效）/{花括号词}
+  （**零替换**、嵌套配平、可跨行——SDC 多行列表惯例）/[方括号] 命令替换
+  （子脚本原文保留按需递归——`[get_ports {a b}]` 对象访问器惯例）；
+  一词可多段拼接（`clk$idx`/`pad[get_cells x]`）；变量 `$name`/`${name}`
+  ——set 命令按解析序即时更新环境变量表，未定义如实保留原文 `$name`
+  （静态解析无运行时语义，不猜不炸）；转义 `\x` 取下一字面字+行尾反斜杠
+  行连续；`"`/`{`/`}` 只在词首特殊（Tcl 语义），词中一律普通字符。
+- **SDC 语义面（八桶）**：clocks（create_clock -name/-period/-waveform/
+  -add，无名时钟从源对象首 pattern 派生标 auto_named；create_generated_
+  clock -source/-divide_by/-multiply_by/-edges）；delays（set_input_delay/
+  set_output_delay——**既无 -max 又无 -min 时 Synopsys 语义=双边同时置
+  值**，max=min=true 如实落键）；paths（set_false_path/set_max_delay/
+  set_min_delay -from/-through/-to）；constraints（set_load/set_driving_
+  cell/set_fanout_load/set_case_analysis/set_multicycle_path/set_clock_
+  latency/set_clock_uncertainty）；对象访问器 get_ports/pins/cells/nets/
+  clocks（内联子命令与顶层独立命令两路径统一收集 patterns；pattern 按
+  空白+逗号切分——`{clk_p, clk_n}` 逗号形兼容收取）。
+- **陷阱**：①未知命令不报错（SDC 文件合法含工具私有命令）→ warnings
+  （line+name）披露后继续解析——宁全量带警告不半途而废。②负数值
+  `-1.0` 不被当旗标（旗标=`-` 后字母起头）。③词位 `#` 宽容注释口径的
+  双面性：消费端需知悉本解析按注释剥、严格 Tcl 工具可能当普通词——
+  跨工具复用时留意此口径声明。
+
+### 21.5 Verilog 网表（Q-X47：core/verilog_netlist_parser.py，CLI verilog parse/list 两叶，73 测）
+
+- **格式定位**：IEEE 1364 结构网表子集——数字后端（综合/PnR）输出的
+  gate-level netlist 标准交接面，结构分析（module/port/wire/assign/
+  instance/parameter/defparam）单源入口。
+- **词法覆盖**：`//` 与 `/* */` 注释（块注释未闭合报错带行号）；字符串
+  字面量（未闭合报错）；普通标识符+**转义标识符** `\name` 到空白止
+  （EDA 工具网表常见）+层次名 `a.b.c` 自然合成；数字=十进制明数（含
+  `_` 位分隔）+**位宽字面量** `8'hFF`/`4'b0101`/`12'd135`/`1'bx`
+  （parse_verilog_number 单源，parameter 数值提取同源消费）；系统任务
+  `$display` 类词法识别；编译器指令 `` `timescale ``/`` `define ``/
+  `` `include ``/`` `ifdef `` 族整行消费（含行尾续行），指令名收进
+  directives 名录（网表功能语义不依赖指令体，静默跳过+如实登记）；
+  多字符运算符最大吞噬（`<=`/`===`/`<<<` 等）。
+- **语义面（模块级五桶+参数面）**：ports（**ANSI 2001 头内全声明与 1995
+  头列名+体内方向声明双形态统一归一**；direction 无法判定如实 None；
+  width={msb,lsb,span}）；wires（wire/reg/tri/wand/wor/supply0/supply1
+  含 kind/init）；assigns（多目标逗号形逐条展开，delay 原文记录）；
+  instances（**门级原语 LRM 14 章全集**（and/nand/…/pullup/pulldown）经
+  GATE_PRIMITIVES 注册表（RegistryKit，规则 3）把位置连接归一命名映射
+  out/in1..inN/ctrl+模块实例 named/positional 双形态——位置连接按子模块
+  端口声明序对位，未知子模块（外部单元库）连接网如实入 external_boundary_
+  nets）；parameters/localparams/defparams。
+- **拓扑提取 extract_module_topology**：三层关系实例→网→实例
+  （net_drivers/net_readers 双向图+instance_edges 边表）；孤立网双桶
+  undriven/unloaded（**reg 类网不判 undriven**——行为块跳过属已知盲区，
+  无证据不下结论；外部未知实例连接网豁免——宁不报不误报）；DAG 树深度
+  +关键路径（同层取字典序=确定性）+组合环检测（cyclic=True 时 depth
+  如实置 None 不猜；3000 级链迭代 DFS 防递归爆栈）。
+- **陷阱**：行为块 always/initial/function/task/specify/generate 整体
+  跳过记 warning（结构网表解析不进行为语义——被跳块内过程赋值驱动的
+  reg 是孤立网检测盲区，双桶口径已内建豁免）；病态实例语句解析失败降级
+  警告+跳语句，不炸全文档。
+
+### 21.6 相邻面与跨格式消费链（Q-X32/Q-X33/Q-X48/Q-X49）
+
+- **SPICE 网表解析器（Q-X33：core/spice_netlist_parser.py，CLI spice
+  parse 单叶，59 测）**：ngspice/HSPICE/Spectre 三格式统一五维度结构化
+  输出（elements/subckts/controls/models/topology）；flavor auto 内容
+  启发式判定（simulator lang 显式>spectre 信号>ngspice .control>HSPICE
+  .option post/.step/`;` 注释）；拓扑=MNA 维度（非地节点+V/E/H 分支
+  增广）+节点双向图+孤立节点检测+接地归一（0/gnd/gnd!）+子电路调用层次
+  树（环截断）；fail-soft（结构错误进 structural_errors 不中断；表达式
+  值保留原文不代入）；.control/.endc 交互块整块收编防误吸元件；方言终止
+  符 .endl/.endfl/.endt/ends 收编+warning。
+- **SKILL 模板生成器（Q-X32：core/skill_template_engine.py，CLI skill
+  三叶，57 测）**：非解析器——Jinja2 形态自制微实现（{{var}}/{%for%}/
+  {%if%}/{#注释#}+|raw/|default 过滤器）+六检查语法守卫 fail-loud+5 电路
+  设计模板（aedt_run_simulation/cell_layout/layer_setup/schematic_instance/
+  waveform_export）byte-identical——EDAS 自动化脚本生成的确定性出口
+  （Virtuoso-Bridge-lite 借鉴化用首块）。
+- **跨格式消费链**：LVS 网表对照器（Q-X49，netgen 思想借鉴化用自研）
+  双源消费 SPICE（Q-X33）+Verilog（Q-X47）——双源归一化+1-WL 颜色精化+
+  元件回溯图同构+参数相对容差+RF 特化（端口/tline series/shunt/coupled
+  分类），CLI lvs compare 叶（50 测）；DRC 规则解析器（Q-X48）三形态文法
+  +12 类型注册表+RF 特化检查器四件（阻抗/焊盘间距/地过孔围栏/屏蔽罩间距），
+  CLI drc parse/validate 两叶（89 测）。**接新格式的位次**：core 纯函数
+  （零依赖、ParseError 带行号）→service 信封→CLI parse/list 叶→（如涉
+  RF 数值）skrf 桥放 service 不进 core（CITI 先例）。
+
+- **全集群扩展归属索引（Q-X75 追加行，2026-11-08；上行原文零改动——五格式
+  之后的 13+ 新格式席位按族分节落 §21.7-21.11，每格式五件套：格式定位/
+  核心语法要点/解析面/陷阱/集成点）**：
+  - 数字后端：SPEF（Q-X60→§21.7.1）/SDF（Q-X61→§21.7.2）/LEF-DEF（Q-X57→
+    §21.7.3）；SDC/Verilog 网表已在上文 §21.4/§21.5（交叉引用不重写）。
+  - 版图与制造：GDSII（Q-X58→§21.8.1）/Gerber RS-274X+Excellon（Q-X59→
+    §21.8.2，fab 组内两叶已接线）/IPC-D-356/356A（Q-X65→§21.8.3）/ODB++
+    （Q-X68 在制→§21.8.4 如实标注零预写）。
+  - 测试与波形：VCD（Q-X63→§21.9.1）/STIL（Q-X72→§21.9.2）；测试三面=
+    STIL+IPC-356+VCD（DEVLOG 二百九十口径），仪器面=CITI（§21.3）。
+  - 互连与封装：Touchstone（Q-X64→§21.10，#248/#287/#309 三坑经验单源化
+    专节）。
+  - 模拟生态：SKILL/OCEAN 语言解析（Q-X62→§21.11，与 Q-X32 skill 模板
+    生成器读写对偶）。
+  - MCP 暴露两批：Q-X69 mcp_tools/parser_formats.py 八工具（171→179，
+    38 测）+Q-X73 mcp_tools/cad_formats.py 十工具（179→189，36 测）；
+    CLI 叶接线除 fab 组内两叶外均挂账待合流（2026-11-08 时点，以
+    rfauto --help 实测为准）。
+  - 集群专审 Q-X74 在制（只读审查报告供合流与终门消费，零代码改动）。
+
+### 21.7 数字后端三件套扩展（SPEF/SDF/LEF-DEF——SDC=§21.4、Verilog 网表=§21.5 已在前）
+
+数字后端流程（综合→PnR→寄生提取→STA→时序反标）的交换格式族本节补齐三件：
+SPEF 寄生（Q-X60）+SDF 时序标注（Q-X61）+LEF/DEF 库与版图交换（Q-X57）——
+与 §21.4 SDC 约束、§21.5 Verilog 网表合成"约束/网表/寄生/时序标注/物理库"
+五面（DEVLOG 二百八十一"数字后端三件套集齐"口径）。共性架构与 §21 卷首注
+同款（core 纯函数→service 信封→CLI 薄壳）；全节 ParseError 家族+fail-soft
+warning 如实回显+不设 __all__ 零金快照漂移。
+
+#### 21.7.1 SPEF（Q-X60：core/spef_parser.py，CLI spef parse/report 两叶挂账，136 参数化测）
+
+- **格式定位**：SPEF（Standard Parasitic Exchange Format，IEEE 1481-1998）
+  寄生提取交换格式——OpenRCX/K-layout/商用提取器输出、STA 输入的标准交接
+  面；RC 寄生网表（*D_NET+CAP/RES）与长名折叠（*NAME_MAP）的只读结构化
+  解析单源入口。
+- **核心语法要点**：①`*SPEF "IEEE 1481-1998"` 版本串头=文件身份判定面
+  （缺失致命 SpefParseError）；②`*T_UNIT/*C_UNIT/*R_UNIT/*L_UNIT <乘数>
+  <单位>` 单位三元组——换算系数=乘数×单位基准表（spef_unit_factor 单源；
+  未知单位 fail-closed：warning+系数 1.0 原值保留，绝不猜量纲）；③
+  `*NAME_MAP *id name` 长名折叠：id→name 主映射+name→id 反查双录，重复
+  id 后者覆盖+warning，未映射 `*id` 引用保真展开 `<*id>` 字面（不猜不丢）；
+  ④`*D_NET` 段状态机 `*D_NET *id 总电容`→`*CONN`→`*CAP`→`*RES`→`*IND`→
+  `*END`；⑤`//` 与 `#` 行注释双形态（引号串内不剥）。
+- **解析面**：parse_spef（header 含 dividers/bus_delimiters/scale+ports+
+  nets[*CONN direction-first/type-first 双形态判定、*CAP 两列=对地/四列=
+  耦合双端、*RES 四列、*IND 同 RES 形态换算亨利]）+拓扑三函数
+  spef_topology_summary（逐 net 节点/元件/连通分量并查集+孤立节点宁多报
+  不误报）/spef_coupling_stats（耦合总数/耦合对地比/top-k 排序键
+  (-值,全局序) 确定性稳定）/spef_net_lookup（展开名查 net 全量视图，未
+  命中 None）。schema v1.0（PARSER_SCHEMA_VERSION）；cap 总量一致性三数字
+  （total_cap_far/cap_sum_far/cap_rel_diff）只报告不做硬门。
+- **陷阱**（DEVLOG 二百七十八"已知限制"提炼）：①三值数值（min:typ:max）
+  未支持——warning 整行跳过，真实提取器若用三值形态数据会**静默变少**
+  （后续补）；②*R_NET/*D_PNET/*POWER_NETS/*DEFINE 未覆盖；③*I 行按第三
+  词 I/O/B 分派——类型值恰为 I/O/B 会误读；④耦合电容是否计入总电容各
+  提取器口径不一——rel_diff 只给数字，下结论归消费方复核。
+- **集成点**：service/spef_service.py（parse_spef_file/spef_report(top_k)/
+  spef_net_detail 全信封）；cli/domains/spef.py 域内自注册挂账（main.py
+  re-export 待合流；二次 add_typer 双注册打红 zero-shadow 钉）；MCP
+  spef_parse/spef_report 已暴露（Q-X73）。接线状态=2026-11-08 时点，以
+  rfauto --help 实测为准。
+
+#### 21.7.2 SDF（Q-X61：core/sdf_parser.py，CLI sdf parse/report 两叶挂账，167 测）
+
+- **格式定位**：SDF（Standard Delay Format，IEEE 1497-2001/OVI 3.0）时序
+  标注交换格式——OpenSTA/PrimeTime/Vivado 输出、门级仿真器反标
+  （$sdf_annotate）输入；数字后端三件套（SDC 约束/SPEF 寄生/SDF 时序标注）
+  收官面。
+- **核心语法要点**：①S-expression 文法（括号/引号串/原子三类词元）+栈式
+  解析零递归（MAX_NEST_DEPTH=512 深度守卫；括号失配/注释未闭合=
+  SdfParseError 带行号）；②三元组 min:typ:max 按 `:` 切分三槽，空槽如实
+  None 不猜，单值=三槽同值（IEEE 1497 语义）；③TIMESCALE 档位闭集：乘数
+  1/10/100×单位 s/ms/us/ns/ps/fs 共 18 档显式表 TIMESCALE_FACTORS，表外
+  fail-closed 抛错（绝不静默猜量纲）；缺省=标准规定 1ns（source=default
+  +warning，OpenSTA SdfReader 同口径）；④`\x` 转义字保留反斜杠原文
+  （SDF 标识符转义语义：`a\[3\]` 与总线下标 `a[3]` 不同——解析层不解
+  转义，名字如实）；⑤`(INSTANCE)`=top-level/`(INSTANCE *)`=通配/层次名
+  按 DIVIDER 切分（转义分隔符 `\.` 不切）。
+- **解析面**：parse_sexpr（SdfList/SdfAtom 嵌套树）+parse_sdf（头部键闭集
+  HEADER_KEYWORDS+CELL 段 DELAY ABSOLUTE/INCREMENT 下 IOPATH/COND/
+  INTERCONNECT/PORT/NETDELAY/DEVICE 五类 del_def+TIMINGCHECK 十二类
+  SETUP/HOLD/SETUPHOLD/RECOVERY/REMOVAL/RECREM/SKEW/TIMESKEW/FULLSKEW/
+  WIDTH/PERIOD/NOCHANGE 按定位元数解析+TIMINGENV/LABEL unsupported 保留
+  原文）+parse_sdf_triple+查询三函数 sdf_cell_lookup/sdf_delay_paths
+  （from→to 平坦清单+秒值）/sdf_timing_check_summary（分类计数+每类最坏
+  值 max of max 槽）。
+- **陷阱**：①PATHPULSEPERCENT 值不做时间换算（unit=percent 如实标注）；
+  ②COND/CONDELSE 条件表达式只携带不求值（词元级重建原文）；③DIVIDER
+  缺省=标准 `.`（OpenSTA 内部缺省 `/` 属其网络约定——跨工具对拍留意
+  口径差）；④缺 TIMESCALE 时按标准缺省 1ns+warning——消费端不要把
+  "缺省"当"文件已声明"。
+- **集成点**：service/sdf_service.py（parse_sdf_file/sdf_report/
+  sdf_cell_detail——不存在 cell→ok=False 带可用 cell 清单）；
+  cli/domains/sdf.py 独立根挂账（零导入钉随接线移除）；MCP sdf_parse/
+  sdf_report 已暴露（Q-X73）。2026-11-08 时点/以 rfauto --help 实测为准。
+
+#### 21.7.3 LEF/DEF（Q-X57：core/lef_def_parser.py，CLI lefdef parse/check 两叶挂账，148 测）
+
+- **格式定位**：LEF（Library Exchange Format）/DEF（Design Exchange
+  Format）5.8 语法子集——OpenLane/OpenROAD 数字后端流程的科技库（层/
+  via/site/macro 抽象）与版图（组件摆放/引脚/网/走线）交换骨干格式；读取
+  PnR 产物做结构分析（单元闭合/网连接度/引脚名对齐）的单源入口。
+- **核心语法要点**：①词法：`#` 词首起注释（词中 `#` 属名字如 net#1）；
+  `;`/`(`/`)` 恒独立标点（`0.14;`/`(0 0)` 贴身写法容忍），唯一例外=词内
+  已开 `(` 由同词 `)` 配平（BUSBITCHARS 总线位名 `a(0)` 保持一词）；②
+  语句无显式续行符——跨任意多行直到 `;`；关键字大小写容忍（LAYER/layer
+  同义走大写归一）而**名字大小写敏感**（层名/单元名/网名走原文）；③LEF
+  数值本身即 µm（*_um 直取无换算）；DEF 坐标是 DBU 整数——*_dbu 落原值、
+  *_um=DBU÷UNITS DISTANCE MICRONS（预扫全文取换算因子语句序无关；缺
+  UNITS 时 *_um 如实 None 不臆造缺省因子）；④节头声明计数（`COMPONENTS
+  3 ;`）与实际条目数对账入 section_counts，不等记 count_mismatch 警告；
+  ⑤fail-soft：未知关键字整句跳过记 unknown_statement（ANTENNA*/PROPERTY
+  等合法但未建模语句收 other_statements 原文不记警告）+零进展死循环守卫。
+- **解析面**：parse_lef（LAYERS/VIA/VIARULE/SITE/MACRO[PIN DIRECTION·USE
+  +多 PORT 块 LAYER+RECT/POLYGON+OBS]）+parse_def（DIEAREA/ROW/TRACKS/
+  COMPONENTS placed·fixed·unplaced/PINS/NETS 连接+ROUTED 走线段+VIA+
+  SPECIALNETS/END DESIGN）+拓扑三函数 def_component_macro_closure
+  （COMPONENTS.model ⊆ LEF macros 闭合校验，多份 LEF 合并口径）/
+  def_net_connectivity（逐网连接度/悬空网/单连接网/未知组件与顶层 PIN
+  引用）/def_pin_lef_alignment（DEF PINS↔LEF macro 引脚名双向缺席+方向
+  不一致）——LEF/DEF 无方向语义网表，驱动/负载判定一律不做（宁不报不
+  误报）。
+- **陷阱**：①DEF PINS 的 LAYER 几何是**相对引脚落点的局部坐标**——原样
+  保留不做变换（消费端自行叠加落点）；②走线段 layer=段首声明层，段内经
+  via 换层不追踪（via 名与落点坐标如实登记 vias）；③`*` 沿用前点同轴值
+  与 NEW 分段是 NETS 走线段两惯语（SPECIALNETS 容忍线宽/SHAPE/STYLE 续接）；
+  ④设计文件常见未建模块（REGIONS/BLOCKAGES/FILLS/SCANCHAINS 等）整块跳过
+  并登记——结构分析前先看 warnings 面。
+- **集成点**：service/lef_def_service.py（parse_lef_file/parse_def_file/
+  lef_def_check 信封——MACRO↔COMPONENTS 引用闭合+PIN↔PINS 对齐+NET 连接
+  度摘要）；cli/domains/lefdef.py 独立根挂账（并发窗口延后接线——合流
+  批量接线清单在册）；MCP lef_def_parse 单工具（LEF+可选 DEF 合并函数
+  收单形态，多份 LEF/交叉校验留 CLI，Q-X73）。2026-11-08 时点/以
+  rfauto --help 实测为准。
+
+### 21.8 版图与制造面（GDSII/Gerber+Excellon/IPC-356/ODB++）
+
+PCB/IC 制造数据族按流程排列：版图交换（GDSII，Q-X58）→光绘+钻孔
+（Gerber RS-274X+Excellon，Q-X59）→裸板电气测试（IPC-D-356/356A，Q-X65）
+→制造数据模型（ODB++，Q-X68 在制）——制造三件套=光绘+钻孔+电测
+（DEVLOG 二百八十三口径），与 §21.6 DRC/LVS 相邻面构成制造消费链
+（Q-X59→Q-X65 pair_check 只读消费是首个跨席消费实例）。
+
+#### 21.8.1 GDSII（Q-X58：core/gdsii_parser.py，CLI gdsii parse/layers 两叶挂账，141 测）
+
+- **格式定位**：版图交换事实标准 GDSII Stream Format（公开规范口径）的
+  只读结构化解析——纯 Python 字节级、零第三方依赖（gdstk/gdspy 属大依赖
+  不入仓；字节级确定性内核正是本席要点）。
+- **核心语法要点**：①记录头=**4 字节**：2B 大端 length（**含头自身**）+
+  1B record type+1B data type，负载长=length−4；data type 0x00 无负载/
+  0x01 bitarray/0x02 int2/0x03 int4/0x04 real4/0x05 real8 全大端；②
+  GDSII 实数（1 符号+7 指数 16 底偏移 64+尾数 real8 56 位/real4 24 位）
+  精确解码=int/int 正确舍入除法+整数左移——56/24 位尾数超 double 53 位
+  有效位，**禁 float(mant) 先行转换**（丢位）；全零字节特判 0.0；③
+  ASCII 记录偶字节对齐尾部 NUL 填充，非 ASCII 字节→U+FFFD 如实显示不猜
+  编码；④STRANS bit15=反射（先反射后旋转）、MAG 缺省 1.0/ANGLE 缺省
+  0.0；XY 全程 DBU int 原值，DBU→µm 走 dbu_to_um 显式函数（UNITS 双
+  real8 按规范语义原值双录 units_raw）。
+- **解析面**：parse_gdsii（记录流状态机：HEADER/BGNLIB/LIBNAME/UNITS/
+  BGNSTR/STRNAME+SREF/AREF[COLROW+3 锚点]/BOUNDARY/PATH[PATHTYPE/WIDTH]/
+  TEXT/BOX；头截断/零 length/负载越界→warning+停流 truncated=True；
+  未知记录 warning 跳过；重名结构 warning+桶合并）+拓扑三函数
+  gdsii_hierarchy_stats（被引用计数+未定义引用+孤儿/零引用双桶宁多报）/
+  gdsii_layer_summary（逐 (layer,datatype) 计数+包围盒）/gdsii_expand_
+  bbox（递归展开——平移/反射/旋转仅 0/90/180/270 精确展开零近似，任意角
+  或 mag≠1 如实 skip 带 reason；MAX_HIERARCHY_DEPTH=256+循环引用守卫）。
+- **陷阱**（DEVLOG 二百七十七）：①"2+2+2"记录头系任务书笔误——公开规范
+  与全部开源实现均为 4 字节头（接新实现前先核头长）；②任意角度/mag≠1
+  引用不展开（宁 skip 不近似——skipped_refs 带 reason 是契约不是缺陷）；
+  ③AREF bbox=锚点端点极值法（格位均匀落段的包围盒只依赖端点）；④首记录
+  即不可读→GdsiiParseError 文件级错误，区别于流中截断（truncated=True
+  已收面如实保留）。
+- **集成点**：service/gdsii_service.py（parse_gdsii_file 信封/
+  gdsii_layer_report/gdsii_hierarchy_report）；cli/domains/gdsii.py 独立
+  根挂账（cli.main 零导入钉随接线移除）；MCP gdsii_parse 已暴露（Q-X73）。
+  2026-11-08 时点/以 rfauto --help 实测为准。
+
+#### 21.8.2 Gerber RS-274X + Excellon（Q-X59：core/gerber_parser.py+core/excellon_parser.py，CLI fab parse/summary 组内已接线，108 测）
+
+- **格式定位**：PCB 制造事实标准双件——Gerber RS-274X 光绘（Ucamco 规范）
+  指令级状态机解析（坐标模态/D-code 模态/插值模式/区域模式全跟踪）+
+  Excellon 钻孔（CNC-7/Format 2 公开口径）刀具/钻点/槽孔解析。与既有统计
+  级读入口 gerber_overview_service（T-Q6"禁写完整解析器"口径）分工不同
+  且零 import 关系（单源各自成立，消费面不同层级）。
+- **核心语法要点**：①`%FSLAX35Y35*%` FS 定长拆分：坐标词无小数点按
+  (整数位,小数位) 拆——`0012345@3:5`=12345×10⁻⁵=0.12345 文件单位
+  （Fraction 精确解码浮点累计误差免疫；L/T 零省略只影响补零方向，整数值
+  恒为字面量整值）；②aperture：C 圆/R 矩/O 长圆/P 多边形+AM 宏
+  （unexpanded 整块登记不做参数代换——宏原语求值属出图器职责）；③绘图：
+  G01/02/03 线性/弧（I/J 圆心偏移原值记录不展开弧中间点）+D01 画/D02 移/
+  D03 闪光+G36/G37 区域逐环路径（内环挖孔不做布尔运算如实逐环）+LP 极性
+  登记不清算；④Excellon：M48 头/INCH·METRIC+LZ·TZ/T 刀具 C 直径/G85
+  单行两对槽孔/T0 复位——头部不声明位数，缺省按 KiCad/行业惯例 6 位定标
+  （`;FILE_FORMAT=2:5` 类 X2 注释出现时优先+decimals_source 如实回显）。
+- **解析面**：parse_gerber（flashes/draws/regions+outline_bbox_mm+
+  gerber_layer_summary/gerber_bbox 消费面）+parse_excellon（hits/slots+
+  excellon_hit_grid_summary 最近邻孔距统计，n<2 如实 None 不做虚假统计）
+  +service/fab_gerber_service.py 四函数全信封构造器（parse×2/summarize/
+  pair_check——孔位落板 bbox 越界列表交叉校验，tol_mm 缺省 0.5 可调）。
+- **陷阱**（DEVLOG 二百七十九）：①FS 拆分示例勘误（任务书"0012345→
+  123.45mm"系笔误——按 Ucamco 规范 3 整数位+5 小数位=0.12345 文件单位；
+  123.45mm 的 3:5 坐标词应为 12345000）——内核按规范钉、消费端换算前先
+  对 MO 单位；②弧段 endpoint-only bbox 恒声明（I/J 圆心鼓出未展开——
+  bbox_mode 键如实标注，宁近似不报错值）；③MO 缺失时 _mm 键如实 None
+  （单位不明不猜，#316 多报不冒充同款方向）；④Excellon 6 位缺省定标是
+  **声明限制**非规范保证（summary 交叉核对）；M97/M98 文字钻/R
+  step-repeat warning 登记不展开；多行槽形态未覆盖（只解 KiCad 惯例单行
+  两对 G85）。
+- **集成点**：cli/fab_app.py 组内追加 fab parse/summary 两叶——**全集群
+  唯一已接线 CLI 面**（fab 组既有 9 叶→11 叶零 main.py 编辑，2026-11-08
+  时点）；service/fab_gerber_service.py；MCP gerber_excellon_pair_check
+  已暴露（Q-X73）。以 rfauto --help 实测为准。
+
+#### 21.8.3 IPC-D-356/356A（Q-X65：core/ipc356_parser.py，CLI ipc356 report 一叶挂账，104 测）
+
+- **格式定位**：裸板电气测试网表事实标准（Per-Pin Electrical Test Data）
+  ——KiCad/Altium 导出、飞针/测试架具消费；记录级结构化解析：头部参数+
+  记录状态机+net→pads 测试点拓扑+单点 net 开路嫌疑清单。与 Q-X59 构成
+  制造三件套（配对校验入口在服务层 ipc356_fab_pair_check）。
+- **核心语法要点**：①头部 `P 2.10`/`P 3.00` 版本行（缺失=解析错误）+
+  `C<数字>` 坐标缩放因子（≥4 位数字）+M10/M20 用户名/日期+CM 注释；②
+  记录类目六种：317 元件/378 焊盘·V 节点/367 过孔/363 DIP 轴向/362 非测试
+  面引脚/357 夹具探针（收 probes 独立清单不冒充板面焊盘）+XT 扩展变体族
+  （tag 字段扫描天然列宽不敏感——356 旧式固定列与 356A 扩展列双形态同
+  读取器容忍）；③坐标换算 mm=原始整数×100/C 因子（Fraction 精确十进制；
+  表驱动已知量钉 C1000000+X0012345→1.2345mm）；C 缺失→warning+_mm 如实
+  None；④net 名双形态：356A=记录尾裸词字段；356 旧式=独立 `%` 行
+  （%NETNAME 模态段+空 `%` 行清模态）；⑤终止 `9999` 文件尾标记（00000
+  兼容）；流尾无标记 truncated=True 不报错。
+- **解析面**：parse_ipc356（schema 含 components/pads/vias/probes/nets
+  映射/stats/truncated/warnings）+查询三函数 ipc356_net_pads（未知 net
+  fail-closed ValueError 带可用名录）/ipc356_component_pins（元件引脚
+  视图）/ipc356_single_point_nets（单点 net 清单——开路嫌疑信息桶非判错）。
+- **陷阱**（DEVLOG 二百八十三）：①C 因子换算口径为 campaign 钉定未逐条
+  对原版规范核验（docstring 声明限制）；②tag 扫描的代价：designator 内嵌
+  `X<数字>` 形态（如 AX1B）会被提前截断、net 名内嵌 tag 字母+数字（如
+  NET_X2）会被先行消费——真实 356A designator 走旗标/固定列两惯例时无害，
+  自造命名前先对 docstring 限制声明；③过孔不入 nets 映射（测试点口径）
+  自带 net 字段如实保留；④357 探针面只到坐标/点名级（探针网表关联不
+  展开）。
+- **集成点**：service/ipc356_service.py（parse_ipc356_file/ipc356_report/
+  ipc356_fab_pair_check——只读消费 Q-X59 fab_gerber_service 产物零改动，
+  lazy 标注）；cli/domains/ipc356.py 独立根挂账；MCP ipc356_report 已暴露
+  （Q-X73）。2026-11-08 时点/以 rfauto --help 实测为准。
+
+#### 21.8.4 ODB++（Q-X68 在制——零预写）
+
+- **在制如实标注**：core/odbpp_parser.py+service/odbpp_service.py+
+  cli/domains/odbpp.py 工作树在飞未提交（2026-11-08 时点 git untracked）
+  ——测试数/集成状态/陷阱清单以席位交付与主代合流后实测为准，本节不预写
+  任何数字。方向（工作树 docstring 调研结论）：ODB++Design 目录形态
+  **结构与统计面**（matrix 层清单/step 目录树/netlists 网表/symbols/
+  eda 顶层计数/net→pads 库存+悬空 pad/空 net 双清单+matrix↔step 层对齐
+  校验）——与既有 adapters/layout_interchange.py import_odbpp（几何语义
+  展开）、format_overview_service（存在性探测）三面零函数重叠；集群专审
+  Q-X74 同为在制（只读审查报告供合流与终门消费）。
+
+### 21.9 测试与波形面（VCD/STIL——与 IPC-356/CITI 构成测试三面+仪器面）
+
+数字验证/测试面两件：VCD 波形（Q-X63）+STIL 测试向量（Q-X72）——测试
+三面=STIL+IPC-356（§21.8.3）+VCD（DEVLOG 二百九十口径），仪器面=CITI
+（§21.3）。x/z 值分型（VCD）与 WFC 事件字母表（STIL）同守"结构化保存
+不解释物理含义"（铁律 7）。
+
+#### 21.9.1 VCD（Q-X63：core/vcd_parser.py，CLI vcd parse/report 两叶挂账，141 测）
+
+- **格式定位**：数字仿真波形交换事实标准 VCD（Value Change Dump，IEEE
+  1364-2005 附录）——iverilog/Verilator/开源仿真器全走此链；声明段状态机
+  +时间轴增量值事件流的只读结构化解析。
+- **核心语法要点**：①声明段：$date/$version 跨行块；$timescale 表驱动
+  （数值 1/10/100×单位 fs..s 档位闭集，非法 fail-closed VcdParseError）；
+  $scope 嵌套栈→层次树（scope 路径点分单源）；$var type width id name
+  （id=ASCII 33-126 多字符编码；同 id 冲突 warning+**后列覆盖**）；
+  $enddefinitions 缺失=致命（文件身份判定面）；②数值段：#时间戳（单调
+  不减违例 warning 不中断）；标量 `0!`/向量 `b1010 !`/实数 `r123.456 id`
+  三类；③x/z 如实字符串分型（值恒 str 与数值不可比——不做数值化；单
+  比特 x 值是标量非向量——向量 x 必 bx 形态，测试钉此区分）；④
+  $dumpvars/$dumpall 快照是真数据不丢；$dumpoff..$dumpon 窗口登记（显式
+  x 保留、**不合成**未显式写出的 x）；$dumpports 只计数登记不解析。
+- **解析面**：parse_vcd（schema=vcd/1.0：header/scopes 树/vars by id/
+  events by id[[time,value]]/dump_regions/stats）+查询三函数
+  vcd_var_lookup/vcd_signal_profile/vcd_time_windows+vcd_activity_top。
+- **陷阱**（DEVLOG 二百八十五）：①id 冲突后列覆盖→被覆盖 var 的层级名
+  不可再查（事件按 id 合并如实保留）；②无流式/分块模式（全文读入——大
+  波形注意内存）；③转义标识符 \name 形态不特判按原文收；④先于首个时间
+  戳的值事件按时间 0 归置+warning；值事件引用未声明 id→warning+事件如实
+  保留（events 与 vars 键集可异，消费方自查）。
+- **集成点**：service/vcd_service.py（parse_vcd_file/vcd_report/
+  vcd_var_detail，utf-8→Latin-1 兜底）；cli/domains/vcd.py 域内自注册
+  挂账（main.py 只 re-export 三行待合流）；MCP vcd_parse 已暴露（Q-X73）。
+  2026-11-08 时点/以 rfauto --help 实测为准。
+
+#### 21.9.2 STIL（Q-X72：core/stil_parser.py，CLI stil parse/report 两叶挂账，134 测）
+
+- **格式定位**：IEEE 1450 STIL（Standard Test Interface Language）数字
+  测试向量交换标准——ATPG 输出、ATE 消费；块树状态机+两遍语义（先声明面
+  后 Pattern 面）的只读结构化解析。
+- **核心语法要点**：①块结构：块头关键字+`{...}` brace 平衡计数
+  （MAX_BLOCK_DEPTH=100 深度守卫；失衡致命带开括号行号）；`/* */` 与
+  `//` 注释双形态+`'...'`/`"..."` 字符串单 token；②Signals：`name =
+  in|out|inout ;`+WFC 定义 `WFC_0 = '0' ;`（引号/裸字双形态，文件全局
+  字符集定义序去重）；SignalGroups 四形态（引号/无引号/级联 `'a' + 'b'`/
+  选择器只取末个 `:` 之后成员段）；③Timing：WaveformTable{Period+
+  Waveforms 逐组逐 WFC 事件 token 序列化保存——**不解释事件字母物理含义**
+  （铁律 7）}；④Pattern：`W <wft>`+`V { 组=值串; }` 向量行（长度≠组员数
+  fail-soft 跳行）+`Loop n {` 倍数计数不物化（Loop 1000000 实测内存恒定）
+  +Shift/SubStroke 计数+Ann 收编；⑤两遍语义：Pattern 先于 SignalGroups
+  的文件同样可解析。
+- **解析面**：parse_stil（schema=stil/1.0：signals/groups/timing{wft:
+  {period,waveforms{组:{wfc:[事件 token]}}}}/patterns{burst:{patterns}}/
+  stats）+查询三函数 stil_pattern_vectors/stil_vector_at（逐字符 WFC 事件
+  联查缺映射如实 None）/stil_coverage_stats。
+- **陷阱**（DEVLOG 二百九十）：①Procedures/Import/PatternExec（BSDL/
+  过程引用）只登记名目不展开；②WFC 定义文件全局字符集回填不逐信号区分；
+  ③n_loop=倍数累计和+嵌套加和**不乘积**（消费端自行换算）；④Pattern
+  重名同 burst 后列覆盖、跨 burst 双录。
+- **集成点**：service/stil_service.py（parse_stil_file/stil_report/
+  stil_pattern_detail——未命中带可用 pattern 名录上限 30+总数注记+
+  Latin-1 兜底）；cli/domains/stil.py 独立根挂账；MCP 面暂无 stil 工具
+  （Q-X73 十域清单外，2026-11-08 时点）。
+
+### 21.10 互连与封装面：Touchstone（Q-X64——#248/#287/#309 三坑单源化专节）
+
+- **格式定位**：Touchstone .sNp 是 RF/互连 S 参数数据交换事实标准（IBIS
+  Open Forum v1.0/v2.0 规范）。本席要点=把仓内三次 ad-hoc 修复**单源化**
+  为确定性内核：rank 推断/频轴对齐/多模形状判定从此单一出处；既有消费者
+  （adapters/hfss_adapter.infer_touchstone_port_count 等）迁移归后续席
+  （本席零改既有消费方）。
+- **核心语法要点**：①option line `# <freq_unit> <param(S/Y/Z/H/G)>
+  <format(RI/MA/DB)> R <n>`；v2.0 关键字块（[Number of Ports]/[Two-Port
+  Data Order]/[Matrix Format]/[Reference]/[Network Data]）；②rank 三规则
+  按序嗅探：文件名 .sNp（N≤9 可信）→首行值数（v1 候选集消歧：9 值∈
+  {2,4,5,…}；v2=2n²+1 直接解）→块结构（v1 块行数=n·ceil(n/4) 直接定 n；
+  v2 token 流分组交叉验证）——②③内容共识 vs ①文件名冲突→**内容为准**
+  +disagreement 登记（#248 口径：扩展名由实际端口数决定）；②③冲突→
+  n_ports=None+disagreements 宁 UNKNOWN 不猜；③三格式解码 DB/MA/RI 表
+  驱动（DB=20log10 换算已知量钉）；freqs_hz 单位表驱动；④2 端口 v1
+  legacy 列序 S11 S21 S12 S22（与矩阵行列序相反的历史约定）；N≥3 端口每
+  频率 n·ceil(n/4) 行仅首行带频率、行主序。
+- **解析面**：sniff_touchstone（三规则+disagreement 清单）+parse_touchstone
+  （s_matrix/freqs_hz/reference+detect_mode_data_shape）+align_freq_axis
+  （同栅 rtol 1e-9 直接比对/异栅 argmin 真最近邻+端点 ulp 容差）+
+  matrix_health（无源性 |max eig|≤1+ε 统计不做硬门）+to_skrf_network 桥
+  （与 skrf.Network 直读 v1 1/2/3 端口+v2 rows_12_21 **全 parity 逐位
+  对拍通过**）。
+- **三坑回放（仓内真实痛点，接消费链必读）**：①#248——skrf 只按 .sNp
+  扩展名推断 rank（1 端口数据写成 .s2p 即报 reshape 错）；首行值数
+  (V−1)//2 对 2 端口 9 值文件误判 4 端口；HFSS 导出按插件契约 n_ports
+  命名是错源（本内核规则③块结构消歧）；②#287——dB 形式写出/读回频率带
+  ~1e-7 Hz 浮点噪声，与显式频扫端点差一个 ulp 即触发 scipy interp1d
+  bounds ValueError（align_freq_axis：同栅 rtol 换频轴/异栅 bounds_error=
+  False 端点微量外推——**禁 searchsorted 越位一格**，#294 同款）；③
+  #309——HfssAdapter.export_touchstone 按端口边界数命名：2 个 2 模波端口
+  的 4×4 模态数据被写成 .s2p，skrf 按扩展名推 rank 抛 IndexError（多模
+  端口按 Σ模数改名 .s4p；detect_mode_data_shape=Σ模数 vs 端口数互证冲突
+  建议输出）。
+- **陷阱**（DEVLOG 二百八十四"已知限制"）：①noise 段 5 值行登记不解析
+  语义（Γopt/Rn 不解释）；②v2.0 [Matrix Format] 仅 Full；③2 端口缺
+  [Two-Port Data Order] 按规范默认 rows_12_21+警告（skrf 同场景按 legacy
+  列序——口径差已入 warnings）；④[Reference] 不支持跨行延续；v1.0 规则
+  ②单独不可采信宁 UNKNOWN。
+- **集成点**：service/touchstone_service.py（touchstone_info 查询面冲突=
+  答案 ok=True 带全量证据/parse_touchstone_file rank 冲突→ok=False 信封
+  s_matrix [re,im] JSON 化 cap 4096 截断态如实/touchstone_report）；
+  cli/domains/touchstone.py 独立根挂账（显式 callback 防 typer 单命令
+  app flatten——typer 形态经验）；MCP touchstone_info 已暴露（Q-X73）。
+  2026-11-08 时点/以 rfauto --help 实测为准。
+- **席位与测数**：Q-X64 97 测（两轮不同 randomly 种子均绿——DEVLOG 二百八十四
+  原文口径；主代独立复验 97 复现）。
+
+### 21.11 模拟生态面：SKILL/OCEAN 语言解析（Q-X62——与 Q-X32 生成器对偶）
+
+- **格式定位**：SKILL（Cadence Virtuoso 的 Lisp 方言）与 OCEAN（SKILL
+  超集+仿真命令面：analysis/sweep/ocnXxx/asi/sim/netlist 前缀家族）的
+  只读结构化解析——脚本静态分析/API 调用清单提取/defun 盘点/全局赋值面
+  盘点；**永不执行**被解析代码（零求值副作用）。
+- **与 Q-X32 的对偶关系**：core/skill_template_engine.py（Q-X32，§21.6）
+  是**生成方向**——EDAS 自动化脚本的确定性出口（Jinja2 形态微实现+5 电路
+  设计模板 byte-identical）；本席是**解析方向**——既有 SKILL 语料的
+  确定性入口。两模块零 import 关系（读写两向互不依赖），合起来构成
+  Virtuoso 生态双面；注意 CLI 顶层 `skill` 域已被 Q-X32 模板生成占用且
+  已接线——解析域接线名必须另取（见集成点）。
+- **核心语法要点**：①S-expression 词法+栈式解析零递归（MAX_NEST_DEPTH=
+  512）；`;` 行注释+`/* */` 块注释；数字 int 优先（`1+`/`1-` 函数名符号
+  同字符集自然覆盖）；②**f( 调用糖折叠**（SKILL 语言读取器口径）：符号
+  后零字符间隔紧跟 `(` 时折叠为紧随表头部——`defun( f (x) …)` ≡
+  `(defun f (x) …)`；冒烟实证：无此糖则真实 Cadence 语料 defun 盘点全空
+  =解析器对真实语料失灵；符号与 `(` 间有空白则两独立形态；③前缀糖
+  `'x`/`` `x ``/`,x`/`,@x`（quote/quasiquote/unquote/unquote-splicing）→
+  Quote 包装不展开不求值（糖绑定下一个完整节点；悬挂糖=致命）；向量
+  `[...]`→LispVector 与表类型区分；`|...|` 转义符号名单行逐字保留；④
+  `&` 字符集扩展（&optional/&rest/&key defun 必需——任务书字母表最小
+  超集，偏差项如实记录）；词法闭集外字符致命（异名走 `|...|` 形态）。
+- **解析面**：parse_skill（Symbol/LispList/LispVector/Quote/原生值节点树）
+  +结构提取四函数 skill_definitions（define 双形态+args 原文含 & 标记+
+  arity）/skill_top_level_forms（闭集分类+逐头符号频次）/skill_api_calls
+  （ocean/virtuoso/generic 前缀桶）/skill_globals（作用域深度）+
+  skill_call_graph（静态调用边：符号名匹配同名 define，递归自环如实）+
+  skill_literal_eval（数字算术/quote/list/字符串 concat 可求值，非字面量
+  fail-closed 不猜）。引号数据整树视为数据（Quote 子树不计定义/赋值/
+  调用）；绑定形态如实剪除（lambda 参数表/let 绑定变量位/setf 目标位等
+  不计调用）。
+- **陷阱**（DEVLOG 二百八十六"已知限制"）：①call graph 无作用域分析——
+  调用归属最近包围定义；②中缀表达式首操作数计 generic 调用（前缀/中缀
+  无句法界标）；③let 绑定表按扁平 var/val 剪除；④数组下标糖 x[1] 不
+  折叠（向量字面量独立形态）；skill_literal_eval 除法恒真除。
+- **集成点**：service/skill_service.py 加性节追加 +155/−0（parse_skill_
+  file/skill_report/skill_call_graph 三信封——既有 935 行 Q-W6-1 card→
+  skill 产线逐字节未动）；cli/domains/skill_parse.py 独立根挂账+**撞名
+  自查**：接线名必须 `skill_parse`（顶层 skill 已占，双注册打红
+  zero-shadow 钉）；MCP 面暂无 skill 解析工具（Q-X69 建议清单已备、
+  Q-X73 十域未收——skill 落盘面不上 MCP 是既定取舍）。2026-11-08 时点/
+  以 rfauto --help 实测为准。
+- **席位与测数**：Q-X62 151 测（重派席——前任初写期静默死亡零足迹，本席从零
+  重建；skill 家族既有测试+定向门 260 passed 零回归——DEVLOG 二百八十六原文
+  口径）。
+
+---
+
+## 22. AI-driven RF 设计方法论吸收（aurora_r R-06 知识落点席，2026-11-10）
+
+> 性质与口径：本章为纯知识落点（零代码改动）。四篇微信文章经 web_reader
+> 全文实读（访问日期 2026-11-10，URL 见章尾出处清单）；virtuoso-bridge
+> 与作者生态吸收以 runs/aurora_q/qx40_vbridge/{DIGEST.md,AUTHOR_SURVEY.md}
+> （Q-X40 席+主代调研席，钉 SHA 实读口径）为接地底稿。**思想级转述、不搬
+> 原文段落**；仓内统计数字（测试数/CLI 数/MCP 数等）一律不写具体值——
+> 它们由数字链门管理，本章只写对位关系与仓内证据路径（#97 口径，
+> 2026-11-10 本席 grep/ls 实测）。
+
+### 22.1 L0–L5 六级成熟度与 rfauto 对位自评
+
+**六级定义（一行级转述）**——出处：Keysight 官方博客《AI-Driven RF
+Design: From Scripts to Autonomous Agents》（2026-09-09）的微信转述版
+（URL 见章尾清单）：
+
+| 级 | 名称 | 一行定义 |
+|---|---|---|
+| L0 | 手工 | 工程师在 EDA 图形界面点选/扫参/判读，全凭个人经验与直觉 |
+| L1 | 自动化 | 重复劳动固化成脚本（批量仿真、批量优化），人不碰重复操作 |
+| L2 | 副驾驶与代理模型 | AI 帮查文档/配分析/生成脚本；代理模型用监督学习逼近物理——AI 开始帮忙但仍需人带 |
+| L3 | 领域智能体 | 自然语言下达目标与约束，智能体自主编排"跑求解器→看结果→调参数"——工程师从操作员变策略导演 |
+| L4 | 智能体之智能体 | 中央编排智能体把任务派给领域智能体（电路/版图/EM/热），大部分流程自主执行，关键验证节点仍需人工介入 |
+| L5 | 组织级智能 | 全自动自我改进的智能体组织覆盖规格→验证全生命周期，沉淀机构级知识，人只做高层治理（愿景） |
+
+原文纪律（终句级结论）：**先在 L2 证明可靠性，再把自主权交给 L4 以上的
+智能体**——连代理模型的误差边界都没摸清，就不该让它自主定版。
+
+**rfauto 各面实测对号表**（每行给仓内证据路径，不写数字）：
+
+| rfauto 面 | 对位 | 证据路径（2026-11-10 grep/ls 实测） |
+|---|---|---|
+| recipes 声明式配方 + CLI 命令域 | L1（自动化） | recipes/*.yaml；src/rfauto/cli/domains/ |
+| capture 半边（把人的 GUI 会话/散乱实测数据结构化捕获） | **缺→自评 L1.5 登记** | 缺口处方已挂账：runs/aurora_r/PLAN.md Wave3 R-23"会话→配方录制" |
+| GP 代理内核 + 数据工厂/lake + surrogate_loop | L2 | src/rfauto/core/gp_tensor_kernel.py；src/rfauto/service/dataset_service/、lake_service/、dataset_quality_service.py；src/rfauto/optimization/（model_registry/mo_bo/eipu 为 surrogate_loop 消费面） |
+| autotune 闭环 + em_bench 判据 | L3 雏形 | src/rfauto/service/autotune_service.py（critique 为确定性 service 函数）；src/rfauto/service/em_bench_service.py（闭环编排面为内部档，不在公开树） |
+| 战役/席位编排 + agent 工具循环家族 | L4 初级 | src/rfauto/service/campaign_executor.py、campaign_queue_daemon.py、multi_agent_service.py、agent_runtime.py（AgentRuntime 薄协议+RuntimeRegistry）、agent_sandbox.py（agent 写面沙箱隔离） |
+| L5 | 不设目标，仅作愿景与风险参照 | 五坎（数据稀缺/强非线性/可解释性/代理漂移/集成难题）对本仓同样成立，处置见 22.2 |
+
+对位结论：rfauto 分层架构（cli→service→…）天然落在"编排"半边的
+L2→L4 连续带上；最薄的半边是 capture（L1.5）。对照 capture–accelerate–
+orchestrate 框架（出处同文：把资深工程师"没被记录下来的鼠标点击"数字化
+为脚本/可执行流程，是敢信任自主智能体的前提），本仓的知识捕获管道
+（会话→配方、散乱实测→结构化数据）是下一个补强方向（R-23 挂账）。
+
+### 22.2 代理模型方法论
+
+**五步建法**（转述 Keysight 文；括号内为 rfauto 对位）：①定义与被测
+器件相关的参数空间（recipes 的 design_params/physics_roles 面）；②DOE
+在参数空间里挑稀疏网格点（数据工厂采集面，service/dataset_service/）；
+③只对网格点跑全波真值（HFSS/openEMS/ADS 适配器，规则 0b 服务器优先）；
+④拿真值训练代理模型（GP=core/gp_tensor_kernel.py；神经代理面挂账
+R-05）；⑤在已仿真点之间做平滑插值（optimization/ 代理消费面）。
+
+**验收四件套**（Keysight 文"但是"节+Alpha-RF 实证汇流；R-01/R-05
+判据面对位）：
+
+1. **训练包络声明**：代理模型被训练数据分布严格约束、不能安全外推——
+   模型产物必须随包络（参数范围/样本来源）声明落盘；优化器出包络即
+   降级为"仅探索参考"，不得采信为判读依据。
+2. **OOD 探针**：在包络边缘与包络外构造探针点验证退化行为——Alpha-RF
+   把耦合开口拉到训练范围外做成全通波导、四种长度预测仍贴合，是教科书
+   级的 OOD 探针设计；注意其结论只对"几何相近"的外推有效，换工艺/
+   频段/叠层不保。
+3. **真值抽查**：交付级设计必须回全波/实测复核——Alpha-RF 六组人机
+   对比中两组预测奖励漂亮而真值带宽偏出，代理误差一路传导到最终设计
+   （原文自证），抽查门不可省。
+4. **无源性/物理约束硬校验**：Keysight 文点名 EM 代理模型必须满足
+   无源性（passivity），DRC/LVS 类工艺约束必须硬编码进流水线、不交给
+   模型自觉——与铁律 7（数值只在确定性内核）、规则 1b（先验模型再
+   校准）同构。
+
+**Alpha-RF 奖励函数设计要点**（出处=Alpha-RF 拆解文 §2.2/附录 C 转述；
+UC Davis×Keysight，arXiv:2603.00104）：
+
+- **权重分档**：五项指标按工程重要性分档加权——中心频率与相对带宽各
+  0.3（高档）、峰值插损 0.2（中档）、左右阻带抑制各 0.1（低档）；权重
+  取舍全是射频判断，不是模型自己长出来的。
+- **幂次重罚**：越界误差按 5 次/3 次幂重罚——把"差点达标"与"达标"
+  的分差拉开，防止奖励地形在指标边缘过于平坦。
+- **超标记满分**：指标一旦优于要求，该项直接记满——留口子鼓励超人
+  设计，不卡"刚好及格"。
+- rfauto 对位：autotune/em_bench 的 cost 设计与这三条同构（罚函数
+  形态/达标饱和/权重分级）；改造 cost 或新增判据面时按此三角自查。
+  另一条实现细节可参考：离散动作维度（阶数）用可微分类头+直通估计器
+  保梯度通路，混合离散/连续动作空间不要用"输出实数再取整"。
+
+**代理误差传导→全波兜底纪律**（与规则 1b/铁律 7 互链）：Keysight 文
+的风险缓解同向——AI 只做快速预优化与初始化、把设计空间大幅收窄，最终
+验证与签核一律回传统求解器；rfauto 现行纪律链（HFSS=对齐基准、闭式/
+解析/实测三方裁判、代理只当加快器不当裁判）与其完全一致，本节将其
+升级为明文：**代理模型参与判读的任何链路，必须存在全波/闭式/实测
+兜底门，且兜底门的判定优先级高于代理预测**。
+
+**数据账意识**：Alpha-RF 的门槛不是网络结构，是 100k 版图+全波真值的
+数据集——按其单次全波 4 min 折算约 278 天单机（原文口径）。折算到
+本仓：lab_server 8 路并行（AGENTS 规则 0b；runs/aurora_r/PLAN.md R-20
+数据采集战役）把同类数据工厂战役的墙钟压缩约两个数量级——"凡可借
+服务器加速的环节一律上服务器"正是数据账意识的执行形态；立项顺序=
+先算数据的账，再算算法的账。
+
+### 22.3 闭环基建论
+
+**核心论点**（出处=张托肯《模拟设计缺的不是新 AI，缺的是新基建》，思想
+转述）：模拟/RF 设计缺的不是新 AI，缺的是新基建——让 AI 调优化器/改
+网表/跑仿真只证明局部流程可跑通，不等于进入真实工程；真实设计的判断
+依赖一整套上下文（原理图/testbench/文件结构/标注/文档）作为反馈，AI
+拿不到反馈就进不了闭环，进不了闭环就只能停留在外围。按任务三分类看：
+标准明确+反馈充足（做题/编程）AI 已极强；标准模糊+反馈可得（写作）
+同样好；**标准明确但拿不到反馈——模拟电路设计恰属此类：不是没有 spec，
+是反馈断了**。
+
+**闭环三件套**（原文尾节论点，思想转述）：**监督+反馈+验证**——监督=
+人定边界与门；反馈=环境接口把验证结果与工程上下文持续回收给系统；
+验证=确定性判据裁定。开环系统永远靠人盯着，闭环系统才开始自我进化
+（原文句意的思想转述）。
+
+**rfauto 对位**：三件套的仓内形态=autotune_service 的确定性 critique
+（验证件，铁律 7）+agent_sandbox 三层 Gate+席位三禁（监督件；
+不 commit/不写账本/不跑全量）——闭环编排层为内部档（不在公开树）。
+
+**virtuoso-bridge 实证接地**（出处=runs/aurora_q/qx40_vbridge/DIGEST.md
+§0–§1/§5，钉 SHA e2a69fca，MIT 判定三源一致）：Agent↔Virtuoso/Spectre
+桥=经鉴权（HMAC-SHA256 帧签名+令牌永不过线）的 TCP→SSH 隧道→守护
+进程→CIW evalstring 执行链+独立 Spectre 网表仿真通道；不确定结局
+状态机（RequestNotStarted/ExecutionUncertain 毒化车道+探针重同步+
+幂等回执）是"请求回执/不确定不重放"的参考实现。原文三块更新（maestro
+读设回读等读写接口/多服务器多账号/弹窗与执行稳定性）与 DIGEST §0–§1
+逐项对上。rfauto 侧接地对照（DIGEST §5 共 20 项，三态=已在/部分在/
+缺）：**缺与半缺项**（MCP ToolAnnotations 全覆盖、resources+prompts、
+逐工具限流、通道层请求回执/幂等、GUI 弹窗三态巡检、Spectre 交接件）
+已挂账 aurora_r Wave2 VB 批（R-10..R-18，runs/aurora_r/PLAN.md）——
+本席只登记对位，不做实现。下游实证：TACS-RF（arXiv:2610.31882）§II-A
+载明 agent 经 virtuoso-bridge 控制 Virtuoso——"新基建论"已进真实
+论文工作流，非 PPT。
+
+**PINO 等效源框架一段摘要**（出处=PINN→PINO 文，适用域与局限如实
+转录）：传统 PINN 解电磁"一个几何一个网络"不泛化；该框架把散射等效
+原理搬进网络——输入=金属边界采样点坐标+入射波信息，输出=边界等效源
+强度，用"金属表面切向电场为零"构造损失（无求解器标签，物理约束替代
+数据监督）；等效源的全局耦合用多头注意力学（替代矩量法满阵求逆）；
+几何用 RBF 参数化的水平集变成可微变量（可顺梯度做逆设计）。**泛化
+证明走逆设计不走留出集误差**（随机生成的结构不唯一，留出集误差不可
+靠）：单站 RCS 缩减/多角度单双站散射抑制/宽带平顶波束赋形三任务，
+CST 全波复核吻合。局限（作者自认，如实转录）：只覆盖一维准平面 PEC、
+理想导体、自由空间格林函数——受约束几何子空间内的泛化，离任意超
+表面设计尚远；正向精度靠逆设计结果间接体现，无与矩量法/CST 的正面
+对标精度与耗时曲线。对 rfauto 的启示：①泛化声明可用"目标功能可
+达成"（逆设计+全波复核）与 OOD 探针双证，比单看留出集误差诚实；
+②局限清单前置的写法=本仓诚实边界纪律的同款范式。
+
+### 22.4 Token Zhang 生态与 ADC 蓝图
+
+**作者生态**（出处=runs/aurora_q/qx40_vbridge/AUTHOR_SURVEY.md）：GitHub
+Arcadia-1（署名 Token Zhang/微信笔名张托肯，三种署名形态并存如实
+记录），AMS 侧"LLM×电路"完整栈（分析→仿真→评测→理解→知识→桥接
+→技能）；与 rfauto 对位=AMS 器件级（Spectre/Virtuoso 生态）vs RF/EM
+器件级（HFSS/openEMS/ADS 生态）——几乎零重叠、强互补；方法学签名
+（fail-closed/显式认证边界/判据不凑绿/双层验证）与铁律 7/#122 同源。
+
+**15 仓一行表（许可三档；stars/时点值以 AUTHOR_SURVEY §1 原表为准，
+此处不复制防漂移）**：
+
+| 许可档 | 仓 | 吸收级别 |
+|---|---|---|
+| MIT（代码级可参考） | virtuoso-bridge-lite / ADCToolbox / netlist-crawler / EVAS / circuits-and-systems-classroom | 代码级或思想级（Rust/TS 栈思想级） |
+| Apache-2.0 软件面+内容面红线 | razavi-bench（基准材料禁再分发）/ analog-design-bench（内容 CC BY-NC 4.0）/ analog-design-bench-code-a-chip（本批唯一干净基准仓） | 思想级，内容面禁收编 |
+| 无 LICENSE（默认版权保留，零文件搬运） | analog-agents / veriloga-skills / gmoverid-skill / awesome-ams-skills / behavioral-veriloga-eval / ADC-12b-100M / circuit-bench-toolchains | 一律思想级 |
+
+**红线复述**（AUTHOR_SURVEY §3，硬约束）：①razavi-bench 题面/金标/
+rubric/图/分数表**禁收编**进 em_bench/knowledge/数据工厂（其 LICENSE
+§3 自定义双边界明文禁再分发）；②analog-design-bench 内容 CC BY-NC 4.0
+禁并入 rfauto 基准/发布面；③无 LICENSE 7 仓零文件搬运；④MIT 徽章
+陷阱：README 徽章字样≠许可成立，以 LICENSE 文件签名为准（速查 ㉖
+口径实锤）；⑤PTM 模型文件（ASU 版权+学术引用义务）不进发布面。
+
+**ADCToolbox 模块拓扑蓝图**（MIT 代码级；AUTHOR_SURVEY AX-9 远期
+参照）：spectrum（频域测量）/aout（模拟输出）/dout（数字输出）/
+calibration（校准）/timeinterleave（交织失配）五模块划分——特征化
+与校准分离、按物理主题切模块；分发形态=包内捆绑 router 型 agent
+skill+安装 CLI。对 rfauto 有源族（ADC/PLL/放大器，仓内现为空白面）
+远期立项的参照：模块拓扑抄结构不抄代码，skill 分发形态与 card_to_skill
+产线同构。
+
+**吸收提案挂账**：立即可做 6 项（AX-1..6）+中期 3 项（AX-7 gm/ID
+查表内核/AX-8 vaBench 四任务族/AX-9 ADC 蓝图）——其中 AX-1→R-01、
+AX-2/AX-6→R-02、AX-3/AX-4→R-03、AX-5→R-04（aurora_r Wave1 排席）、
+AX-7→R-19、AX-8→R-08（Wave1/Wave3，runs/aurora_r/PLAN.md）；台账
+见 AUTHOR_SURVEY §2，本席不重复展开。
+
+**出处落版清单**（访问日期均为 2026-11-10，本席 web_reader 全文实读；
+思想级转述，技术数字以原文为准）：
+
+1. Keysight 博客微信转述版——六级成熟度/capture-accelerate-orchestrate/
+   代理模型五步/无源性硬校验（原文=Keysight 官方博客 2026-09-09
+   《AI-Driven RF Design: From Scripts to Autonomous Agents》）：
+   https://mp.weixin.qq.com/s/wOfPnB3UF2qONV0gPiOcPA
+2. 张托肯《模拟设计缺的不是新 AI，缺的是新基建》：
+   https://mp.weixin.qq.com/s/wgHy4K9-tWm6qjIpUhma7A
+3. Alpha-RF 拆解文（UC Davis×Keysight，arXiv:2603.00104）：
+   https://mp.weixin.qq.com/s/eECahVLaD_cxWcprwkpoVg
+4. 从 PINN 到 PINO：电磁散射问题的几何泛化求解框架：
+   https://mp.weixin.qq.com/s/f1413kyuxHe-jKHKPzMosQ
+5. 仓内接地：runs/aurora_q/qx40_vbridge/DIGEST.md（Q-X40，2026-11-07）、
+   runs/aurora_q/qx40_vbridge/AUTHOR_SURVEY.md（2026-11-09）、
+   runs/aurora_r/PLAN.md（Wave1–4 挂账台账）。
+
+**诚实边界**：①四篇均为微信转述/拆解版，论文级数字（Alpha-RF 的
+MAE/耗时、PINO 框架细节）以 arXiv 原文为准，本席未核对原文（PINN→
+PINO 文未给出处论文号）；②22.1 对位表是"证据路径存在+模块语义对号"
+的自评，不是能力审计——各面成熟度以对应席位交付与测试面为准；③
+AUTHOR_SURVEY 的 stars/时点值为 2026-11-09 API 值，本席未重测。
+
+### 22.5 TACS-RF 报道吸收：LLM 操盘四件套九步设计 sub-THz 发射机（第五篇，R-23）
+
+> 性质与口径：纯知识落点（零代码改动），本章第五篇——章首"四篇"为 R-06
+> 落版时点口径，本节出处单列节尾续号，只追加、不改写既有清单。报道=射频
+> 学堂微信文章（web_reader 全文实读，访问 2026-11-10）；同篇论文 TACS-RF
+> （arXiv:2610.31882）abs 页与 HTML 全文本席同日实读核对——Q-X40 DIGEST
+> 已实读 §II-A/§II-B，本席扩读 §I–§V 与表 I。思想级转述、不搬原文段落；
+> 仓内统计数字一律不写（#97，数字链门管理），只写对位关系与证据路径。
+
+**论文档案**：Tristan Liang、Aravind Nagulu（Northeastern University ECE，
+HTML 首页署名）；2026-10-22 提交 arXiv（v1，cs.AI），Comments 载已录用
+2027 IEEE RWW/SiRF。LLM 编码智能体=Claude Opus 4.8（§II 原文为 Enterprise
+版），经脚本、命令行与机器可读仿真输出直驱四件套，**零人工 GUI 介入**。
+验证载体=90 nm SiGe BiCMOS 工艺 240–251 GHz 亚太赫兹发射机：60 GHz
+push-push Colpitts VCO 取二次谐波→多级差分 cascode 驱动→push-push 倍频
+→片上差分领结天线，连同全部级间匹配由 agent 半自主设计。**半自主**的
+分工：人供资料与参数化晶体管版图库、核验结果、拼顶层版图并终验；其余
+由 agent 承担。
+
+**①四件套分工表**（论文 §II-A/B/C 与 §III 原文转述；rfauto 对位列给
+证据路径，2026-11-10 本席 ls/grep 实测）：
+
+| 工具 | 流程角色 | 论文载明的具体活 | rfauto 对位 |
+|---|---|---|---|
+| Cadence Virtuoso/Spectre | 原理图·版图·电路仿真 | 经 virtuoso-bridge-lite 生成原理图/符号、查连通、建仿真视图、起 Spectre、画参数化版图；日志/工作点/波形量测以机器可读形式回传。双 Spectre 流：脚本网表流（并行快扫尺寸/偏置/无源值，供迭代优化）+ cellview/Maestro 流（原理图/testbench/配置视图，供人工核验） | 本机无 Cadence（Q-X40 VB-9 口径）；spectre 风格网表解析 service/spice_netlist_service.py；EM→IC 交接件 service/spectre_nport_service.py（VB-9/R-18，真 Spectre 运行 UNVERIFIED-LOCAL 常驻）；桥层吸收见 22.3 |
+| Cadence EMX | 片上无源 EM 提取 | 顶两层金属参数化单圈八角变压器/电感；多端口 S 参数回 Virtuoso 做电路级评估；几何按整链发射机性能迭代更新 | EMX 不在本仓工具链；同几何族确定性模板位=§19.1 octagonal_spiral（openEMS 渲染模板，离线审计已过、真机冒烟未发射、HFSS=对齐基准——§19 节首口径；GaAs IPD 工艺，与论文 SiGe 后道叠层不同：几何族对位、工艺不对位）；sNp 互操作=adapters/touchstone_interop.py |
+| Ansys HFSS/PyAEDT | 天线 3D EM | agent 现写 PyAEDT 脚本，按晶圆厂后道叠层与材料建领结天线，**自定**端口/辐射边界/网格/扫频，导出匹配/增益/方向性（§II-B、§III-D 步 9） | **同工具正对位**：adapters/hfss_session.py（PyAEDT 会话）+adapters/hfss_adapter.py；端口/边界/网格走确定性模板+健康门+HFSS 对齐基准纪律（§0 方法学基线）——见④ |
+| Cadence Calibre | 物理验证+寄生提取 | 命令行+脚本化 runset 跑 DRC/LVS/PEX；提 RCC（R/C/耦合 C）寄生并导入 RCC 视图；对比原理图级与 RCC 提取级的增益/调谐范围/Pout 以改级间匹配 | Calibre 不在本仓工具链；只读相邻面=寄生交换格式 core/spef_parser.py、版图 core/gdsii_parser.py、网表级 LVS 拓扑对照 service/lvs_compare_service.py——解析/对照面，不执行签核 |
+
+**②九步四阶段流程——登记为 em_bench 端到端任务族参照蓝本**（挂账
+AX-8 扩展方向，**不实现只落版**）。步号区间与阶段名取论文 §III-A..D
+小节标题；阶段内逐步拆分按段落顺序推定（Fig. 2 图内逐步标注未经多模态
+实读，见诚实边界④）：
+
+| 阶段 | 步 | 内容（转述） | 人/agent 分工 |
+|---|---|---|---|
+| 一 技术与参考设计准备 | 1 | 读 90 nm SiGe PDK 文档与选定前人 sub-THz 发射机文献，归纳可用器件/无源模型、偏置与安全工作区（SOA）界限、预期管子性能、代表拓扑 | 人供资料；agent 归纳 |
+| 二 原理图级电路与匹配 | 2–4 | 扫偏置表征不同并联倍数的 SiGe NPN（看 Gmax 与 fT/fmax）→VCO/缓冲/PA/倍频器在独立 testbench 各自定尺寸与偏置→驱动级数+器件尺寸+偏置+匹配参数协同优化（级间网络先用参数化集总模型：两电感、品质因数、耦合系数 k）；结论=两级驱动够用，第三级只留增益裕量吸收版图后损耗与级间失谐 | agent 主导 |
+| 三 版图与 EM 感知优化 | 5–7 | 人备参数化晶体管版图库；agent 选版图跑 Calibre LVS+RCC 提取、替换原理图理想管；并行把级间变压器用顶两层金属参数化、EMX 仿真、多端口 S 参数导入 Virtuoso 替换理想匹配；迭代到整链重居中 240 GHz 带并按 Pout 打磨。闭环=RCC 提取→无源几何生成→EM 仿真→电路评估→电路微调，无源件按**对整链的影响**优化而非孤立无源指标 | 人备版图库；agent 跑闭环 |
+| 四 顶层集成与验证 | 8–9 | 步 8：提取态整链扫 VCO 调谐电压得 240–251 GHz，优化大信号匹配与功率传输，并在全调谐范围逐管把瞬态端电压对 PDK SOA 界限逐项比对；步 9：agent 在 HFSS 按晶圆厂后道叠层独立设计片上领结天线（匹配/增益/方向性/方向图）。顶层拼版与终验由人完成 | agent 验证+天线；人拼版终验 |
+
+**蓝本化要点**（em_bench 端到端任务族候选形态，**未实现**；立项时须过
+铁律 7、规则 1c 与 R-01 准入门）：
+
+1. **阶段门控任务**：一个端到端任务=四阶段检查点串联，各阶段自带判据，
+   首个失败检查点即停（与 PANDA"Stop at the first failing checkpoint"
+   同思想，runs/aurora_r/p4_survey/RAW_P4_A.md 目标 1）。现役端到端族
+   （service/em_bench_analog_service.py 的 va_end_to_end：spec→va→tb
+   模拟侧全链）是同形态的模拟侧先例，RF 侧扩展挂账。
+2. **两级保真路由**：阶段二"参数化集总模型先行"→阶段三"EM 提取件替换"
+   =快引擎查→金标晋升两级验证（AX-8 原台账口径）；RF 侧天然对位闭式/
+   fake→openEMS/HFSS 多保真链。
+3. **系统级判据**：无源件 cost 以整链指标（Pout/调谐范围/相噪）计，不以
+   孤立 S 参数指标计——autotune/em_bench cost 设计的系统级扩展位（与
+   22.2 奖励函数三角同列自查）。
+4. **硬约束全扫门**：SOA 逐管×全调谐范围扫描=确定性判据，不交模型自觉
+   （22.2 验收四件套第 4 条同构）。
+5. **交接一致性门**：EM 步→电路步之间的 sNp 交接须过端口数/节点一致性
+   校验——VB-9 交接件已备（service/spectre_nport_service.py）。
+6. **人工步显式声明**：人供版图库/人拼顶层/人终验三处须在任务 schema
+   中显式标为人工持有步（agent 范围外、不计分），对应 22.1 的 L4"关键
+   验证节点仍需人工介入"。
+7. **本仓可承接范围（诚实划界）**：本机无 Cadence/EMX/Calibre——可落
+   EM 侧步（步 6 类无源 EM→sNp、步 9 天线 HFSS）与交接件；IC 侧步
+   （2–5、8）只能走 fake/代理桩，真机判读如实 UNVERIFIED-LOCAL（R-08
+   L2_DEFERRAL 同款处置）。天线步须先立领结天线模板（src/rfauto/ 与
+   docs/templates/ grep "bowtie" 0 命中，2026-11-10 实测），并按规则 1c
+   先对照官方例。
+
+台账锚：runs/aurora_r/PLAN.md「TACS-RF 报道吸收」条（AX-8 扩展挂账）；
+AX-8 原台账=runs/aurora_q/qx40_vbridge/AUTHOR_SURVEY.md §2。
+
+**③"机器可读输出回灌+AI 读数据改脚本"闭环=rfauto 已在形态**（自评
+复证，非新能力）：
+
+- TACS-RF 形态：工具回传日志/工作点/波形量测（机器可读）→agent 评估
+  本轮→决定下一轮参数更新；全程终端驱动、零人工 GUI。
+- rfauto 已在面（证据路径）：服务层 JSON 进出（规则 4）；run 元数据与
+  引擎身份随 run 落盘 infra/run_store.py（R-03）；确定性 critique
+  service/autotune_service.py；闭环编排面为内部档（不在公开树）；判据面
+  service/em_bench_service.py；回灌前产物校验=退出码判读前置
+  core/exit_code_verdict.py（R-21）+严格结果访问器
+  core/strict_access.py（R-12）。
+- 论文双 Spectre 流（脚本快路径供迭代、cellview 路径供人核）↔本仓
+  fake/真机双轨与"快引擎查→金标晋升"两级路由——同属已在形态。
+- **数值归属差异（有意差异化，非缺口）**：TACS-RF 的参数更新值由 LLM
+  推理直接写进脚本；本仓铁律 7 要求几何/物理数值只由确定性内核/优化器/
+  综合引擎产出——本仓在 prompt 契约层与 schema 层（extra="forbid"
+  闭集）双闸禁止 LLM 产几何/物理数值，LLM 只产 spec 与 typed tool call。复证结论=**闭环形态同构、数值归属不同**；后者是
+  本仓对"代理误差传导"（22.2）的结构性防线，不因 TACS-RF 的成功而放宽。
+
+**④Q-X40 VB-9 定位复证**：
+
+- 原定位（runs/aurora_q/qx40_vbridge/PROPOSALS.md VB-9 节）：TACS-RF
+  电路侧建在开源 MIT 桥之上，EM 侧是 LLM 现写脚本（无内核/无门/无
+  仲裁）——正是本仓确定性 EM 链可补的位置。
+- 本席扩读复证三点：①§II-B 与 §III-D 步 9：HFSS 侧端口/辐射边界/网格/
+  扫频均由 agent 逐次现写决定——恰是本仓坑账最密的面：端口（#191 波
+  端口尺寸、#254 平衡线端口截面、#307 双导体模阻抗基准）、边界（#356
+  零厚度薄片须 PerfectE）、网格收敛（#335 ΔS 达标≠关键标量收敛）；
+  确定性模板+健康门+HFSS 对齐基准把"每次现写"收敛为"一次定版、门控
+  复用"。②§III-C：EMX 多端口 S 参数"导入 Virtuoso 替换理想匹配网络"
+  正是 VB-9 sNp→Spectre nport 交接件的落点（R-18 已交付）。③§V：作者
+  自述设计耗时首要瓶颈=EM 仿真运行时，若有预表征无源库可再显著缩短——
+  即本仓数据工厂/代理内核（22.2 数据账意识；service/active_learning_loop.py
+  σ 选点回填、core/gp_tensor_kernel.py）与服务器并行（规则 0b）的直接
+  用例。
+- 结论：VB-9 定位成立且被论文全文加强；本仓 EM 侧确定性内核生态对
+  TACS-RF 栈是正对位补位，不是重叠竞争。
+
+**⑤关键数字如实转录**（论文 abs/§IV/表 I 原文值，报道版同值；**全部为
+提取后仿真值，非流片实测**）：
+
+| 量 | 值 | 出处口径 |
+|---|---|---|
+| 频段/工艺 | 240–251 GHz；90 nm SiGe BiCMOS（fT/fmax 300/350 GHz） | abs；表 I |
+| 输出功率 | +5.1 ~ +6.3 dBm（峰值 +6.3 dBm @246 GHz） | abs；§IV-B |
+| 直流功耗 | 361 mW（表 I 记 0.36 W） | abs；§IV-B |
+| 效率 | ~1.2%（报道方现场换算：+6.3 dBm≈4.27 mW，÷361 mW≈1.18%；本席复算一致，下限 +5.1 dBm≈3.24 mW 对应≈0.90%） | **报道派生量，论文未给本工作效率** |
+| 调谐范围 | 11 GHz，varactor-only（纯变容管，不切电容阵列、不换频段） | abs；§IV-B |
+| 相位噪声 | −80 ~ −88 dBc/Hz @1 MHz（跨调谐范围）；表 I 单点 −88 @1 MHz、−108 @10 MHz（表注：工作于 248 GHz） | abs；表 I（§I 另写"≤−85 dBc/Hz @1 MHz、跨 6 GHz VCO 调谐范围"，与 abs 口径不一致，如实并列） |
+| 子模块 | VCO −1.5 dBm @123.7 GHz（负载牵引最优 25+j30 Ω）；两级 PA 功率增益 14.1–16.6 dB、OP1dB +2.2 dBm、Psat +8.5 dBm；倍频器 +2.9 dBm @123 GHz 入→+6.3 dBm @246 GHz 出，变频增益 +3.4 dB | §IV-A |
+| 用时 | pre-layout 整链从零不到一周；作者估计有知识库后同复杂度模块一天内 | §V |
+
+调谐 11 GHz 的报道解读（"低频调、高频跟"：二次谐波节点约 6 GHz 调谐经
+倍频放大约两倍）与论文 §I 的 6 GHz VCO 调谐范围口径一致；11 GHz 即
+240–251 GHz 的频段宽度。
+
+**诚实边界**：①数字全部为提取后仿真（§IV 标题即 Post-Extraction
+Simulation Results），未报告流片/实测；顶层拼版与终验原文用"would
+assemble"——硅验证未发生（对照 AMS-IO-Agent 报 28 nm 流片，验收等级
+不同，见 RAW_P4_A.md 目标 3/4）；报道"真实实例""AI 自己当射频工程师"
+属报道措辞，不作采信依据。②表 I 的两篇对比源恰是提供给 agent 的参考
+设计（§IV-B 原文）——对比属"给定参考答案下的复现与再优化"，不是独立
+基线。③效率~1.2% 为报道派生量（论文未给；参考文献 [6] 标题所载 1.3%
+DC-to-RF 效率属对比源，非本工作）；相噪口径 abs 与 §I 不一致，本节并列
+不择一。④Fig. 1/2/4/5 未多模态实读（微信图为 blob 占位不可取，arXiv
+图未抓取）——九步内逐步拆分按 §III 段落顺序推定。⑤框架无公开代码：abs
+页 Comments 无代码发布声明（本席实读），与 Q-X40 DIGEST §7 第 8 条
+"TACS-RF 无公开代码"口径一致；本席未检索第三方代码索引。⑥利益相关
+提示：报道开篇提及该号曾推荐本项目开源仓——本节对位结论只以论文原文与
+仓内证据为据。⑦本机无 Cadence/EMX/Calibre：四件套中三件的对位为"交换
+格式解析/交接件/思想"级，唯 HFSS/PyAEDT 为同工具真对位。
+
+**出处落版清单（续 22.4 章尾清单）**（访问日期均为 2026-11-10；思想级
+转述，技术数字以论文原文为准）：
+
+6. 射频学堂《AI自己设计射频，这事可能真的快成了！？》（第五篇微信文章，
+   web_reader 全文实读）：
+   https://mp.weixin.qq.com/s/RRArWeeEPRxLfeMvmczzMA
+7. T. Liang, A. Nagulu, "TACS-RF: Tool-driven Agentic Circuit Synthesis
+   of RF and mmWave Modules", arXiv:2610.31882v1（2026-10-22）——abs 与
+   HTML 全文本席实读：https://arxiv.org/abs/2610.31882 ，
+   https://arxiv.org/html/2610.31882
+8. 仓内接地：runs/aurora_q/qx40_vbridge/DIGEST.md（§0"下游使用实证"行、
+   §7 第 8 条）、runs/aurora_q/qx40_vbridge/PROPOSALS.md（VB-9 节）、
+   runs/aurora_r/PLAN.md（「TACS-RF 报道吸收」条）、
+   runs/aurora_r/p4_survey/RAW_P4_A.md（PANDA/AMS-IO 对照）。
+
+### 22.6 "不报错的错误"判据面与连通性诊断链（第六篇：PFC 热力耦合 AI 全自动验证，主代 2026-11-10）
+
+- 出处：微信文章《AI 全自动做热力耦合：从一句话需求到解析解验证》
+  https://mp.weixin.qq.com/s/cm8qUIt4JLgC00oGmmc9Gg （访问 2026-11-10；
+  VibePFC 社区 PFC 6.0 实测演示——个人公众号文章非开源仓，思想级吸收零许可风险；
+  PFC/Itasca 颗粒离散元生态与 rfauto RF/EM 域零重叠）。
+- **核心案例与 rfauto 坑账同族实锤**："热求解器收敛指标全好但温度场冻结"
+  （热量传到 x≈11 停止、升温球数恒定 68、零报错零警告——"程序正常结束≠物理
+  正确"）与 rfauto 速查既有家族完全同构：#262（窄窗截断 |S11|>1 假象）、#266
+  （耦合缝 <NEAR 缝内零内部线=外 Q 建模粗）、#268（et 文件 mtime 停止≠卡死，
+  stdio 缓冲伪象）、#323（整树无声消失无 traceback）。本篇增量=**自主诊断链
+  形态**：异常症状（冻结）→量化探查（升温球数恒定）→结构分析（接触网络导出
+  边列表→flood fill 连通分量→11 孤岛，含热源孤岛恰=68 球覆盖 x≤11.5）→病因
+  定谳（37% 近邻对有缝隙无接触=无热管道）→两种解法（半径放大/力学压密）各自
+  全链验证。**整链零人工**。
+- **吸收点①（em_bench 新任务族蓝本，挂账 R 系扩展池）**：silent-failure 检测
+  任务族——给 agent 一个"数值上收敛但物理上退化/冻结/截断"的 run 产物，判据=
+  agent 能否在无引擎报错辅助下检出退化（判据面：物理守恒量检查/边界值 sanity/
+  传播深度与解析预期对照）。与本仓 #331"观察工具自身失真"家族互补：前者防
+  观察面失真，本篇防"引擎侧静默退化被收敛指标掩盖"。
+- **吸收点②（渲染链守卫参照）**：接触/网格连通性图论自检——flood fill 连通
+  分量分析作为 run 前结构自检，与本仓 NetRegistry 连通性检查、#152/#311 网格
+  缝隙守卫同构；增量=把"连通性"从建模期守卫扩展到**激励→边界的完整导热/导电
+  路径贯通性检查**（单分量含源含汇），openEMS 渲染链可作后续席参照（挂账，
+  不实现）。
+- **吸收点③（多保真叙事互证）**：三版本对照方法论（A 规则排列=理想接触网络
+  证算法本体正确，偏差 <0.2%；B 随机+放大=快捷但孔隙率失真 20-35%；C 随机+
+  力学压密=保真且追平 0.6%）与 rfauto fake（理想闭式）→openEMS（离散真实）
+  →HFSS（仲裁基准）三保真链同构——"基准版证模块对、工程版证地形对、双版互
+  印证强于单算例碰巧对上"的叙事可直接引用为多保真判读文档语料。
+- **吸收点④（报告形态参照，低优先）**：自包含单文件 HTML 报告（动图+偏差表+
+  参数表+复现命令内嵌，可转发可归档）——rfauto design_report/health 报告已有
+  HTML 面，"单文件自包含+复现命令附尾"两点可作报告产物形态参照。
+- **采样策略小件**：瞬态扩散过程按 √t 等比取时刻切片（12 片+稳态）——对
+  openEMS 时域场验证/收敛切片采样可借鉴（挂账）。
+- 诚实边界：原文系数值模块功能验证（对标解析解），非真实材料标定——k/Cv 为
+  算例设定值；"AI 全自动"含人工发起的一句话需求与迭代方向裁决，非无监督。

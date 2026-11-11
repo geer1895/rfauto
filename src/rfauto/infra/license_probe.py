@@ -1,4 +1,4 @@
-"""License-aware 队列（plan-extension_v3 方向 1 工程必要条件）。
+"""License-aware 队列（Plan_Extension_v3 方向 1 工程必要条件）。
 
 探测 license server 可用性；不可用时调用方应挂起（等待重试）而非失败——
 真机 HFSS 求解 40 分钟成本，一次探测失败不应烧掉整个多保真管线。

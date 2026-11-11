@@ -72,7 +72,7 @@ def test_extract_desktop_pid_missing_or_junk_is_none():
 def test_grpcsrv_port_parses_bare_and_triple_forms():
     # 实测形态（w8_pid_probe 真机）：裸端口
     assert _grpcsrv_port_from_cmdline(
-        '"E:\\ANSYSINC\\...\\ansysedt.exe" -grpcsrv 61359 -ng') == 61359
+        '"C:\\Program Files\\ANSYS Inc\\...\\ansysedt.exe" -grpcsrv 61359 -ng') == 61359
     # pyaedt _get_grpcsrv_args 三段式（TCP/mTLS）
     assert _grpcsrv_port_from_cmdline(
         "ansysedt.exe -grpcsrv 127.0.0.1:50051:SecureMode") == 50051
@@ -161,7 +161,7 @@ def test_close_warns_on_pid_residue_local_only(monkeypatch, caplog):
         session = HfssSession.instance()
         session.desktop = _FakeDesktopWithPid(pid=8888)
         session._desktop_pid = 8888
-        session._remote = {"name": "sim_server"}
+        session._remote = {"name": "lab_server"}
         with caplog.at_level("WARNING",
                              logger="rfauto.adapters.hfss_session"):
             session.close()

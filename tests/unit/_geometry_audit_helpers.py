@@ -100,6 +100,11 @@ TEMPLATE_MESH_MM: dict[str, float] = {
     # 1.25µm ≤ min(sf,gp)/3=1.667µm 过 #266 守卫（0.4 缺省档越守卫即
     # 渲染期红——守卫是正确行为，K11 族同口径）
     "interdigital_cap": 0.005,
+    # layered_stack（aurora_q Q-X6 批 2）：0.0=自动 λ_sub/50@F_MAX 档（批 1
+    # spec 缺省口径，最高 εr 介质 silicon 11.9 @95.25GHz → BASE≈18.2µm、
+    # NEAR≈4.6µm ≤ 带宽/3 过 #266 守卫）——显式登记防 0.4mm 收敛档缺省
+    # 混入（0.4mm @95GHz≈λ/8，物理错档；查表 0.0 语义=render_script 自动档）
+    "layered_stack": 0.0,
 }
 # 各模板网格最小间距守卫阈值（m；#152 家族）：缺省 1µm（μm 尺度金属
 # 特征档）。mim_cap（2026-10-23 aurora_k K12）例外：介质薄层 z 向三线
@@ -182,6 +187,10 @@ PORT_GROUPS: dict[str, tuple[frozenset[int], ...]] = {
     # 隔离开路环谐振器，端口 1/2 分属环 1/环 4（缝塌缩短路即红，与功分器
     # 族判据相反）
     "xcheb_bpf4": (frozenset({1}), frozenset({2})),
+    # layered_stack（aurora_q Q-X6 批 2）：双端口同属载带网络（strip+双端口
+    # 馈段连通=单分量口径，缺省 (frozenset(ports),) 同效——显式登记防多端口
+    # 漂移时静默改判据；腔壁金属化+键合环网络 DC 隔离无端口不计）
+    "layered_stack": (frozenset({1, 2}),),
 }
 
 # 场激励端口模板（2026-09-18 w1b）：WaveguidePort 文件模式（路线 A）是截面场
@@ -565,6 +574,12 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     # =正确行为）；+0.05mm 保域（0.80≤0.83）且必变几何
     "atten_pi": {"shunt_off_mm": (1.0, 0.05)},
     "atten_t": {"shunt_off_mm": (1.0, 0.05)},
+    # layered_stack（aurora_q Q-X6 批 2）：cavity_w_mm ×1.37+0.013=1.246 >
+    # wafer_width 1.2（"腔足印须落在叠层内"守卫拒渲染——守卫是正确行为）；
+    # ×0.9=0.81 保域（>带宽 0.524 且 <wafer 1.2）且必变几何。cavity_h_mm
+    # ×1.37=0.698 → 腔顶 0.349 越出叠层顶 0.253（"腔体 z 区间越出叠层"守卫
+    # 拒——正确行为）；×0.9=0.45 保域（腔顶 0.225<0.253）且必变几何
+    "layered_stack": {"cavity_w_mm": (0.9, 0.0), "cavity_h_mm": (0.9, 0.0)},
 }
 
 

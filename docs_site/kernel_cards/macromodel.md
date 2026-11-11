@@ -129,15 +129,15 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `内部证据档`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。"
 
-测试面（tests/unit 引用扫描，机读；合计 **132** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **139** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
-| `tests/unit/test_macromodel.py` | 15 |
+| `tests/unit/test_macromodel.py` | 18 |
 | `tests/unit/test_macromodel_replay.py` | 43 |
 | `tests/unit/test_macromodel_xval.py` | 10 |
 | `tests/unit/test_pole_residue_surrogate.py` | 23 |
-| `tests/unit/test_spice_param_export.py` | 22 |
+| `tests/unit/test_spice_param_export.py` | 26 |
 | `tests/unit/test_w3_a_lake_compact.py` | 19 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

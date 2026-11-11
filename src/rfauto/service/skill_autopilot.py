@@ -154,13 +154,24 @@ def build_run_skill(record: Mapping[str, Any], *, skill_name: str | None = None,
     }
 
 
-def write_run_skill(record: Mapping[str, Any], *, output_dir: str | Path = "skills",
+def write_run_skill(record: Mapping[str, Any], *, output_dir: str | Path | None = None,
                     skill_name: str | None = None, task: Any = None,
                     entries: Sequence[Any] | None = None) -> dict[str, Any]:
     """构造 + 落盘：<output_dir>/<skill_name>/SKILL.md + references/。
 
     返回构造契约并补 output_path/deposited；写失败如实 ok=False（#105）。
+
+    #144 同族修复（aurora_q Q-W6-1 收官顺笔，主代理 2026-11-05）：缺省
+    ``"skills"`` 按 cwd 相对解析会把包静默写进工作区 skills/ 湖（探针实测
+    复现，write_experience_skill 已同笔改拒写形态）——本函数对齐同款：
+    output_dir 缺省 None 拒写+可执行报错，调用方显式传参（生产调用面
+    api/run_core.py 均显式）。
     """
+    if output_dir is None:
+        raise ValueError(
+            "output_dir 缺省拒绝（#144 同族防湖污染）：显式传 output_dir（如"
+            " runs/<case>/skills/ 或审计 D 轴指定的 knowledge/skills/），"
+            "不再按 cwd 相对解析静默写 skills/")
     built = build_run_skill(record, skill_name=skill_name, task=task,
                             entries=entries)
     if not built.get("ok"):
@@ -229,7 +240,7 @@ def validate_agentskills_md(path: str | Path) -> dict[str, Any]:
 
 def auto_deposit_hook(record: Mapping[str, Any] | None = None,
                       run_id: str | None = None, *,
-                      output_dir: str | Path = "skills",
+                      output_dir: str | Path | None = None,
                       skill_name: str | None = None, task: Any = None,
                       entries: Sequence[Any] | None = None) -> dict[str, Any]:
     """接线钩子：record 直给或 run_id（经 health_check_run 判定）二选一。

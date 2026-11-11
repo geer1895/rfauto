@@ -279,7 +279,7 @@ def _normalized_sections_echo(chain: list[Any]) -> list[dict[str, Any]]:
     return out
 
 
-# canonicalize_chain 已删除（P1 core 根治后清理，Devlog 四一零 followUp 闭合）：
+# canonicalize_chain 已删除（P1 core 根治后清理，DEVLOG 四一零 followUp 闭合）：
 # 曾为 solve_chain ``id()`` 反查 guide 表的适配器侧权宜（iris 预展开 + 值相等
 # Waveguide 归一实例）。core/rwg_mmt 现按值语义去重+按值反查（frozen dataclass
 # 值哈希，_guide_list 契约），JSON 段表逐段新造实例直连可解；iris 展开本就由

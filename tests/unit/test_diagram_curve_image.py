@@ -246,22 +246,9 @@ class TestRenderDeterminism:
             "png = render_curves_png(build_curve_plan(curve_series_from_payload(payload)))\n"
             "print(hashlib.sha256(png).hexdigest())\n",
             encoding="utf-8")
-        # 确定性加固（公开门实测 flake 消源）：两进程共享受控空 MPLCONFIGDIR
-        # +预热渲染一次（字体缓存先建于受控目录）——消除冷/热字体缓存不对称
-        # 与宿主缓存状态漂移两类 sha 抖动源（渲染本体零改动）。
-        mpl_cfg = tmp_path / "mplconfig"
-        mpl_cfg.mkdir()
-        env = {**os.environ, "PYTHONPATH": str(_src_dir),
-               "MPLCONFIGDIR": str(mpl_cfg), "MPLBACKEND": "Agg"}
+        env = {**os.environ, "PYTHONPATH": str(_src_dir)}
         outs = []
-        for i in range(3):
-            if i == 0:
-                continue  # 第 0 轮=预热（字体缓存落 MPLCONFIGDIR，不进比对）
-            r = subprocess.run([sys.executable, str(script)], capture_output=True,
-                               text=True, encoding="utf-8", env=env, timeout=300,
-                               cwd=str(tmp_path))
-            assert r.returncode == 0, r.stderr
-            outs.append(r.stdout.strip())
+        for _ in range(2):
             r = subprocess.run([sys.executable, str(script)], capture_output=True,
                                text=True, encoding="utf-8", env=env, timeout=300,
                                cwd=str(tmp_path))

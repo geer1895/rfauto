@@ -1,6 +1,6 @@
 """P3 real_edt: 真机 ADS 2027 B 档链路（hpeesofsim + keysight.ads.dataset）。
 
-需 E:/ADS/ADS27（RFAUTO_HPEESOF_DIR）。用 p3_d5 合成的 wilkinson_like.s3p
+需 C:/Program Files/Keysight/ADS2027（RFAUTO_HPEESOF_DIR）。用 p3_d5 合成的 wilkinson_like.s3p
 跑 run_from_snp N=2, 验证系统指标与输入一致。
 """
 import os
@@ -10,8 +10,8 @@ import pytest
 
 pytestmark = pytest.mark.real_edt
 
-_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"E:/ADS/ADS27"))
-_SNP = Path(r"E:\rfauto-workspace\scripts\spike_b_ads\p3_d5_out\wilkinson_like.s3p")
+_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"C:/Program Files/Keysight/ADS2027"))
+_SNP = Path(r"E:\rfauto_workspace\scripts\spike_b_ads\p3_d5_out\wilkinson_like.s3p")
 
 
 @pytest.mark.skipif(not (_ADS / "bin" / "hpeesofsim.exe").exists(),

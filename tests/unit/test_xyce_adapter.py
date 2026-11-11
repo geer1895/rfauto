@@ -175,7 +175,8 @@ class TestBridgeUtils:
 #: WSL 桥的网表路径=Windows 宿主盘符路径（run_xyce 先 exists() 再
 #: windows_to_wsl_path）：tmp_path 在 POSIX 解释器下无盘符，三件真文件
 #: 用例只能在 Windows 宿主执行（aurora_p H4 Linux CI 实证，诚实环境 skip；
-#: 纯函数/缺文件/解码用例平台无关照常跑）。
+#: 纯函数/缺文件/解码用例平台无关照常跑。公开仓 CI 修复批同款回冲，
+#: 2026-11-05）。
 _WIN_HOST_ONLY = pytest.mark.skipif(
     sys.platform != "win32",
     reason="Xyce WSL 桥：tmp_path 真文件需 Windows 宿主盘符路径（POSIX 无盘符）")

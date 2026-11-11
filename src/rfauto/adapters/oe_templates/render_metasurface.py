@@ -426,7 +426,7 @@ def _ms_patch_lines(p: dict[str, Any]) -> str:
 
     读出（2026-10-01 ge5 ms_patch 读出修复，runs/ge5_msjcross/audit.md §D/E
     定性：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载（能量预算破损），
-    反射相位为片负载 Möbius 像（Devlog 六百八十七：fine 弧 100.90° 去嵌后
+    反射相位为片负载 Möbius 像（DEVLOG 六百八十七：fine 弧 100.90° 去嵌后
     物理 133.98°、coarse 19/21 点反演负阻不可修复）——jcross/cross 修法
     同族移植：soft plane 激励 + 双 E 探针对（_WgProbePairRefl 对调 uf）。
     """
@@ -1183,7 +1183,7 @@ MS_PATCH_META: dict[str, Any] = {
                   "波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出"
                   "判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 "
                   "LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 "
-                  "Möbius 像，runs/ge5_msjcross/audit.md §D/E + Devlog 六百八十"
+                  "Möbius 像，runs/ge5_msjcross/audit.md §D/E + DEVLOG 六百八十"
                   "七）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["px_mm", "py_mm", "period_mm", "h_mm"],

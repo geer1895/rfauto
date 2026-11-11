@@ -1,0 +1,201 @@
+/* Liberty 样例库（tests/fixtures/liberty/sample.lib）
+ * aurora_q Q-X34 席位测试夹具——NLDM 主面全覆盖：
+ *   1. 库头：单位/名义工况/file_version（自定义属性）+块注释；
+ *   2. lu_table_template：delay_template_2x2 / power_template_2x2
+ *      （表组引用模板时 index 继承路径）；
+ *   3. INVX1：模板引用四张 NLDM 表+internal_power+leakage_power 两种
+ *      values 写法（简单属性串 vs 复合属性）；
+ *   4. BUFX2：显式 index（不引用模板）+一维表（仅 index_1）；
+ *   5. DFFX1：同 related_pin 双 timing 组（rising_edge/falling_edge
+ *      ——同名消歧 @timing_type 路径）。
+ * 数字为夹具演示值（非任何真实工艺库），仅供形状/插值断言。
+ */
+
+library (sample_lib_rfauto) {
+  file_version : "1.0";
+  date : "2026-11-07";
+  revision : "A";
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  leakage_power_unit : "1nW";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1, pf);
+  default_max_transition : 0.6;
+  nom_process : 1.0;
+  nom_temperature : 25.0;
+  nom_voltage : 1.25;
+
+  lu_table_template (delay_template_2x2) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("0.01, 0.20");
+    index_2 ("0.005, 0.050");
+  }
+
+  lu_table_template (power_template_2x2) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("0.01, 0.20");
+    index_2 ("0.005, 0.050");
+  }
+
+  operating_conditions (TYP_1V25_25C) {
+    process : 1.0;
+    temperature : 25.0;
+    voltage : 1.25;
+    tree_type : "balanced_tree";
+  }
+
+  /* 反相器：模板引用路径（index 从 delay_template_2x2 继承） */
+  cell (INVX1) {
+    area : 4.5;
+    cell_leakage_power : 0.123;
+    pin (A) {
+      direction : input;
+      capacitance : 0.0021;
+    }
+    pin (ZN) {
+      direction : output;
+      function : "!(A)";
+      capacitance : 0.0;
+      max_capacitance : 0.12;
+      timing () {
+        related_pin : "A";
+        timing_sense : negative_unate;
+        timing_type : combinational;
+        cell_rise (delay_template_2x2) {
+          values ("0.0314605, 0.0948593", \
+                  "0.1090630, 0.2122158");
+        }
+        cell_fall (delay_template_2x2) {
+          values ("0.0292106, 0.0891039", \
+                  "0.1007964, 0.2019540");
+        }
+        rise_transition (delay_template_2x2) {
+          values ("0.0185659, 0.1065505", \
+                  "0.0602344, 0.1865252");
+        }
+        fall_transition (delay_template_2x2) {
+          values ("0.0179805, 0.1016710", \
+                  "0.0585269, 0.1781253");
+        }
+      }
+      internal_power () {
+        related_pin : "A";
+        rise_power (power_template_2x2) {
+          values ("0.512354, 1.114862", \
+                  "0.612676, 1.234559");
+        }
+        fall_power (power_template_2x2) {
+          values ("0.700948, 1.282833", \
+                  "0.784676, 1.356602");
+        }
+      }
+    }
+    leakage_power () {
+      values : "1.234";
+      when : "!A";
+    }
+    leakage_power () {
+      values ("2.345");
+      when : "A";
+    }
+  }
+
+  /* 缓冲器：显式 index（不引用模板）+一维 transition 表 */
+  cell (BUFX2) {
+    area : 6.0;
+    is_macro_cell : false;
+    pin (A) {
+      direction : input;
+      capacitance : 0.0035;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      capacitance : 0.0;
+      max_capacitance : 0.2;
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        cell_rise (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.0401002, 0.1305058", \
+                  "0.1153353, 0.2467701");
+        }
+        cell_fall (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.0373938, 0.1205321", \
+                  "0.1047493, 0.2333592");
+        }
+        rise_transition () {
+          index_1 ("0.01, 0.20");
+          values ("0.0200001, 0.1500002");
+        }
+        fall_transition () {
+          index_1 ("0.01, 0.20");
+          values ("0.0190001, 0.1400002");
+        }
+      }
+    }
+  }
+
+  /* 触发器：同 related_pin 双 timing 组（时钟沿消歧）+clock pin */
+  cell (DFFX1) {
+    area : 12.0;
+    pin (D) {
+      direction : input;
+      capacitance : 0.0028;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.0031;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      capacitance : 0.0;
+      max_capacitance : 0.15;
+      timing () {
+        related_pin : "CK";
+        timing_sense : positive_unate;
+        timing_type : rising_edge;
+        cell_rise (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.1026981, 0.1993133", \
+                  "0.1731231, 0.3134198");
+        }
+        cell_fall (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.0950221, 0.1893319", \
+                  "0.1632165, 0.3014647");
+        }
+      }
+      timing () {
+        related_pin : "CK";
+        timing_sense : positive_unate;
+        timing_type : falling_edge;
+        cell_rise (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.1086423, 0.2051771", \
+                  "0.1805982, 0.3213689");
+        }
+        cell_fall (explicit_index) {
+          index_1 ("0.01, 0.20");
+          index_2 ("0.01, 0.10");
+          values ("0.0991885, 0.1948286", \
+                  "0.1694083, 0.3081213");
+        }
+      }
+    }
+  }
+}

@@ -1,10 +1,11 @@
-"""templates 子应用——EC-8 全模板 golden 几何回归仓薄壳（aurora_e W2-S8）。
+"""templates 子应用——EC-8 全模板 golden 几何回归仓薄壳（aurora_e W2-S8）
++ T-Q14 模板→配方导出叶（aurora_q Q-W1-1）。
 
-零逻辑转发 service/template_golden_service（规则 4 薄壳；stats.py 先例：
-域内自注册模块级 add_typer，main.py 只 re-export——二次 add_typer 会双
-注册打红 zero-shadow 钉）。顶层无同名 `templates` 域（#df6① 冲突检查
-2026-10-18：全 CLI 树零撞名；唯一近名 `template-spec` 是 bands 域子应用
-TemplateSpec 注册表，语义不同）。
+零逻辑转发 service/template_golden_service / service/template_recipe_service
+（规则 4 薄壳；stats.py 先例：域内自注册模块级 add_typer，main.py 只
+re-export——二次 add_typer 会双注册打红 zero-shadow 钉）。顶层无同名
+`templates` 域（#df6① 冲突检查 2026-10-18：全 CLI 树零撞名；唯一近名
+`template-spec` 是 bands 域子应用 TemplateSpec 注册表，语义不同）。
 
 JSON 信封直出（stats 同款口径）：本命令缺省即 JSON 信封，--json 为归一
 兼容位；diff 命中漂移/缺失时退出码 1（判定=verdict 字段：clean|drift|
@@ -68,3 +69,35 @@ def templates_golden_diff_cmd(
         return
     _emit(ok_envelope(schema_version=TEMPLATES_GOLDEN_SCHEMA_VERSION, **result),
           fail_verdict=not accept)
+
+
+@templates_app.command("export-recipe")
+def templates_export_recipe_cmd(
+    family: str = typer.Argument(
+        ..., help="openEMS 模板族名（TEMPLATE_META 76 族键，如 pifa；"
+                  "族名错给 did-you-mean）"),
+    out: str = typer.Option(
+        None, "--out", "-o",
+        help="配方 YAML 写出路径（缺省只打印不落盘；recipes/ 下为显式保存"
+             "档——写守卫 explicit 档；已存在须 --force）"),
+    force: bool = typer.Option(
+        False, "--force",
+        help="目标已存在时覆盖（缺省拒绝覆盖既有配方）"),
+    json_output: bool = typer.Option(
+        False, "--json",
+        help="JSON 信封输出（本命令缺省即 JSON 信封，旗标为归一兼容位）"),
+) -> None:
+    """模板族 → 配方 YAML 一键导出（T-Q14 模板→配方通路单源）。
+
+    76 族→优化模型映射（service/template_recipe_service 单源）：有模型族
+    出 model: 形态（validate/run/tune 全链），其余出 template: 形态
+    （模板直跑，run 走 fake/openems 通道）。参数值全部出自注册表归档
+    名义值（TEMPLATE_NOMINAL，铁律 7 零手拍数字）。
+    """
+    from rfauto.service.template_recipe_service import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        export_template_recipe,
+    )
+
+    result = export_template_recipe(
+        family, out if out is not None else None, overwrite=force)
+    _emit(result)

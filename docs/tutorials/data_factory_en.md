@@ -29,7 +29,7 @@
 | M4 optimization | Surrogate-driven optimization (querying the inventory) vs the HFSS-baseline wall-clock account | `factory_m4_bench.py` | `runs/datafactory_m4/` |
 
 Two iron disciplines run through the whole chain (violate them and the work
-is redone, per house rules):
+is redone, per AGENTS house rules):
 
 1. **Criteria are pre-declared (write before compute)**: each batch's
    criteria/readouts are written into `runs/<batch>/criteria.md` (fixed in
@@ -78,7 +78,7 @@ Measured output (excerpt):
 }
 锚点 9: a2d_w0500_l20000(corner), a2d_w0500_l60000(corner), ...（共 9 个）
 LHS 111 点前 5: (0.5070,33.482), (0.5187,28.664), (0.5275,20.805), ...
-  ...（共 120 点，全量见 D:\rf_workspace\runs\datafactory_a2d\plan.json）
+  ...（共 120 点，全量见 E:\rfauto_workspace\runs\datafactory_a2d\plan.json）
 ```
 
 How to read it: **9 anchors** (corners/nominal/bounds — physical coverage is
@@ -137,19 +137,19 @@ value"):
 
 ```bash
 .venv/Scripts/python.exe scripts/factory_m2_mfk_rejudge.py --judge \
-    --out runs/demo/mfk_verdict.json
+    --out runs/aurora_d/tut/mfk_verdict.json
 ```
 
 Measured output (~49s, excerpt):
 
 ```
-[mfk] 低保真数据集：D:\rf_workspace\runs\datasets\datafactory_m1m3_merged_20260920（消费栅格 21 点）
+[mfk] 低保真数据集：E:\rfauto_workspace\runs\datasets\datafactory_m1m3_merged_20260920（消费栅格 21 点）
 [mfk] 低保真行数 150（εeff 缺行如实跳过）
 [mfk] 高保真锚点 9 行
 [mfk] 合成回收钉（Forrester 式仿射双保真族，#118）
 [mfk] 合成钉 pass=True gamma_max=0.00058 eps_max=0.0000%
   MFK fit：lo=150 hi=7 heads=43
-[mfk] verdict → D:\rf_workspace\runs\demo\tut\mfk_verdict.json
+[mfk] verdict → E:\rfauto_workspace\runs\aurora_d\tut\mfk_verdict.json
 
 ===== MFK 多保真判读摘要（overall=FAIL） =====
              smt_mfk: |ΔΓ|max=0.06291 εeff_max=1.0114% S21_max=0.0058dB

@@ -1,0 +1,38 @@
+# 均匀微带线 mline — 模型形态配方（T-Q14 模板→配方通路预置件，aurora_q Q-W1-1）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库新增（T-Q18 部分提前）：mline 是 75 族里第四个有优化模型
+# 的族（models 注册表同名插件 name="mline"，与 wilkinson_power_divider/
+# branchline_coupler/patch_antenna 并列）——本配方=模型形态（model:）样例，
+# 与 pifa_v1/monopole_v1 的 template: 直跑形态互补。
+#
+# · 本文件可由命令再生（参数值=TEMPLATE_NOMINAL 注册表归档名义值，零手拍）：
+#     rfauto templates export-recipe mline --out recipes/mline_v1.yaml --force
+# · mline=引擎仲裁锚模板（S21 相位斜率→εeff，β 金标准；|S11| 显著非零=
+#   端口/网格判废信号）——50Ω 线宽 1.113mm 为 skrf HJ 精算权威口径。
+# · model: 形态走既有优化链全链（validate/run/tune）；fake 通道解析近似
+#   零 license。
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；
+#   通路全程实录：docs/tutorials/from-template-to-first-sim.md。
+# · 注释写法注意（#324 坑）：值面"空格+#"会被 YAML 解析器截断——引注只写注释行。
+model: mline
+# model：目标模型（models 注册表键；`rfauto models list` 可列）。
+recipe_version: 1
+# recipe_version：配方 schema 版本（与插件 schema_version 语义不同，#106）。
+schema_version: 1
+# schema_version：模型插件参数 schema 版本。
+notes: "2.5 GHz 50Ω 均匀微带线（引擎仲裁锚：S21 相位斜率→εeff，β 金标准）"
+# notes：人类备注（自由文本，不进校验/缓存键）。
+params:
+  # params：设计参数段（键名=mline 插件 params_model 字段面）。
+  w_mm: 1.113
+  # w_mm：线宽（50Ω @rogers4350b h=0.508，skrf HJ 精算权威口径）。
+  line_len_mm: 40.0
+  # line_len_mm：两端口间线长。
+setup:
+  # setup：仿真设置段（频带/点数=export-recipe 从 meta f0 确定性派生口径）。
+  solver: openEMS
+  freq_range_ghz: [2.4, 2.604167]
+  points: 401
+# objectives 缺席=plain run（mline 锚模板主判读量是 β/εeff 而非带内回损，
+# 出 S 参数与报告即可；eps_eff 目标需配 length_mm 语义，见 docs/reference.md
+# 指标名表——预置件不替用户选判读口径）。

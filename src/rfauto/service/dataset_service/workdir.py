@@ -49,7 +49,7 @@ from .workdir_params import (
 # ``runs/<工作目录>/<点目录>/``（sparams.csv / *.sNp / 摘要 JSON），没有
 # meta.json，也没有 results/params.sNp 与 recipe.snapshot.yaml——不在 ①—⑤
 # 收集契约里，materialize_dataset 一律"缺 meta.json 跳过"，是渐进式数据工厂
-# 的漏数口（Devlog（二百零九）数据入库批如实记录的整类缺口）。
+# 的漏数口（DEVLOG（二百零九）数据入库批如实记录的整类缺口）。
 #
 # 导入单元 = 曲线产物文件（Touchstone ``*.s<N>p`` 或 openEMS 单激励
 # ``sparams.csv``），每个曲线产物物化为注册表一行（schema 同 DATASET_SCHEMA；

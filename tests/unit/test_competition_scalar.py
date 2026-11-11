@@ -222,7 +222,6 @@ class TestScoringSemantics:
 class TestAllEnginesSmoke:
     def test_all_seven_engines_produce_runs(self) -> None:
         """全七引擎（含 gp/sbo 重件）单问题 smoke：轨迹非空、排名完整。"""
-        pytest.importorskip("torch", reason="torch extra (rfauto[torch]) 未安装")
         prob = _sphere_problem()
         r = run_competition_scalar([prob], ALL_ENGINES, 12, [0])
         assert len(r["runs"]) == 7

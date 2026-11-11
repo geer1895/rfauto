@@ -308,9 +308,32 @@ def doctor() -> dict[str, Any]:
     # 缓存模式
     checks.append({"name": "缓存模式", "status": "ok", "detail": settings.cache_mode})
 
+    # 工作目录 ASCII 检查（T-Q26a，晶圆键合用户实测反馈 P0-3.3，2026-11-06）：
+    # AEDT 对非 ASCII 路径 OpenProject 直接失败（GrpcApiError: OpenProject）
+    # 且错误无"路径含非 ASCII"提示——cwd 是 runs/ 与 HFSS 工程的缺省落点，
+    # 非 ASCII 即 HFSS 链路必堵，照 doctor"缺项"语义显式亮红 + 给映射指引。
+    from rfauto.infra.ascii_paths import ascii_path_report
+
+    ascii_report = ascii_path_report(Path.cwd())
+    if ascii_report["ascii"]:
+        checks.append({
+            "name": "工作目录 ASCII",
+            "status": "ok",
+            "detail": ascii_report["path"],
+        })
+    else:
+        checks.append({
+            "name": "工作目录 ASCII",
+            "status": "警告",
+            "detail": (
+                f"{ascii_report['path']} 含非 ASCII 字符"
+                f" {'、'.join(repr(c) for c in ascii_report['bad_chars'])}"
+                f"——{ascii_report['suggestion']}"),
+        })
+
     envelope = ok_envelope(checks=checks)
-    # ok 透传探测汇总位（历史形状；全绿才 True）
-    envelope["ok"] = raw.get("ok", True)
+    # ok 透传探测汇总位（历史形状；全绿才 True——工作目录 ASCII 项一并计入）
+    envelope["ok"] = raw.get("ok", True) and ascii_report["ascii"]
     return envelope
 
 
@@ -413,7 +436,7 @@ def recipe_migrate(recipe_path: str | Path) -> dict[str, Any]:
     # version 0 → 1: add recipe_version field
     # 写面守卫：`rfauto recipe migrate <path>` 是用户把目标路径作为命令本意的
     # 显式入口（explicit），允许原地升级 recipes/ 下的配方；其余库代码路径
-    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 TODO
+    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 TODO.md
     # 「fix-recipe-pollution」条）。
     from rfauto.infra.recipe_guard import write_recipe_text
 

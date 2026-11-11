@@ -24,6 +24,13 @@
   进程指纹直查=权威判据 + 服务器探针 census mutex 行=旁证；三通道
   （HFSS gRPC/ADS hpeesofsim/openEMS runner）同构复用，指纹按通道语义词
   分（OE=python runner 家族 / ADS=hpeesofsim / HFSS=本机注册端口 grpcsrv）。
+- ``aedt_migrate_remote_recipe``/``build_bridge_task_bat``（aedt_migrate
+  子模块，aurora_r AM-S3）：aedt_migrate 远程桥接发射**配方与清单**
+  （不真发射——2023 R2 未装挂账主代/用户窗口；env 意图门
+  ``RFAUTO_AEDT_MIGRATE_REMOTE`` 预声明）；amasya 中间根
+  ``E:\\rfauto_remote`` 唯一、#261 互斥自检含 ansysedt 命令行、schtasks
+  once /Delete 补刀与 verified_gone 清理清单照三代发射家法。新公开名
+  未进 ``__all__``（金快照钉归 S4 接线同笔扩面，申报制挂账）。
 
 通道拓扑：HFSS gRPC 本机客户端→服务器 ``ansysedt -grpcsrv``；文件走
 SSH sftp（服务器云盘 SMB 为生产资料库，禁测试写入——服务器说明 §11.7）。
@@ -42,6 +49,24 @@ import importlib as _importlib
 import sys as _sys
 from types import ModuleType as _ModuleType
 
+from .aedt_migrate import (
+    AEDT_MIGRATE_MUTEX_FINGERPRINT as AEDT_MIGRATE_MUTEX_FINGERPRINT,
+)
+from .aedt_migrate import (
+    AEDT_MIGRATE_MUTEX_PROCESS as AEDT_MIGRATE_MUTEX_PROCESS,
+)
+from .aedt_migrate import (
+    AEDT_MIGRATE_REMOTE_ENV as AEDT_MIGRATE_REMOTE_ENV,
+)
+from .aedt_migrate import (
+    AEDT_MIGRATE_REMOTE_WORK_ROOT as AEDT_MIGRATE_REMOTE_WORK_ROOT,
+)
+from .aedt_migrate import (
+    aedt_migrate_remote_recipe as aedt_migrate_remote_recipe,
+)
+from .aedt_migrate import (
+    build_bridge_task_bat as build_bridge_task_bat,
+)
 from .hfss_smoke import (
     _C_M_S as _C_M_S,
 )
@@ -225,7 +250,7 @@ __all__ = [
 # 测试面 ``setattr(本模块, name, value)`` 时同步写入全部持有该名的
 # 子模块全局——与单文件时代"补丁即全局生效"逐位一致（含模块级状态
 # 与按名内调的实现函数）。扇出清单由各子模块 globals 按名自动构建。
-_SUBMODULES = ("mutex", "hfss_smoke", "precheck")
+_SUBMODULES = ("mutex", "hfss_smoke", "precheck", "aedt_migrate")
 
 
 class _FacadeModule(_ModuleType):

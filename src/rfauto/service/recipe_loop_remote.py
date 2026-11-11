@@ -155,7 +155,7 @@ class RemoteLoopLauncher:
        gitignored 的 configs/remote_machines.local.yaml，本类不持有凭据）；
     2. 参数点+配方快照经 ``SshTransport.upload_file`` 上服务器——服务器
        侧一切临时目录/中间文件一律 E 盘（E:\\rfauto_remote 为唯一中间
-       文件根），禁写生产云盘 D:\\CloudDrive（服务器说明 §10）；
+       文件根），禁写生产云盘（服务器说明 §10）；
     3. 发射形态=console 可见 bat 直指（禁 schtasks 隐藏标志/wscript 静默
        ——AGENTS 0b-2），发射后存活复核（console log 公告+CPU/ws 增长
        探针）；

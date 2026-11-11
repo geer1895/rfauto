@@ -1,4 +1,4 @@
-"""WP4.4a Icepak 电-热首案例真机脚本（continuation-plan_20260907 §4 WP4.4a）。
+"""WP4.4a Icepak 电-热首案例真机脚本（continuation_plan_20260907 §4 WP4.4a）。
 
 链路（方案行口径）：Wilkinson 隔离电阻损耗 → Icepak 温度场 → 材料温漂 →
 S 参数失谐。全部数值由确定性内核产出（#7 纪律：LLM/脚本不发明物理数字）：

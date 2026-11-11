@@ -56,7 +56,36 @@ rfauto sparams-compare a.s2p b.s2p   # 曲线对拍
 rfauto fab go --vars part_vars.json --rules rules/<x>.yaml  # 机加交付包
 ```
 
-## 5. 下一步
+## 5. AEDT 版本批量迁移（aedt-migrate）
+
+合作者遗留的老版本 `.aedt` 工程（如 2021 时代）迁移到本机统一使用的
+AEDT 2025 R1，走 `aedt-migrate` 域三叶（五阶段决策树：直开→体检→
+对比→桥接→抢救，每工程产出结构化迁移报告）：
+
+```bash
+rfauto aedt-migrate run --input <file|dir> [--work-root DIR] [--json]
+rfauto aedt-migrate status --report <path> [--json]   # 结构化摘要
+rfauto aedt-migrate report --report <path> [--json]   # 人读全文
+```
+
+`run` 递归收集 `*.aedt`，盘点（sha256+备份规划）后逐工程决策树，报告落
+`<work-root>/reports/`；原 `.aedt` 全程只读，一切产物落 work-root。重跑
+幂等：`MIGRATED_*`（已完成）自动跳过，`FAILED_*`/`BLOCKED_*` 允许重跑。
+`verdict` 枚举（诚实终态，零凑绿）：
+
+| verdict | 语义 |
+| --- | --- |
+| MIGRATED_DIRECT_PASS | 2025 R1 直开+体检+新旧对比达标 |
+| MIGRATED_DIRECT_FAIL_COMPARISON | 迁移成功但新旧结果对比超差（如实红） |
+| MIGRATED_VIA_BRIDGE_PASS | 经 2023 R2 桥接后全链达标 |
+| NEEDS_CAD_REEXPORT | 几何需老版本导出 Parasolid/STEP 抢救重建 |
+| NO_BASELINE | 原件无已存解，新旧对比无基线（如实，不伪造） |
+| FAILED_OPEN / FAILED_HEALTH / FAILED_BRIDGE | 直开/体检/桥接链失败（附消息原文） |
+| BLOCKED_NO_BRIDGE_HOST | 桥接机（2023 R2）未配置——前提不满足，非失败 |
+
+MCP 侧同名两面 `aedt_migrate_run`/`aedt_migrate_report` 供 agent 消费。
+
+## 6. 下一步
 
 - 30 分钟完整教程：[getting-started](../tutorials/getting-started.md)
 - 优化/扫描语义与判据门：仓内 `docs/how-to/` 系列

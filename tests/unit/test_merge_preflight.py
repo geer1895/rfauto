@@ -97,7 +97,7 @@ def test_pytest_targets_for_matrix():
     ("docs_site/cli.md", {"counts", "docs_drift"}),  # F-04 计数载体
     ("mkdocs.yml", {"counts", "docs_drift"}),
     ("README.md", {"counts", "docs_drift"}),
-    ("agent handoff_CURRENT.md", {"counts", "docs_drift"}),
+    ("AGENT_HANDOFF_CURRENT.md", {"counts", "docs_drift"}),
     ("src/rfauto/cli/main.py", _ALL),
     ("tests/unit/test_x.py", _ALL),
     ("scripts/check_numbers.py", _ALL),

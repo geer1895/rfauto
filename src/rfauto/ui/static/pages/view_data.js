@@ -202,10 +202,37 @@ export async function pageAnchors() {
       const det = await apiFetch("/api/anchors/" + encodeURIComponent(tr.dataset.id),
         { signal: viewSignal("anchors") });
       if (det.aborted) return; // UI-R12：切页取消——不写隐藏区
+      // T-Q14（aurora_q Q-W1-1）：锚关联模板族 → 导出配方按钮（先组局部
+      // 串再插值——裸 `${det.*.map}` 插值过不了 XSS 源钉，条目逐项 esc/escAttr）
+      const famBtns = (det.ok ? (det.anchor.template_family || []) : [])
+        .map((f) =>
+          `<button class='minor' data-fam='${escAttr(f)}' aria-label='${escAttr(t("anchors.export_btn_tpl", { name: f }))}'>${t("anchors.export_btn_tpl", { name: f })}</button>`)
+        .join("");
       T.$("an-detail").innerHTML = det.ok
-        ? `<div class='panel'><b class='title'>${t("anchors.detail_lead")}${esc(det.anchor.anchor_id)}</b><pre>${esc(JSON.stringify(det.anchor, null, 2))}</pre></div>`
+        ? `<div class='panel'><b class='title'>${t("anchors.detail_lead")}${esc(det.anchor.anchor_id)}</b>${famBtns ? `<div class='toolbar' style='margin-top:var(--space-1)'>${famBtns}</div><div data-slot='export'></div>` : ""}<pre>${esc(JSON.stringify(det.anchor, null, 2))}</pre></div>`
         : `<div class='panel'>${kitApiErrorHtml(det, { title: t("anchors.detail_unreadable") })}</div>`;
+      // T-Q14（aurora_q Q-W1-1）：锚关联模板族 → 导出配方（同源 service，
+      // 画廊抽屉同款 API；按钮新增不重构，既有详情渲染零变化）
+      if (det.ok) {
+        for (const btn of T.$("an-detail").querySelectorAll("[data-fam]"))
+          btn.onclick = () => exportAnchorRecipe(btn.getAttribute("data-fam"),
+            T.$("an-detail").querySelector("[data-slot=export]"));
+      }
     }, "tr.clickable");
+
+    /* 导出配方（模板直跑通路单源 service/template_recipe_service；只回
+       YAML 文本预览不落盘——写面走 CLI --out 或用户复制）。 */
+    async function exportAnchorRecipe(family, slot) {
+      if (!slot) return;
+      const r = await apiFetch("/api/template-recipe/export", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ family }),
+      });
+      slot.innerHTML = !r.ok
+        ? kitApiErrorHtml(r, { hint: t("common.error_hint") })
+        : `<b class='title'>${t("anchors.export_result_title_tpl", { name: esc(family) })}</b>` +
+          `<pre style='background:var(--panel2);padding:8px;overflow:auto;max-height:260px'><code>${esc(r.yaml || "")}</code></pre>`;
+    }
   };
   T.$("an-reload").onclick = load;
   await load();

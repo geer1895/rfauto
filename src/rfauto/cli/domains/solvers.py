@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.table import Table
@@ -343,12 +344,48 @@ def chat_cmd(
         raise typer.Exit(code=1)
     result = chat.chat(message)
     if json_output:
-        # VI-5 W6-B：--json 信封（text/action 原样透传，channel 并入）
-        console.print_json(json.dumps(
-            ok_envelope(text=result.get("text", ""),
-                        action=result.get("action", "?"), channel=channel),
-            ensure_ascii=False, default=str))
+        # VI-5 W6-B：--json 信封（text/action 原样透传，channel 并入；
+        # T-Q15：LLM 错误归一结果 llm_error 只增透传——回退路径带
+        # code/provider/http_status/message/advice，无错时不落键零变化）
+        fields: dict[str, Any] = {"text": result.get("text", ""),
+                                  "action": result.get("action", "?"),
+                                  "channel": channel}
+        if result.get("llm_error"):
+            fields["llm_error"] = result["llm_error"]
+        console.print_json(json.dumps(ok_envelope(**fields),
+                                      ensure_ascii=False, default=str))
         return
     console.print(result["text"])
     if result.get("action") != "help":
         console.print(f"[dim]动作: {result.get('action', '?')}（通道: {channel}）[/dim]")
+
+
+# ─── chat-test-connection (T-Q15: LLM 通道接通性检测+分诊) ─────────────────────
+
+@app.command("chat-test-connection")
+def chat_test_connection_cmd(
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """LLM 通道接通性检测（最小探针 + 分诊结论：额度/限速/认证/网关）。
+
+    读 configs/chat_settings.yaml 配置，发最小 1 消息探针；失败按
+    llm_error_service 分诊（code/provider/http_status/message/advice
+    结构化透传，429 区分额度耗尽 vs 限速）。
+    """
+    from rfauto.service.llm_error_service import (
+        test_llm_connection,  # lazy: CLI 叶内延迟导入（lazy 预算回调：Q-W0-2 遗留标注补齐，2026-11-04 主代理）
+    )
+
+    result = test_llm_connection()
+    if not result.get("ok"):
+        # _emit：--json 失败信封同构 / 非 json 红字 errors（含 advice 行）
+        _emit(result, "LLM 通道接通性检测失败", json_output=json_output)
+        return
+    if json_output:
+        console.print_json(json.dumps(result, ensure_ascii=False, default=str))
+        return
+    elapsed = result.get("elapsed_ms")
+    console.print(f"[green]✓ LLM 通道接通[/green] "
+                  f"model={result.get('model', '')} 耗时={elapsed}ms")
+    console.print(f"[dim]{result.get('advice', '')}[/dim]")

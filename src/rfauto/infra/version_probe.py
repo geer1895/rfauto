@@ -25,7 +25,7 @@ _COMPAT_MATRIX_PATH = Path(__file__).parent.parent.parent.parent / "knowledge" /
 _ANSYSEM_ENV_RE = re.compile(r"^ANSYSEM_ROOT(\d+)$")
 _AEDT_DIR_RE = re.compile(r"^[vV]?(\d{3,4})$")
 # ADS 安装目录名：4 位年份（ADS2027）或 2 位短年（ADS27，2026-09-18 现役安装
-# E:/ADS/ADS27 实测目录名，rm-ads-wp43 治理），短年统一归一到 20xx。
+# C:/Program Files/Keysight/ADS2027 实测目录名，rm-ads-wp43 治理），短年统一归一到 20xx。
 _ADS_DIR_RE = re.compile(r"ADS(\d{4}|\d{2})$", re.IGNORECASE)
 
 _DEFAULT_AEDT_VERSION = "2024.1"  # pyaedt 未指定版本时的默认值

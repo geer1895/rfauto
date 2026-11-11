@@ -69,7 +69,7 @@ from typing import Any
 # domain 字段表达 schema 零扩展；0795b2a T3 核验解锁，P1 §8.5 主路线兑现）。
 # Goal 批 T14（wf:goal-t14，2026-09-30）+2：mmt.inductive_post_b.hfss-v1 /
 # mmt.resonant_window_fres.hfss-v1 constant active——ME-5 MMT 销钉/谐振窗
-# HFSS 仲裁锚（sim_server 远程仲裁，runs/mmt_anchor_20260930/criteria.md
+# HFSS 仲裁锚（lab_server 远程仲裁，runs/mmt_anchor_20260930/criteria.md
 # §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
 # 随工作点 domain 钉死；单点锚 consumers=[] 零接线如实）。
 # ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2：ring.design_dk.

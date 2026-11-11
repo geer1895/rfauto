@@ -45,7 +45,10 @@ DOMAINS = ("建模", "求解", "后处理", "优化", "校准", "测量", "版�
 # ── 我方工具名→域（人工维护：前缀规则优先级从上到下；显式覆盖最后生效） ──────
 _OUR_PREFIX_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("知识", ("search_knowledge", "get_guidelines_for", "error_hints_lookup",
-             "explain_run", "diagnose", "rag_", "anchors_", "rationale_")),
+             "explain_run", "diagnose", "rag_", "anchors_", "rationale_",
+             # T-Q19 批 2 接线席 Q-W9-3：厂商帮助文档检索三面（索引构建/
+             # 带引用检索/零入库审计）=知识域（vendor 帮助语料知识面）
+             "vendor_docs_")),
     ("远程", ("doctor", "remote_")),
     ("版图", ("kicad_", "farfield_", "port_gate")),
     ("校准", ("correlate_measurement", "certify_design", "goldset_regression",
@@ -100,6 +103,14 @@ _OUR_OVERRIDES: dict[str, str] = {
     "competition_run": "优化",         # 引擎竞赛=优化基准面
     "surrogate_export_onnx": "后处理",  # 代理产物导出=后处理面
     "surrogate_uq": "后处理",          # 不确定度量化=后处理面
+    # T-Q3 接线席 Q-W5-2R（aurora_q 方向 B，2026-11-04）：anim_render 动图
+    # 渲染=后处理域（run 数据可视化复现面，与 design_report/compare_runs 同域）
+    "anim_render": "后处理",
+    # T-Q5 接线席 Q-W9-3（aurora_q 方向 C，2026-11-06）：format_overview
+    # EDA 格式速览=版图域（读面覆盖 KiCad/GDSII/DXF/IPC-2581/ODB++ 版图
+    # 家族为主（8 kind 中 5 个）+touchstone/drawio/ADS .ds 数据文件——
+    # 单工具按占多数的版图家族归版图域，kicad_ 前缀同域先例）
+    "format_overview": "版图",
     # 显式覆盖：与前缀规则域判定不同的个案（人工判读）
     "slotline_analysis": "建模",      # 槽线族分析=设计域（合成对拍面）
     "marchand_balun_design": "建模",  # balun 综合=设计域
@@ -111,6 +122,52 @@ _OUR_OVERRIDES: dict[str, str] = {
     "edb_emit_spec": "建模",
     "edb_build_solve": "求解",
     "edb_status": "后处理",
+    # aurora_q §二-1 合流笔（2026-11-10）：Q-X85 MCP 四批 odbpp/bsdl 三工具
+    # 域映射（版图域——ODB++ 制造数据/BSDL 边界扫描=版图制造家族，
+    # format_overview/gdsii_ 前缀同域先例）
+    "odbpp_report": "版图",
+    "bsdl_report": "版图",
+    "bsdl_boundary_detail": "版图",
+    # aurora_r M-10（2026-11-10）：R-26 parser_ext 六工具+AM-S4 aedt_migrate
+    # 两工具域映射（drc/veriloga/skill_call 三条详下方 26 工具补全块）
+    "netlist_overlay_file": "知识",
+    "spectre_overlay_file": "知识",
+    "netlist_overlay_text": "知识",
+    "aedt_migrate_run": "远程",
+    "aedt_migrate_report": "远程",
+    # aurora_r M-10 补全（Q-X69/73/76 批 26 工具 aurora_q 收官遗留未映射——
+    # test_our_domain_mapping_is_total_and_closed 在 final3 第一轮 seg5 即红，
+    # 全量闭合断言的清偿；域归=知识（网表/描述解析理解）/版图（制造与规则
+    # 面）/校准（S 参数测量数据）/基准（测试向量与产线记录））
+    "spice_netlist_parse": "知识",
+    "liberty_parse": "知识",
+    "sdc_parse": "知识",
+    "verilog_netlist_parse": "知识",
+    "ibis_parse": "知识",
+    "lvs_compare_files": "版图",
+    "drc_rules_parse": "版图",
+    "drc_design_validate": "版图",
+    "spef_parse": "知识",
+    "spef_report": "知识",
+    "spef_net_detail": "知识",
+    "lef_def_parse": "版图",
+    "lef_def_check": "版图",
+    "sdf_parse": "知识",
+    "sdf_report": "知识",
+    "sdf_cell_detail": "知识",
+    "gdsii_parse": "版图",
+    "gdsii_layers": "版图",
+    "gdsii_hierarchy": "版图",
+    "gerber_excellon_pair_check": "版图",
+    "ipc356_report": "版图",
+    "ipc356_fab_pair_check": "版图",
+    "citi_info": "测量",
+    "touchstone_info": "校准",
+    "vcd_parse": "基准",
+    "vcd_report": "基准",
+    "stil_pattern_detail": "基准",
+    "veriloga_module_detail": "知识",
+    "skill_call_graph": "建模",
 }
 
 _UNMAPPED = "未映射"

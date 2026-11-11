@@ -57,9 +57,13 @@ from rfauto.core.circuit_hb import (
     HBResistor,
     HBVSource,
 )
+from rfauto.core.exit_code_verdict import (
+    SPICE_FATAL_PATTERN,
+    SPICE_FLAG_LINE_PATTERN,
+)
 from rfauto.core.macromodel import compare_s_matrices, spice_subcircuit_port_info
 
-#: 工作区随带 ngspice 的缺省位置（tools/ngspice，AGENTS 环境 rule 1：
+#: 工作区随带 ngspice 的缺省位置（tools/ngspice，AGENTS.md 环境 rule 1：
 #: 工具链一律落 E 盘工作区；不存在时回落 PATH 探测）。
 _WORKSPACE_NGSPICE = Path(__file__).resolve().parents[3] / "tools" / "ngspice" / (
     "Spice64/bin"
@@ -295,10 +299,13 @@ def run_ngspice(
         cwd=str(netlist_path.parent),
         check=False,
     )
+    # P4-1-1（aurora_r R-21）：旗标行收集 pattern 单源化收编——现行字面量
+    # 移入 core/exit_code_verdict 的 SPICE_FLAG_LINE_PATTERN（逐字符同一，
+    # 零行为变化；字面量钉见 tests/unit/test_exit_code_verdict.py）。
     flag_lines = [
         ln.strip()
         for ln in (proc.stdout + "\n" + proc.stderr).splitlines()
-        if re.search(r"\b(Error|failed|warning)\b", ln, re.IGNORECASE)
+        if re.search(SPICE_FLAG_LINE_PATTERN, ln, re.IGNORECASE)
     ]
     return {
         "stdout": proc.stdout,
@@ -665,7 +672,11 @@ def run_ngspice_ac_sparam(
             wrdata_name=wrdata_name,
         )
         res = run_ngspice(deck, exe=exe_path, timeout_s=timeout_s)
-        fatal = [ln for ln in res["errors"] if re.search(r"\b(Error|failed)\b", ln, re.IGNORECASE)]
+        # P4-1-1（aurora_r R-21）：rc!=0 or fatal 双门（rc 不足为凭）的
+        # fatal 复扫 pattern 单源化收编 SPICE_FATAL_PATTERN（逐字符同一，
+        # 零行为变化；fatal 复扫仍作用于 errors 旗标行——合成日志注入钉
+        # 见 tests/unit/test_exit_code_verdict.py）。
+        fatal = [ln for ln in res["errors"] if re.search(SPICE_FATAL_PATTERN, ln, re.IGNORECASE)]
         runs.append({
             "port": j + 1,
             "deck": str(deck),
@@ -722,7 +733,7 @@ def xval_macromodel_spice(
 ) -> dict[str, Any]:
     """第三方 SPICE 对拍（ngspice .AC）→ D12 FSV 评级（best-effort，不抛异常）。
 
-    验收口径（方案冻结行 docs/continuation-plan_20260907.md D13 验收列）：
+    验收口径（方案冻结行 docs/continuation_plan_20260907.md D13 验收列）：
     "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。``s_reference``
     为原始 S 矩阵（复数 ndarray ``[nf, n, n]``）；对拍 S 由
     :func:`run_ngspice_ac_sparam` 真跑重建；FSV/误差摘要用

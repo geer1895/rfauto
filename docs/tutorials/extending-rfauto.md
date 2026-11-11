@@ -5,7 +5,7 @@
 > docs/explanation/layered-architecture.md（分层架构——你加的东西落在
 > 哪一层决定它能 import 什么）。
 > 英文版（English version）：docs/tutorials/extending-rfauto_en.md
-> （2026-10-24 复测同笔：六适配器/75 模板/通道三元组均与本文一致——
+> （2026-11-07 Q-X6 批 2 复测：六适配器/76 模板/通道三元组均与本文一致——
 > 模板数随模板注册增长，下文计数以注册表单源为准，勿硬编码；
 > 脚手架返回值现含 `module` 键，见 §1 注记）。
 
@@ -125,7 +125,7 @@ sys.modules 钉死测试。
 ## 4. 加一个 openEMS 模板
 
 模板单源在 `adapters/oe_templates/registry.py`：`TEMPLATE_META`
-（75 模板：几何参数表/端口轴/网格口径——此数随模板注册增长，
+（76 模板：几何参数表/端口轴/网格口径——此数随模板注册增长，
 勿硬编码）与 `TEMPLATE_NOMINAL`
 （名义值表），经 `adapters/openems_templates.py` re-export 消费。
 

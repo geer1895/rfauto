@@ -113,8 +113,17 @@ def db_query_cmd(
 
     示例：rfauto db query "SELECT run_id, model FROM runs WHERE adapter = ?" -p hfss
     """
+    from rfauto.cli.domains._core import _emit_usage_error  # lazy: usage error 单源出口（cli 注册根轻载）
+    from rfauto.service.arg_guard_service import (
+        validate_count_args,  # lazy: quantity 守卫铺广度（Q-W8-4；cli 注册根轻载）
+    )
     from rfauto.service.db_service import db_query_safe
 
+    # R11 Top3 quantity 守卫铺广度（Q-W8-4）：计数参数负/零显式拒绝
+    # （usage error 信封 + exit 2；合法值路径零变化）。
+    errs = validate_count_args({"--limit": limit})
+    if errs:
+        _emit_usage_error("; ".join(errs), json_output=json_output)
     params = [_coerce_param(p) for p in (param or [])]
     result = db_query_safe(sql, params, limit=limit, db_path=db_path)
     _emit(result, "注册表查询失败", json_output=json_output)

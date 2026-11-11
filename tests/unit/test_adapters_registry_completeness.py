@@ -114,6 +114,9 @@ NON_REGISTRY: dict[str, str] = {
     "kicad_extract": "KiCad 提取（子进程）",
     "kicad_pcell": "KiCad P-Cell（子进程）",
     "kicad_power_pairs": "KiCad 电源对提取（.kicad_pcb 文本解析，B5-5）",
+    "kicad_sch_gen": "KiCad 原理图 s-expr 生成器+readback/ERC 解析（T-Q22 工具层，无注册副作用）",
+    "layered_stack_spec": "layered_stack 模板族 schema+分层围合布局单源（T-Q26d 工具层，无注册副作用）",
+    "hfss_builder_layered": "layered_stack HFSS 声明式 plan/builder（T-Q26d，build_and_setup geometry_lint 钩子消费面）",
     "layout_generator": "版图生成",
     "layout_interchange": "版图互换",
     "layout_ports": "版图端口",
@@ -138,6 +141,10 @@ NON_REGISTRY: dict[str, str] = {
     # aurora_d PYEDB-REG 批（2026-10-14，#373）：DotNet 通道 Ansys OpenSSL
     # 预载 helper（纯 stdlib fail-soft 可选能力，函数级 API 零注册副作用）
     "pyedb_preload": "PyEDB OpenSSL DLL 预载 helper（fail-soft 工具层，非注册面）",
+    # aurora_r aedt_migrate S2（2026-11-10）：Stage 1/2 迁移执行器（2025 R1
+    # 直开+体检，独立 executor 协议不经 EMSolverRegistry，会话面复用
+    # hfss_session；pyaedt 在模块内惰性 import，零注册副作用）
+    "hfss_migrate": "aedt_migrate Stage 1/2 执行器（2025 R1 直开+体检，非注册面）",
 }
 
 #: 接受 registry 参数的注册函数所属模块（可向独立注册表实例注册）

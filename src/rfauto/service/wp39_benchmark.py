@@ -653,7 +653,7 @@ def merge_factory_with_replay(
 
 
 # ── mline MSLPort |S11| 伪底判据内核（W3②，2026-09-16）─────────────────────
-# 机理（Devlog（一百八十五）归因 + （一百九十二）#250 新证据）：mline 模板
+# 机理（DEVLOG（一百八十五）归因 + （一百九十二）#250 新证据）：mline 模板
 # CalcPort(ref_impedance=50) 下单激励 |S11| 是 50Ω 基**带载比值**；均匀线两端
 # 入 PML 无远端失配 ⇒ 物理 |S11| ≡ |Γ(Z_line, 50)|。引擎自算线阻抗 ZL
 # （MSLPort.ReadUIData 三探针 sqrt(Et·dEt/(Ht·dHt))）对 HJ 系统性偏低
@@ -672,7 +672,7 @@ H1_DOMINANCE_MIN_GAIN_DB = 6.0
 GAMMA_DB_FLOOR = -200.0
 #: openEMS 通道线阻抗经验偏差（引擎 ZL 对 HJ 闭式，%）——**经验修正常数**，
 #: 来源：本项 W3② mline 真机三宽度×网格（runs/mline_pseudofloor/）与 W2⑤ wstep
-#: pt3_s22_renorm（50Ω −4.7%/35Ω −3.7%，Devlog（一百九十二））拟合；适用范围
+#: pt3_s22_renorm（50Ω −4.7%/35Ω −3.7%，DEVLOG（一百九十二））拟合；适用范围
 #: rogers4350b_h0.508 微带、官方口径网格（λ_sub/50 base，NEAR=base/4）、
 #: 2–3GHz。**不进 core/synthesis HJ 内核**（铁律 7：常数来自真机拟合并可由
 #: mline_pseudofloor_probe.py 复算）；调用方显式传入 `engine_z0_from_hj`。
