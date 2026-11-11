@@ -199,8 +199,20 @@ jobs:
           # report_render._font_paths 的 /usr/share/fonts 扫描面拾取
           # （模板字体表第三顺位 "Noto Sans CJK SC"）。apt 系统包非 pip
           # 面，留独立步不进 composite action。
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
+          # apt 源（security.ubuntu.com）DNS 解析瞬断在 run 43043071700 两
+          # 次连续复现（exit 100，"Temporary failure resolving"）——三试退避
+          # 重试 + dpkg 在位终验（不静默降级，缺字体让测试面自己红）。
+          ok=""
+          for i in 1 2 3; do
+            if sudo apt-get update -qq && sudo apt-get install -y -qq \
+                --no-install-recommends fonts-noto-cjk; then
+              ok=1; break
+            fi
+            echo "apt attempt $i failed (transient mirror/DNS), retry in 20s"
+            sleep 20
+          done
+          dpkg -l fonts-noto-cjk | grep -q '^ii' \
+            || { echo "fonts-noto-cjk not installed after retries"; exit 1; }
       - name: Run unit + integration-fake tests (real_edt deselected, 4-shard balanced, --lf retry once)
         run: |
           # ── W3-5 分片选择：重件锚定表 + 轻件字母序均分 ─────────────────
@@ -680,6 +692,11 @@ jobs:
           # uv export --frozen 锁集复现 "Found 2 known vulnerabilities, ignored 71
           # in 1 package"，与 CI run 41443122420 逐字同）。解锁条件不变=fdtdx/
           # moviepy 放开 pillow<12。
+          # pillow 11.3.0 第七批（2026-11-11）：PYSEC-2026-4363（TIFF 编码器
+          # TIFFSetField 参数类型不匹配，fix 13.0.0），同包同版本 advisory 库
+          # 增量（本地 pip-audit 2.10.1 对 uv export --frozen 锁集复现
+          # "Found 1 known vulnerability, ignored 73 in 1 package"，与 CI run
+          # 43043071700 逐字同）。解锁条件不变。
           pip-audit --strict --no-deps \
             --ignore-vuln PYSEC-2026-165 \
             --ignore-vuln PYSEC-2026-2249 \
@@ -737,6 +754,7 @@ jobs:
             --ignore-vuln CVE-2026-112398 \
             --ignore-vuln PYSEC-2026-4327 \
             --ignore-vuln PYSEC-2026-4332 \
+            --ignore-vuln PYSEC-2026-4363 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
