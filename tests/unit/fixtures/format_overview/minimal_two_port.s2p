@@ -1,0 +1,9 @@
+! Minimal two-port Touchstone 1.0 fixture (hand-written, deterministic)
+! Fixture for format_overview_service unit tests
+# GHZ S RI R 50
+! freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22
+1.0 0.9 0.1 0.05 0.02 0.05 0.02 0.8 -0.1
+1.5 0.7 0.2 0.10 0.04 0.10 0.04 0.6 -0.2
+2.0 0.5 0.3 0.15 0.06 0.15 0.06 0.4 -0.3
+2.5 0.3 0.4 0.20 0.08 0.20 0.08 0.2 -0.4
+3.0 0.1 0.5 0.25 0.10 0.25 0.10 0.1 -0.5

@@ -28,6 +28,7 @@ runs/*
 *.aedt.bak
 *.s1p
 *.s2p
+!tests/unit/fixtures/format_overview/minimal_two_port.s2p
 *.s3p
 *.s4p
 *.sNp

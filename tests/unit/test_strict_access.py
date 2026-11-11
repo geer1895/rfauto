@@ -24,6 +24,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+import os
 import pytest
 import skrf
 
@@ -102,6 +103,9 @@ class TestResolveUniqueResultFile:
             resolve_unique_result_file(tmp_path, pattern)
         assert "path_containment" in str(ei.value)
 
+    @pytest.mark.skipif(os.name != "nt",
+                        reason="C:/ 盘符与反斜杠形态参数=Windows 路径语义"
+                               "（POSIX 下非绝对路径，报错形态不同）——诚实 skip")
     @pytest.mark.parametrize("pattern", ["/abs/x.s2p", "C:/x.s2p", "\\x.s2p"])
     def test_reject_absolute(self, tmp_path, pattern):
         with pytest.raises(StrictPathRejectedError):

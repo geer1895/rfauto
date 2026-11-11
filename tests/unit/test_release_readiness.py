@@ -376,6 +376,8 @@ def test_sdist_hygiene_missing_backend_reports_fail(monkeypatch, tmp_path, capsy
 
 # ─── F4 build 步骤可 mock（不真跑 build/twine）+ MCP 清单确定性 ───────────────
 
+@pytest.mark.skipif(__import__("shutil").which("twine") is None,
+                    reason="F4 清单含 build/twine 本地可用性检查步（CI 无 twine → ok=False 形态）——诚实 skip")
 def test_f4_build_steps_mockable_and_manifest_deterministic(monkeypatch, tmp_path):
     pytest.importorskip("fastmcp")
     calls: list[list[str]] = []

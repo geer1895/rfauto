@@ -224,6 +224,8 @@ class TestProbeEngineIdentity:
         assert out == {"engine": "ads", "version": "2027",
                        "version_probe": "hpeesof_dir"}
 
+    @pytest.mark.skipif(__import__("importlib.util", fromlist=["x"]).find_spec("openems") is None,
+                        reason="openEMS 绑定在位时的真实版本串通道（缺席态返回无 version_probe 键的 unknown 形态，由 test_unknown_engine_channel_honest 覆盖）——诚实 skip")
     def test_openems_real_or_unknown_string(self):
         """openEMS：本机有绑定=真实版本串；无绑定=unknown——两态均诚实。"""
         out = probe_engine_identity("openems")

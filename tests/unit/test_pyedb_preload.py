@@ -59,6 +59,8 @@ def _isolate(monkeypatch: pytest.MonkeyPatch):
 # ─── helper：解析链 / 信封 / 幂等 / fail-soft ───────────────────────────────
 
 
+@pytest.mark.skipif(os.name != "nt",
+            reason="pyedb 预载=Windows ctypes.WinDLL 通道（src 非 Windows 恒 fail-soft 信封，Windows 正常态断言在 Linux 全不适用——诚实 skip）")
 class TestPreloadHelper:
     def test_ok_explicit_root_envelope(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path)

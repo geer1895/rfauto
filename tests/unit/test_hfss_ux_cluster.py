@@ -29,6 +29,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -320,6 +321,8 @@ class TestDetectProjectOccupancy:
         report = detect_project_occupancy(tmp_path / "wb.aedt")
         assert report["occupied"] is True
 
+    @pytest.mark.skipif(os.name != "nt",
+                        reason="#265 占用探测=Windows ansysedt 进程通道（normcase 大小写归一是 Windows 语义，Linux 恒等 normcase 下大小写漂移匹配不适用）——诚实 skip")
     def test_cmdline_match_reports_occupied_without_lock(
             self, tmp_path, monkeypatch):
         """#265 家法通道：无锁但 ansysedt 命令行引用本工程（大小写/分隔符

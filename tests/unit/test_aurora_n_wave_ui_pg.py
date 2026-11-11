@@ -328,6 +328,10 @@ class TestModelCardNineKeys:
         bounds = {"a": (0.0, 1.0), "b": (0.0, 1.0)}
         t = np.linspace(0.0, 1.0, 12)
         if kind == "siren":
+            import importlib.util as _ilu
+            if _ilu.find_spec("torch") is None:
+                pytest.skip("siren 通道需要 torch（CI 无 torch extra 装面）"
+                            "——其余 7 键照常执行")
             cfg = {"coord_keys": ["x", "y"], "field_key": "field",
                    "epochs": 25, "width": 8, "n_hidden": 1,
                    "bounds": {"x": (0.0, 1.0), "y": (0.0, 1.0)}}

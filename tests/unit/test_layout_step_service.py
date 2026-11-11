@@ -94,6 +94,8 @@ class TestKicadCliInfo:
         assert r["available"] is False
         assert r["env_hint"] == ENV_KICAD_CLI
 
+    @pytest.mark.skipif(os.name != "nt",
+                        reason="kicad-cli.cmd stub=Windows 批处理形态（Linux 无 .cmd 解释器，探测通道形态不同）——诚实 skip")
     def test_version_probe_stub(self, tmp_path, monkeypatch):
         cli = tmp_path / "stub" / "kicad-cli.cmd"
         cli.parent.mkdir(parents=True)

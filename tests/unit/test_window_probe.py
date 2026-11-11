@@ -280,6 +280,8 @@ def test_enum_face_clear_via_fake_api(monkeypatch):
     assert result.verdict == VERDICT_CLEAR
 
 
+@pytest.mark.skipif(os.name != "nt",
+            reason="EnumWindows 失败路径消费 ctypes.get_last_error=Win32 专属（Linux 上 error 形态不同）——诚实 skip")
 def test_enum_failure_is_indeterminate(monkeypatch):
     """EnumWindows 失败→indeterminate（error 摘要在案，不冒充空闲）。"""
     fake = _FakeApi(_seed_table(), enum_fail=True)

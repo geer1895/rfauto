@@ -53,6 +53,9 @@ _CSXCAD_TEST_MODULES = frozenset({
     "test_msl_siw_taper_template.py", "test_nrts_wiring.py",
     "test_openems_real_bundle_offline.py", "test_openems_slotline_port.py",
     "test_openems_real_smoke.py", "test_openems_templates_bridge.py",
+    # layered_stack 渲染 digest 依赖 CSXCAD（缺席时 compute_template_digest
+    # 降级返回缺 script_sha256 键的 dict——2026-11-11 CI linux 分片实证）
+    "test_layered_stack_registry.py",
     "test_coax_wg_template.py", "test_compose_layout_netlist.py",
     "test_diplexer_ridged_templates.py", "test_layout_sim_service.py",
     "test_oe_phase3_driver.py", "test_pyramid_horn_template.py",
@@ -72,6 +75,9 @@ _CSXCAD_TEST_MODULES = frozenset({
 })
 _NGSPICE_TEST_MODULES = frozenset({
     "test_macromodel.py", "test_macromodel_xval.py", "test_spice_netlist.py",
+    # exit_code_verdict spice 家族（run_ngspice 真通道——resolve 缺 ngspice
+    # 即 FileNotFoundError，2026-11-11 CI linux 分片实证）
+    "test_exit_code_verdict.py",
 })
 
 
@@ -98,6 +104,10 @@ _LINUX_NUMERIC_TEST_IDS = frozenset({
     "test_golden_default_s2x2",
     "tests/unit/test_symbolic_fit.py::test_holdout_selection_requires_mask_and_prefers_parsimony",
     "tests/unit/test_synthesis_bpf_polish_backsub.py::test_bpf_n13_boundary_smoke_both_families",
+    # turbo 统计断言（budget 内击败随机搜索/收敛带）——Linux BLAS 轨迹漂移
+    # （2026-11-11 CI run 43056862348 分片 3 实测 0.0646 vs 门 0.0616/0.1796 vs 0.15）
+    "tests/unit/test_turbo.py::TestTurbo::test_beats_random_search_same_budget",
+    "tests/unit/test_turbo.py::TestTurbo::test_converges_to_known_argmin_and_region_shrinks",
     "tests/unit/test_synthesis_bpf_polish_backsub.py::test_bpf_n15_two_tz_unconverged_gate_two_sided",
     "tests/unit/test_tma_array.py::test_kernel_sll_metrics_descending_grid_equals_ascending",
     "tests/unit/test_w1s3_lange_stepped.py::test_lange_promotion_byte_parity_and_single_object",

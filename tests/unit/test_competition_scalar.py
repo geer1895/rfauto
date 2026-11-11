@@ -220,6 +220,8 @@ class TestScoringSemantics:
 
 
 class TestAllEnginesSmoke:
+    @pytest.mark.skipif(__import__("importlib.util", fromlist=["x"]).find_spec("torch") is None,
+                        reason="七引擎含 torch 系采样器（CI 无 torch 装面）——诚实 skip")
     def test_all_seven_engines_produce_runs(self) -> None:
         """全七引擎（含 gp/sbo 重件）单问题 smoke：轨迹非空、排名完整。"""
         prob = _sphere_problem()
