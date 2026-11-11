@@ -417,7 +417,7 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 
 ```text
 src/rfauto/
-├── cli/            # command line (358 leaf commands)
+├── cli/            # command line (357 leaf commands)
 ├── mcp_server/     # MCP server (208 tools + 17 resources)
 ├── ui/             # browser workbench (24 views, zero-build native ESM)
 ├── service/        # business layer: JSON in, JSON out
@@ -573,7 +573,7 @@ Added:
 
 Fixed and improved:
 
-- CLI grows to 358 leaves: 16 new parser domains wired in one batch
+- CLI grows to 357 leaves: 16 new parser domains wired in one batch
   with help panels, registration-order snapshots and count anchors
   re-pinned in the same commit
 - The fake branchline model upgrades to an ideal TL-matrix closed form
@@ -642,6 +642,6 @@ Fixed and improved:
   timeouts in multi-thread environments
 - A failed comparison gate no longer reports "ADS stage failed"; the two
   failure kinds now have distinct messages
-- 358 CLI commands, 208 MCP tools, 36454 unit tests (same source as the
+- 357 CLI commands, 208 MCP tools, 36454 unit tests (same source as the
   README badge)
 

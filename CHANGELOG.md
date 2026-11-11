@@ -29,7 +29,7 @@ All notable changes to rfauto will be documented in this file.
 
 ### Fixed and improved
 
-- CLI 358 leaves (16 parser domains + aedt-migrate wired in batch, anchors re-pinned)
+- CLI 357 leaves (16 parser domains + aedt-migrate wired in batch, anchors re-pinned)
 - fake branchline upgraded to ideal TL-matrix closed form (benchmark
   verdicts flip to PASS)
 - SPEF three-value/scaled/continuation support; schema keys unified;
