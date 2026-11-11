@@ -23,6 +23,7 @@ SKIP_SUFFIXES = {
     ".png", ".jpg", ".gif", ".ico", ".pdf", ".zip", ".whl", ".exe",
     ".dll", ".so", ".pyd", ".step", ".stp", ".stl", ".s2p", ".s1p",
     ".s3p", ".s4p", ".touchstone", ".snP", ".db", ".sqlite", ".woff", ".ttf",
+    ".ds", ".gds",  # ADS 数据集/GDSII 二进制流（v0.14.0 recorded/overview 夹具）
 }
 SKIP_DIRS = {"pyaedt-main", "pyaedt_reference", ".venv", "__pycache__"}
 
