@@ -21,10 +21,10 @@ from __future__ import annotations
 
 import itertools
 import math
+import os
 from pathlib import Path
 
 import numpy as np
-import os
 import pytest
 import skrf
 
