@@ -557,7 +557,7 @@ class TestCommandRegistryCount:
         #   参数 str 注解 #269；citi 同款独立根 re-export+add_typer
         #   name="aedt-migrate"）；live count_cli() 实测 357 落钉）
         #   = 357
-        assert total == 358
+        assert total == 357  # v0.14.0 移除笔：loop run 摘除（-1）
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""

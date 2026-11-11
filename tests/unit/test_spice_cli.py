@@ -143,7 +143,7 @@ class TestSpiceRegistrationAndCountChain:
         spice 1 + Q-X32 skill 3 + 并发席 citi/sdc 2——#304 家法 grep 字面
         钉，字面随并发席合流笔收敛（本席落树时点 live=313）；本席稳定
         断言=spice 域恰 1 叶 + sum 分型互证（不受后续席位数漂移影响）。"""
-        assert check_numbers.count_cli() == 358  # aurora_r M-6 终合流 2026-11-10 统一重钉到终值（原 354；锚历史链见 test_cli/test_check_numbers 主锚）
+        assert check_numbers.count_cli() == 357  # aurora_r M-6 统一重钉 358 后，v0.14.0 移除笔 loop run 摘除 -1（锚历史链见 test_cli/test_check_numbers 主锚）
         counts = check_numbers.cli_leaf_counts()
         assert counts["spice"] == 1
         assert sum(counts.values()) == check_numbers.count_cli()

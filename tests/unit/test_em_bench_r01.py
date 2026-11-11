@@ -679,7 +679,7 @@ def test_r01_public_api_new_names_declared():
     )
     for name in new_names:
         assert name in em.__all__, f"缺申报公开名: {name}"
-    assert len(em.__all__) == 29  # 既有 24 + 10−5（v0.14.0 移除笔摘 proposals 面公开名）
+    assert len(em.__all__) == 25  # 既有 24 + 10−9（v0.14.0 移除笔摘 proposals 面公开名 9：5 申报名+双通道 4 函数名）
 
 
 def test_r01_result_json_safe_with_new_fields(tmp_path):

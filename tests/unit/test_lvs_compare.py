@@ -674,7 +674,7 @@ class TestRegistrationAndCountChain:
         grep 字面钉，字面随并发席合流笔收敛（Q-X33 spice 先例：落树
         时点 live 实测收口，Q-X46 合流笔实收 320→322）；本席稳定断言
         =lvs 域恰 1 叶 + sum 分型互证（不受后续席位数漂移影响）。"""
-        assert check_numbers.count_cli() == 358  # aurora_r M-6 终合流 2026-11-10 统一重钉到终值（原 354；锚历史链见 test_cli/test_check_numbers 主锚）
+        assert check_numbers.count_cli() == 357  # aurora_r M-6 统一重钉 358 后，v0.14.0 移除笔 loop run 摘除 -1（锚历史链见 test_cli/test_check_numbers 主锚）
         counts = check_numbers.cli_leaf_counts()
         assert counts["lvs"] == 1
         assert sum(counts.values()) == check_numbers.count_cli()

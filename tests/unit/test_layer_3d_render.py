@@ -611,7 +611,7 @@ class TestCliLayer3d:
             "cn_gate", _REPO / "scripts" / "check_numbers.py")
         cn = ilu.module_from_spec(spec)
         spec.loader.exec_module(cn)
-        assert cn.count_cli() == 358  # aurora_r M-6 终合流统一重钉（原 322）
+        assert cn.count_cli() == 357  # aurora_r M-6 统一重钉 358 后，v0.14.0 移除笔 -1
         counts = cn.cli_leaf_counts()
         assert counts["layer-3d"] == 1
         assert sum(counts.values()) == cn.count_cli()
