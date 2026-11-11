@@ -25,7 +25,16 @@ import pytest
 # 生效（conftest 是 pytest 加载链里最早可控点；pytest 自身及其插件不 import typer），
 # setdefault 保留显式外设。断言零放松：旗标文本本体仍逐字匹配。
 os.environ.setdefault("_TYPER_FORCE_DISABLE_TERMINAL", "1")
+
+
 os.environ.setdefault("TERMINAL_WIDTH", "200")
+
+# rich Console 色系创建期冻结 × xdist worker stdout 继承（坑账修法移植，
+# 2026-11-11 CI linux 分片实证：ads-circuit annotate 路径回显被 rich 吞段
+# ——xdist worker 的 stdout 在 collection 期仍是继承的真控制台，共享
+# Console 冻结色系后 markup 照解析；TTY_COMPATIBLE=0 使进程内一切 rich
+# Console 的终端判定恒 False——测试进程零 ANSI、捕获面纯文本）。
+os.environ.setdefault("TTY_COMPATIBLE", "0")
 
 # EC-12（2026-10-06）：openEMS 引擎重建至 E:\openEMS\install\bin——
 # 新 .pyd 的依赖 DLL（CSXCAD.dll/fparser.dll/hdf5 2.2 等）在该目录，
@@ -56,6 +65,9 @@ _CSXCAD_TEST_MODULES = frozenset({
     # layered_stack 渲染 digest 依赖 CSXCAD（缺席时 compute_template_digest
     # 降级返回缺 script_sha256 键的 dict——2026-11-11 CI linux 分片实证）
     "test_layered_stack_registry.py",
+    # 同族（2026-11-11 CI run 43062972504 分片 2/3 实证 CSXCAD 缺席）：
+    "test_layered_stack_audit.py",
+    "test_suspended_anchor_verdict.py",
     "test_coax_wg_template.py", "test_compose_layout_netlist.py",
     "test_diplexer_ridged_templates.py", "test_layout_sim_service.py",
     "test_oe_phase3_driver.py", "test_pyramid_horn_template.py",
@@ -108,6 +120,9 @@ _LINUX_NUMERIC_TEST_IDS = frozenset({
     # （2026-11-11 CI run 43056862348 分片 3 实测 0.0646 vs 门 0.0616/0.1796 vs 0.15）
     "tests/unit/test_turbo.py::TestTurbo::test_beats_random_search_same_budget",
     "tests/unit/test_turbo.py::TestTurbo::test_converges_to_known_argmin_and_region_shrinks",
+    # 闭式恒等逐位钉（== 0.0）——Linux BLAS 残差 -1.78e-15（run 43062972504）
+    "tests/unit/test_suspended_stripline_fd_judge.py::"
+    "test_exact_limit_anchors_full_fill_and_air_identity",
     "tests/unit/test_synthesis_bpf_polish_backsub.py::test_bpf_n15_two_tz_unconverged_gate_two_sided",
     "tests/unit/test_tma_array.py::test_kernel_sll_metrics_descending_grid_equals_ascending",
     "tests/unit/test_w1s3_lange_stepped.py::test_lange_promotion_byte_parity_and_single_object",

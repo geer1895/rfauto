@@ -216,6 +216,12 @@ class TestValidateTemplateForm:
         assert any("二选一" in e for e in v["errors"])
 
     def test_user_repro_model_pifa_prefix_and_hint(self, tmp_path):
+        # runs/ 反馈重放档=证据区（gitignored）——干净检出缺席即 skip
+        # （同 criteria_v2 冻结面先例；Windows 满配门照常执行）
+        if not (Path(__file__).resolve().parents[2] / "runs" / "aurora_q"
+                / "feedback_repro" / "pifa_codex.yaml").is_file():
+            pytest.skip("runs/aurora_q/feedback_repro/pifa_codex.yaml 不在"
+                        "（干净检出）——证据依赖测试不伪造")
         """用户复现形态（model: pifa）：前缀逐字节保留 + 出口指引独立条目。"""
         repro = yaml.safe_load(
             (Path(__file__).resolve().parents[2] / "runs" / "aurora_q"

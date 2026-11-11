@@ -33,11 +33,11 @@ _SPEC.loader.exec_module(audit_mod)
 # ── 棘轮常量（只收不放；有意抬门须同笔说明并更新此处） ─────────────────────
 #: 静默降级嫌疑叶上限（基线实测 0——契约已净；新嫌疑出现即红）
 SUSPECT_RATCHET = 0
-#: 动态退出码 site 名单（基线实测 2：fab ok_code 形参缺省 0、loop 状态映射 0/1，
-#: 均已静态求界 ⊆ 契约；新增动态点必须入本名单并写明求界依据）
+#: 动态退出码 site 名单（基线实测 1：fab ok_code 形参缺省 0——已静态
+#: 求界 ⊆ 契约；posix 斜杠键（审计器 _rel_display 已归一，全平台一致）；
+#: loop.py 键随专利冻结移除笔删除；新增动态点必须入本名单并写明求界依据）
 DYNAMIC_SITE_ALLOWLIST = {
-    ("src\\rfauto\\cli\\fab_app.py", 49),
-    ("src\\rfauto\\cli\\domains\\loop.py", 114),
+    ("src/rfauto/cli/fab_app.py", 49),
 }
 
 

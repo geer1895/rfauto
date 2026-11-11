@@ -259,6 +259,12 @@ def test_real_tree_regenerates_byte_identical(tmp_path):
     ②再生 source.n_test_modules==len(覆盖层)（覆盖层确为治理输入，未被
       缓存/collect 回退顶替）；
     ③再生 links 全部 test_id ⊆ 覆盖层（扫面产物确从覆盖层派生）。"""
+    # runs/ 证据湖=再生输入面（criteria.md 扫描源）——干净检出零湖时
+    # 再生结果≠shipped（links 集随湖漂），诚实 skip（满配 Windows 门
+    # 照常逐字节把守；2026-11-11 CI run 43062972504 分片 4 实证）
+    if not (_REPO_ROOT / "runs").is_dir() or not any(
+            (_REPO_ROOT / "runs").rglob("criteria.md")):
+        pytest.skip("runs/ 证据湖不在（干净检出）——真树再生锚不伪造输入")
     index_bytes = INDEX_PATH.read_bytes()
     curated_files = sorted(V2_DIR.glob("*.yaml"))
     curated_bytes = {p.name: p.read_bytes() for p in curated_files}

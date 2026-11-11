@@ -339,6 +339,16 @@ jobs:
           exit "$rc"
         env:
           OPENBLAS_NUM_THREADS: "1"
+      - name: Upload failure logs (pytest shards, on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-shard-${{ matrix.shard }}-logs
+          path: |
+            /tmp/unit.log
+            /tmp/unit_lf.log
+          if-no-files-found: ignore
+
       - name: Static real_edt marker census (W3-4, replaces the full-collect step)
         run: |
           # W3-4（2026-10-28）：原步 `pytest tests/unit -m "real_edt" --co -q`

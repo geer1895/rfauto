@@ -72,9 +72,11 @@ def _module_name(path: Path) -> str:
 
 
 def _rel_display(path: Path) -> str:
-    """报告位置显示：仓内相对路径；仓外（合成注入单测）原样绝对路径。"""
+    """报告位置显示：仓内相对路径（posix 斜杠统一——棘轮表/报告全平台
+    一致，Windows 反斜杠形态会使 linux CI 棘轮匹配失败）；仓外（合成
+    注入单测）原样绝对路径。"""
     try:
-        return str(path.relative_to(REPO_ROOT))
+        return path.relative_to(REPO_ROOT).as_posix()
     except ValueError:
         return str(path)
 
