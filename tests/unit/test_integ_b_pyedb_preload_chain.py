@@ -183,6 +183,11 @@ class TestThreeStates:
 # ────────────────────────── 错误路径：fail-soft 不阻塞主链 ──────────────────────────
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="pyedb 预载链=Windows ctypes.WinDLL 通道（src 非 Windows 恒 "
+           "fail-soft 信封，链路正常态断言在 Linux 全不适用——诚实 skip，"
+           "同 TestThreeStates 类级先例）")
 class TestFailSoft:
     def test_env_root_without_dlls_still_imports(
             self, tmp_path, monkeypatch, dll_calls):
@@ -232,6 +237,11 @@ class TestFailSoft:
 # ────────────────────────── 顺序钉：预载先于 import ──────────────────────────
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="pyedb 预载链=Windows ctypes.WinDLL 通道（src 非 Windows 恒 "
+           "fail-soft 信封，链路正常态断言在 Linux 全不适用——诚实 skip，"
+           "同 TestThreeStates 类级先例）")
 class TestOrdering:
     def test_preload_precedes_pyedb_import_real_chain(
             self, tmp_path, monkeypatch, dll_calls):
