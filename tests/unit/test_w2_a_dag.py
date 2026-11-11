@@ -157,6 +157,10 @@ def _child_env() -> dict:
 
 # ─── 判据①：断点续跑演练（node2 中段 kill → 重跑 node1 零重执行）─────────────
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="树击杀通道用 taskkill（Windows 命令，Linux 无此可执行文件——"
+           "FileNotFoundError 即此）——诚实 skip")
 def test_resume_after_mid_solve_tree_kill(tmp_path) -> None:
     run_dir = tmp_path / "run1"
     cache_dir = tmp_path / "cache"

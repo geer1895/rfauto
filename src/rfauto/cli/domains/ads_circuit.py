@@ -287,4 +287,8 @@ def ads_circuit_annotate_cmd(
                                   else "未产出（result 无 curves 节，如实跳过）"))
         for w in result_env.get("warnings") or []:
             console.print(f"  [yellow]! {escape(w)}[/yellow]")
-    console.print(f"[green]✓ 已写出[/green] {escape(str(result_env['out_path']))}")
+    # soft_wrap=True：路径行禁 rich 自动折行——80 列下长路径的文件名
+    # 段（如 annot[demo].drawio）会跨行断开，子串断言/复制粘贴面全坏
+    # （run 43069995504 shard3 实证折行形态 annot[d\nemo]；非吞段是
+    # 折行，TTY_COMPATIBLE 守卫管不住 soft_wrap 维度）
+    console.print(f"[green]✓ 已写出[/green] {escape(str(result_env['out_path']))}", soft_wrap=True)

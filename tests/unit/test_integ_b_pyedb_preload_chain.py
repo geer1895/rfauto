@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import importlib.abc
 import importlib.util
+import os
 import sys
 import types
 from pathlib import Path
@@ -95,6 +96,11 @@ def _install_fake_pyedb(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
 # ────────────────────────── 三态开关全链 ──────────────────────────
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="pyedb 预载链=Windows ctypes.WinDLL 通道（src 非 Windows 恒 "
+           "fail-soft 信封，链路正常态断言在 Linux 全不适用——诚实 skip，"
+           "同 test_pyedb_preload 类级先例）")
 class TestThreeStates:
     def test_state_closed_env_unset_zero_behavior(
             self, tmp_path, monkeypatch, dll_calls):

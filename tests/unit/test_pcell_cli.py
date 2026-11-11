@@ -210,7 +210,12 @@ def test_pcell_render_gdsii_roundtrip(tmp_path: Path) -> None:
         (sum(x for x, _ in p.points) / len(p.points),
          sum(y for _, y in p.points) / len(p.points))
         for p in polys)
-    assert centers == pytest.approx([(float(k), 0.0) for k in range(4)])
+    # approx 嵌套结构=TypeError（pytest 8+ 明确拒绝 nested data
+    # structures；本地 Windows gdstk 缺席被 importorskip 掩蔽，CI linux
+    # gdstk 在装真跑即炸，run 43069995504 shard2）——逐分量断言
+    assert [c for c, _ in centers] == pytest.approx(
+        [float(k) for k in range(4)])
+    assert all(abs(y) < 1e-9 for _, y in centers)
 
 
 def test_pcell_render_bad_fmt_exits_2(tmp_path: Path) -> None:

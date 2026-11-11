@@ -13,6 +13,8 @@ runs/aurora_q/feedback/rfauto使用反馈-20261102.md。
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import pytest
 
@@ -310,6 +312,11 @@ def _calls_named(calls, suffix):
     return [(n, a) for n, a in calls if n.endswith(suffix)]
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="守卫测试经 build_geometry=MPh 真桥建几何（测试缝合只盖 "
+           "client/solve 段；无 COMSOL 装面时 build_geometry 返回 False，"
+           "守卫断言前提不成立）——Windows 满配门把守，诚实 skip")
 class TestSolveGuards:
     def test_empty_mesh_guard_blocks_before_study_run(self, tmp_path, monkeypatch):
         client = _FakeClient(_eval_data(normalize_parallel_plate_params(None)))

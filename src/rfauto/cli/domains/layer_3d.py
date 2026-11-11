@@ -120,14 +120,17 @@ def layer_3d_render_cmd(
     console.print(
         f"[bold]逐层渲染[/bold]  source=[cyan]{escape(str(result.get('source')))}[/cyan]"
         f"  layers={escape(str(result.get('layers')))}")
+    # soft_wrap=True：产物路径行禁 rich 自动折行（80 列下长路径文件名
+    # 段跨行断开——run 43069995504 shard3 实测 minimal_board_layer_F_Cu.png
+    # 被折；路径回显行禁折是复制粘贴/断言双友好，annotate 行同款先例）
     for p in result.get("png_paths") or []:
-        console.print(f"  [green]✓[/green] {escape(str(p))}")
+        console.print(f"  [green]✓[/green] {escape(str(p))}", soft_wrap=True)
     for p in result.get("svg_paths") or []:
-        console.print(f"  [green]✓[/green] {escape(str(p))}")
+        console.print(f"  [green]✓[/green] {escape(str(p))}", soft_wrap=True)
     comp = result.get("composite") or {}
     for key in ("png", "svg"):
         if comp.get(key):
             console.print(f"  [green]✓[/green] composite {key} → "
-                          f"{escape(str(comp[key]))}")
+                          f"{escape(str(comp[key]))}", soft_wrap=True)
     for warn in result.get("warnings") or []:
         console.print(f"  [yellow]! {escape(str(warn))}[/yellow]")
