@@ -48,17 +48,6 @@ on:
         description: "Force the full matrix (ignore the docs-only fast path)"
         type: boolean
         default: true
-  schedule:
-    # 活规则周期重跑（K1）：每周一 03:00 UTC 复跑 rules.yaml verify
-    # 验证测试，防综合引擎（skrf/scipy）或依赖版本漂移使定案值失真。
-    # （rules-verify 用 github.event.schedule 锁定本条触发，日触发不跑）
-    - cron: "0 3 * * 1"
-    # 文档再生漂移日检：docs_site/kernel_cards 重生成产物 vs 已提交
-    # 逐字节比对（test_docs_site/test_kernel_cards，与 merge_preflight
-    # 同判据同源），漂移即 job 红——防站点产物静默落后于代码面。
-    # （docs-drift 用 github.event.schedule 锁定本条触发；两个触发器
-    # 按调度串分轨，互不串扰）
-    - cron: "30 2 * * *"
 
 # W3-7（2026-10-28）workflow 级并发控制：
 #   group —— push/PR 按 ref 分组（同分支/同 PR 天然同组）；schedule 事件按
