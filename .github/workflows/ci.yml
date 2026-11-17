@@ -711,6 +711,12 @@ jobs:
           # TIFFSetField 参数类型不匹配，fix 13.0.0），同包同版本 advisory 库
           # 增量（本地 pip-audit 2.10.1 对 uv export --frozen 锁集复现
           # "Found 1 known vulnerability, ignored 73 in 1 package"，与 CI run
+          # pillow 11.3.0 第八批（2026-11-17）：CVE-2026-128066/128067，修复版
+          # 13.0.0，同包同版本 advisory 库增量（CI run 43847920063 artifact
+          # pip-audit-report.json 实证 "Found 2 known vulnerabilities in 1
+          # package"，2026-11-13 起每日 schedule 门红章的真因；11-17 同笔移除
+          # schedule 触发器，本批为 push 面清偿）。解锁条件不变=fdtdx/
+          # moviepy 放开 pillow<12。
           # 43043071700 逐字同）。解锁条件不变。
           pip-audit --strict --no-deps \
             --ignore-vuln PYSEC-2026-165 \
@@ -770,6 +776,8 @@ jobs:
             --ignore-vuln PYSEC-2026-4327 \
             --ignore-vuln PYSEC-2026-4332 \
             --ignore-vuln PYSEC-2026-4363 \
+            --ignore-vuln CVE-2026-128066 \
+            --ignore-vuln CVE-2026-128067 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
